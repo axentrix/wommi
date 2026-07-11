@@ -7,6 +7,7 @@ import '../providers/challenges_provider.dart';
 import '../providers/user_state_provider.dart';
 import '../providers/repository_provider.dart';
 import '../widgets/win_state_dialog.dart';
+import '../widgets/challenge_completion_dialog.dart';
 
 class ChallengesScreen extends ConsumerStatefulWidget {
   const ChallengesScreen({super.key});
@@ -47,33 +48,47 @@ class _ChallengesScreenState extends ConsumerState<ChallengesScreen> {
   void _toggleChallenge(String challengeId) async {
     final challengesNotifier = ref.read(challengesProvider.notifier);
     final userState = ref.read(userStateProvider);
-    final wasCompleted =
-        ref.read(challengesProvider).firstWhere((c) => c.id == challengeId).isCompleted;
+    final challenge = ref.read(challengesProvider).firstWhere((c) => c.id == challengeId);
+    final wasCompleted = challenge.isCompleted;
+
+    if (wasCompleted) return; // Don't untoggle
 
     challengesNotifier.toggleChallenge(challengeId);
 
-    // Save to database if being marked complete
-    if (!wasCompleted) {
-      final repository = ref.read(repositoryProvider);
-      await repository.markRitualComplete(userState.currentDay, challengeId);
-    }
+    // Save to database
+    final repository = ref.read(repositoryProvider);
+    await repository.markRitualComplete(userState.currentDay, challengeId);
 
-    // Check if all challenges are now completed
-    if (!wasCompleted && challengesNotifier.allCompleted) {
-      // Award charm to database
-      final repository = ref.read(repositoryProvider);
-      await repository.awardCharm(userState.currentDay, 'daily_charm');
+    final completedCount = challengesNotifier.completedCount;
+    final totalCount = challengesNotifier.totalCount;
 
-      // Add gem to user state
-      ref.read(userStateProvider.notifier).addGems(1);
+    // Show dialog after a short delay
+    Future.delayed(const Duration(milliseconds: 300), () {
+      if (!mounted) return;
 
-      // Show win dialog after a short delay
-      Future.delayed(const Duration(milliseconds: 500), () {
-        if (mounted) {
-          _showWinDialog();
-        }
-      });
-    }
+      if (completedCount == totalCount) {
+        // All challenges complete - award charm and show full win dialog
+        repository.awardCharm(userState.currentDay, 'daily_charm');
+        ref.read(userStateProvider.notifier).addGems(1);
+        _showWinDialog();
+      } else {
+        // Individual challenge complete - show simple completion dialog
+        _showChallengeCompletionDialog(challenge.title, completedCount, totalCount);
+      }
+    });
+  }
+
+  void _showChallengeCompletionDialog(String title, int completed, int total) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => ChallengeCompletionDialog(
+        challengeTitle: title,
+        completedCount: completed,
+        totalCount: total,
+        onContinue: () => Navigator.of(context).pop(),
+      ),
+    );
   }
 
   @override
@@ -219,21 +234,56 @@ class _ChallengesScreenState extends ConsumerState<ChallengesScreen> {
             ),
           ),
           const SizedBox(height: 12),
-          // Challenges list
+          // Current challenge (only show next uncompleted)
           Expanded(
-            child: ListView.builder(
-              padding: const EdgeInsets.fromLTRB(22, 0, 22, 16),
-              itemCount: challenges.length,
-              itemBuilder: (context, index) {
-                final challenge = challenges[index];
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
-                  child: _ChallengeCard(
-                    challenge: challenge,
-                    onToggle: () => _toggleChallenge(challenge.id),
-                  ),
-                );
-              },
+            child: Center(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(22, 0, 22, 16),
+                child: () {
+                  // Find next uncompleted challenge or show completion message
+                  final nextChallenge = challenges.firstWhere(
+                    (c) => !c.isCompleted,
+                    orElse: () => challenges.last,
+                  );
+
+                  if (completedCount == totalCount) {
+                    // All done - show completion message
+                    return Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          '✨',
+                          style: TextStyle(fontSize: 64),
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          'All rituals complete!',
+                          style: GoogleFonts.unbounded(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w800,
+                            color: WommiColors.ink,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Come back tomorrow for new rituals',
+                          textAlign: TextAlign.center,
+                          style: GoogleFonts.inter(
+                            fontSize: 14,
+                            color: WommiColors.inkDim,
+                            height: 1.5,
+                          ),
+                        ),
+                      ],
+                    );
+                  }
+
+                  return _ChallengeCard(
+                    challenge: nextChallenge,
+                    onToggle: () => _toggleChallenge(nextChallenge.id),
+                  );
+                }(),
+              ),
             ),
           ),
         ],
