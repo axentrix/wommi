@@ -12,6 +12,12 @@ class UserStateNotifier extends StateNotifier<UserState> {
     );
   }
 
+  /// Restores the personal identifier (name/email) collected during a
+  /// previous session. Email is only ever collected once per device.
+  void hydrateProfile(String name, String email) {
+    state = state.copyWith(name: name, email: email);
+  }
+
   void addGems(int amount) {
     state = state.copyWith(gemBalance: state.gemBalance + amount);
   }
@@ -80,9 +86,13 @@ class UserStateNotifier extends StateNotifier<UserState> {
         currentDay: 1,
         journeyHistory: updatedHistory,
         currentJourneyNumber: state.currentJourneyNumber + 1,
+        // The profile is the user's persistent identity across journeys,
+        // not journey-specific state, so it survives a reset.
+        name: state.name,
+        email: state.email,
       );
     } else {
-      state = UserState(currentDay: 1);
+      state = UserState(currentDay: 1, name: state.name, email: state.email);
     }
   }
 

@@ -27,12 +27,33 @@ class CharmsEarned extends Table {
   DateTimeColumn get earnedAt => dateTime().withDefault(currentDateAndTime)();
 }
 
-@DriftDatabase(tables: [CycleProfiles, RitualCompletions, CharmsEarned])
+class UserProfiles extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  TextColumn get name => text()();
+  // Email is the user's personal identifier: unique across all local
+  // profiles and only ever collected once.
+  TextColumn get email => text().unique()();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+}
+
+@DriftDatabase(
+  tables: [CycleProfiles, RitualCompletions, CharmsEarned, UserProfiles],
+)
 class WommiDatabase extends _$WommiDatabase {
   WommiDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
+
+  @override
+  MigrationStrategy get migration => MigrationStrategy(
+        onCreate: (Migrator m) => m.createAll(),
+        onUpgrade: (Migrator m, int from, int to) async {
+          if (from < 2) {
+            await m.createTable(userProfiles);
+          }
+        },
+      );
 
   // Cycle Profile queries
   Future<CycleProfile?> getCurrentCycleProfile() async {
@@ -85,6 +106,27 @@ class WommiDatabase extends _$WommiDatabase {
     final query = selectOnly(charmsEarned)..addColumns([countQuery]);
     final result = await query.getSingle();
     return result.read(countQuery) ?? 0;
+  }
+
+  // User Profile queries
+  Future<UserProfile?> getUserProfile() async {
+    return await (select(userProfiles)
+          ..orderBy([(t) => OrderingTerm.desc(t.createdAt)])
+          ..limit(1))
+        .getSingleOrNull();
+  }
+
+  Future<bool> isEmailTaken(String email) async {
+    final existing = await (select(userProfiles)
+          ..where((t) => t.email.equals(email)))
+        .getSingleOrNull();
+    return existing != null;
+  }
+
+  Future<int> createUserProfile(String name, String email) async {
+    return await into(userProfiles).insert(
+      UserProfilesCompanion.insert(name: name, email: email),
+    );
   }
 }
 
