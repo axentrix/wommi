@@ -31,6 +31,15 @@
 
   <title>wommi</title>
   <link rel="manifest" href="manifest.json">
+
+  <!--
+    Required by lib/data/database.dart (drift's WebDatabase / sql.js backend)
+    to persist ritual completions and charms locally in the browser. Must be
+    loaded before the Flutter app tries to open the database. Vendored from
+    sql.js 1.14.1 (MIT) - https://github.com/sql-js/sql.js.
+    See: https://drift.simonbinder.eu/web/
+  -->
+  <script src="sql-wasm.js"></script>
 </head>
 <body>
   <!--
