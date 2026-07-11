@@ -51,6 +51,10 @@ class WommiRepository {
     await _db.awardCharm(cycleDay, charmName);
   }
 
+  Future<bool> hasCharmForDay(int cycleDay) {
+    return _db.hasCharmForDay(cycleDay);
+  }
+
   Future<List<CharmsEarnedData>> getAllCharms() {
     return _db.getCharmsForCycle();
   }
