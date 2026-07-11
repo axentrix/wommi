@@ -17,6 +17,19 @@ class OnboardingCycleDayScreen extends ConsumerWidget {
       body: SafeArea(
         child: Column(
           children: [
+            // Back button
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 24, 0),
+              child: Row(
+                children: [
+                  IconButton(
+                    icon: Icon(Icons.arrow_back, color: WommiColors.ink),
+                    onPressed: () => Navigator.of(context).pop(),
+                  ),
+                  const Spacer(),
+                ],
+              ),
+            ),
             // Progress bar
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),

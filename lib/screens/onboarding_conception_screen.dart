@@ -4,6 +4,7 @@ import '../theme.dart';
 import '../models/onboarding_state.dart';
 import '../providers/onboarding_provider.dart';
 import '../providers/user_state_provider.dart';
+import '../providers/repository_provider.dart';
 import '../widgets/choice_button.dart';
 
 class OnboardingConceptionScreen extends ConsumerWidget {
@@ -19,6 +20,19 @@ class OnboardingConceptionScreen extends ConsumerWidget {
       body: SafeArea(
         child: Column(
           children: [
+            // Back button
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 24, 0),
+              child: Row(
+                children: [
+                  IconButton(
+                    icon: Icon(Icons.arrow_back, color: WommiColors.ink),
+                    onPressed: () => Navigator.of(context).pop(),
+                  ),
+                  const Spacer(),
+                ],
+              ),
+            ),
             // Progress bar
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
@@ -132,15 +146,34 @@ class OnboardingConceptionScreen extends ConsumerWidget {
                           if (onboardingData.needsStep3) {
                             Navigator.of(context).pushNamed('/onboarding-step3');
                           } else {
-                            // Initialize user state and go to home
-                            ref
-                                .read(userStateProvider.notifier)
-                                .initializeFromOnboarding(onboardingData.cycleDay);
+                            // Save to database asynchronously
+                            final repository = ref.read(repositoryProvider);
+                            repository.saveCycleProfile(
+                              startDate: DateTime.now(),
+                              cycleLength: 28,
+                              ttcStatus: onboardingData.conceptionStatus,
+                            ).then((_) {
+                              // Initialize user state and go to home
+                              ref
+                                  .read(userStateProvider.notifier)
+                                  .initializeFromOnboarding(onboardingData.cycleDay);
 
-                            Navigator.of(context).pushNamedAndRemoveUntil(
-                              '/home',
-                              (route) => false,
-                            );
+                              Navigator.of(context).pushNamedAndRemoveUntil(
+                                '/home',
+                                (route) => false,
+                              );
+                            }).catchError((error) {
+                              print('Error saving cycle profile: $error');
+                              // Still navigate even if save fails
+                              ref
+                                  .read(userStateProvider.notifier)
+                                  .initializeFromOnboarding(onboardingData.cycleDay);
+
+                              Navigator.of(context).pushNamedAndRemoveUntil(
+                                '/home',
+                                (route) => false,
+                              );
+                            });
                           }
                         },
                   style: ElevatedButton.styleFrom(

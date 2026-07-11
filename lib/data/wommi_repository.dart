@@ -1,0 +1,71 @@
+import 'package:drift/drift.dart';
+import 'database.dart';
+import '../models/onboarding_state.dart';
+
+class WommiRepository {
+  final WommiDatabase _db;
+
+  WommiRepository(this._db);
+
+  // Cycle Profile
+  Future<CycleProfile?> getCurrentCycleProfile() {
+    return _db.getCurrentCycleProfile();
+  }
+
+  Future<void> saveCycleProfile({
+    required DateTime startDate,
+    int cycleLength = 28,
+    ConceptionStatus? ttcStatus,
+    List<TryingMethod>? ttcMethods,
+  }) async {
+    final companion = CycleProfilesCompanion.insert(
+      cycleLength: Value(cycleLength),
+      startDate: startDate,
+      ttcStatus: Value(ttcStatus?.name),
+      ttcMethod: Value(ttcMethods?.map((m) => m.name).join(',')),
+    );
+    await _db.createCycleProfile(companion);
+  }
+
+  // Rituals
+  Future<List<String>> getCompletedRitualIdsForDay(int day) async {
+    final completions = await _db.getRitualCompletionsForDay(day);
+    return completions.map((c) => c.ritualId).toList();
+  }
+
+  Future<void> markRitualComplete(int cycleDay, String ritualId) async {
+    await _db.markRitualComplete(cycleDay, ritualId);
+  }
+
+  Future<int> getTotalRitualsCompleted() async {
+    final completions = await _db.getAllRitualCompletions();
+    return completions.length;
+  }
+
+  // Charms
+  Future<int> getCharmCount() {
+    return _db.getCharmCount();
+  }
+
+  Future<void> awardCharm(int cycleDay, String charmName) async {
+    await _db.awardCharm(cycleDay, charmName);
+  }
+
+  Future<List<CharmsEarnedData>> getAllCharms() {
+    return _db.getCharmsForCycle();
+  }
+
+  // Utility
+  Future<int> calculateCurrentCycleDay() async {
+    final profile = await getCurrentCycleProfile();
+    if (profile == null) return 1;
+
+    final daysSinceStart = DateTime.now().difference(profile.startDate).inDays;
+    final cycleDay = (daysSinceStart % profile.cycleLength) + 1;
+    return cycleDay;
+  }
+
+  Future<void> close() {
+    return _db.close();
+  }
+}

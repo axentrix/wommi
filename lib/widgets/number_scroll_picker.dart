@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../theme.dart';
 
 class NumberScrollPicker extends StatefulWidget {
@@ -41,90 +42,59 @@ class _NumberScrollPickerState extends State<NumberScrollPicker> {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 120,
+      height: 200,
       child: Stack(
         alignment: Alignment.center,
         children: [
-          // Selection indicator
+          // Selection indicator box
           Container(
-            height: 80,
+            height: 60,
+            margin: const EdgeInsets.symmetric(horizontal: 40),
             decoration: BoxDecoration(
-              border: Border(
-                top: BorderSide(color: WommiColors.line, width: 1.5),
-                bottom: BorderSide(color: WommiColors.line, width: 1.5),
+              border: Border.all(
+                color: WommiColors.cyan,
+                width: 2,
               ),
+              borderRadius: BorderRadius.circular(12),
             ),
           ),
-          // Number wheel
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              // Previous number (dim)
-              SizedBox(
-                width: 80,
-                child: Center(
+          // Vertical scroll wheel
+          ListWheelScrollView.useDelegate(
+            controller: _scrollController,
+            itemExtent: 60,
+            perspective: 0.003,
+            diameterRatio: 1.5,
+            physics: const FixedExtentScrollPhysics(),
+            onSelectedItemChanged: (index) {
+              final newValue = widget.minValue + index;
+              if (_currentValue != newValue) {
+                setState(() {
+                  _currentValue = newValue;
+                });
+                widget.onChanged(newValue);
+              }
+            },
+            childDelegate: ListWheelChildBuilderDelegate(
+              childCount: widget.maxValue - widget.minValue + 1,
+              builder: (context, index) {
+                final value = widget.minValue + index;
+                final isSelected = value == _currentValue;
+
+                return Center(
                   child: Text(
-                    '${_currentValue > widget.minValue ? _currentValue - 1 : ''}',
-                    style: TextStyle(
-                      fontFamily: 'Unbounded',
-                      fontWeight: FontWeight.w600,
-                      fontSize: 22,
-                      color: Color(0xFFD8D2E8),
+                    '$value',
+                    style: GoogleFonts.unbounded(
+                      fontSize: isSelected ? 42 : 28,
+                      fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+                      color: isSelected
+                          ? WommiColors.cyanDark
+                          : WommiColors.inkDim.withOpacity(0.4),
+                      height: 1.0,
                     ),
                   ),
-                ),
-              ),
-              // Current number (main)
-              SizedBox(
-                width: 90,
-                child: ListWheelScrollView.useDelegate(
-                  controller: _scrollController,
-                  itemExtent: 80,
-                  perspective: 0.005,
-                  diameterRatio: 1.5,
-                  physics: const FixedExtentScrollPhysics(),
-                  onSelectedItemChanged: (index) {
-                    setState(() {
-                      _currentValue = widget.minValue + index;
-                    });
-                    widget.onChanged(_currentValue);
-                  },
-                  childDelegate: ListWheelChildBuilderDelegate(
-                    childCount: widget.maxValue - widget.minValue + 1,
-                    builder: (context, index) {
-                      final value = widget.minValue + index;
-                      return Center(
-                        child: Text(
-                          '$value',
-                          style: TextStyle(
-                            fontFamily: 'Unbounded',
-                            fontWeight: FontWeight.w800,
-                            fontSize: 60,
-                            color: WommiColors.cyanDark,
-                            height: 1.0,
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                ),
-              ),
-              // Next number (dim)
-              SizedBox(
-                width: 80,
-                child: Center(
-                  child: Text(
-                    '${_currentValue < widget.maxValue ? _currentValue + 1 : ''}',
-                    style: TextStyle(
-                      fontFamily: 'Unbounded',
-                      fontWeight: FontWeight.w600,
-                      fontSize: 22,
-                      color: Color(0xFFD8D2E8),
-                    ),
-                  ),
-                ),
-              ),
-            ],
+                );
+              },
+            ),
           ),
         ],
       ),

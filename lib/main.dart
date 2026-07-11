@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'theme.dart';
 import 'screens/splash_screen.dart';
+import 'screens/landing_screen.dart';
 import 'screens/onboarding_cycle_day_screen.dart';
 import 'screens/onboarding_conception_screen.dart';
 import 'screens/onboarding_step3_screen.dart';
@@ -38,6 +39,7 @@ class WommiApp extends StatelessWidget {
       initialRoute: '/',
       routes: {
         '/': (context) => const SplashScreen(),
+        '/landing': (context) => const LandingScreen(),
         '/onboarding': (context) => const OnboardingCycleDayScreen(),
         '/onboarding-step2': (context) => const OnboardingConceptionScreen(),
         '/onboarding-step3': (context) => const OnboardingStep3Screen(),

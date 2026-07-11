@@ -4,7 +4,10 @@ import 'package:google_fonts/google_fonts.dart';
 import '../theme.dart';
 import '../providers/user_state_provider.dart';
 import '../widgets/bottom_navigation_bar.dart';
+import '../widgets/profile_collection_dialog.dart';
 import 'challenges_screen.dart';
+import 'achievements_screen.dart';
+import 'profile_screen.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -15,6 +18,22 @@ class HomeScreen extends ConsumerStatefulWidget {
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
   int _currentIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    // Show profile collection dialog if profile is not complete
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final userState = ref.read(userStateProvider);
+      if (!userState.hasProfile) {
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => const ProfileCollectionDialog(),
+        );
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -116,9 +135,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       case 1:
         return const ChallengesScreen();
       case 2:
-        return _buildPlaceholder('Achievements', '💎');
+        return const AchievementsScreen();
       case 3:
-        return _buildPlaceholder('Profile', '👤');
+        return const ProfileScreen();
       default:
         return _buildJourneyMap();
     }

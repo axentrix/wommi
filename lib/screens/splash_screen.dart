@@ -31,10 +31,10 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
 
     _controller.forward();
 
-    // Navigate to onboarding after 2.5 seconds
+    // Navigate to landing after 2.5 seconds
     Future.delayed(const Duration(milliseconds: 2500), () {
       if (mounted) {
-        Navigator.of(context).pushReplacementNamed('/onboarding');
+        Navigator.of(context).pushReplacementNamed('/landing');
       }
     });
   }

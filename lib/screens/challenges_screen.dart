@@ -5,6 +5,7 @@ import '../theme.dart';
 import '../models/challenge.dart';
 import '../providers/challenges_provider.dart';
 import '../providers/user_state_provider.dart';
+import '../providers/repository_provider.dart';
 import '../widgets/win_state_dialog.dart';
 
 class ChallengesScreen extends ConsumerStatefulWidget {
@@ -43,15 +44,26 @@ class _ChallengesScreenState extends ConsumerState<ChallengesScreen> {
     );
   }
 
-  void _toggleChallenge(String challengeId) {
+  void _toggleChallenge(String challengeId) async {
     final challengesNotifier = ref.read(challengesProvider.notifier);
+    final userState = ref.read(userStateProvider);
     final wasCompleted =
         ref.read(challengesProvider).firstWhere((c) => c.id == challengeId).isCompleted;
 
     challengesNotifier.toggleChallenge(challengeId);
 
+    // Save to database if being marked complete
+    if (!wasCompleted) {
+      final repository = ref.read(repositoryProvider);
+      await repository.markRitualComplete(userState.currentDay, challengeId);
+    }
+
     // Check if all challenges are now completed
     if (!wasCompleted && challengesNotifier.allCompleted) {
+      // Award charm to database
+      final repository = ref.read(repositoryProvider);
+      await repository.awardCharm(userState.currentDay, 'daily_charm');
+
       // Add gem to user state
       ref.read(userStateProvider.notifier).addGems(1);
 

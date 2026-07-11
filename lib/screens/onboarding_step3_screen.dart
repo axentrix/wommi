@@ -6,6 +6,7 @@ import '../providers/onboarding_provider.dart';
 import '../providers/user_state_provider.dart';
 import '../widgets/chip_button.dart';
 import '../widgets/number_scroll_picker.dart';
+import '../providers/repository_provider.dart';
 
 class OnboardingStep3Screen extends ConsumerWidget {
   const OnboardingStep3Screen({super.key});
@@ -23,6 +24,19 @@ class OnboardingStep3Screen extends ConsumerWidget {
       body: SafeArea(
         child: Column(
           children: [
+            // Back button
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 24, 0),
+              child: Row(
+                children: [
+                  IconButton(
+                    icon: Icon(Icons.arrow_back, color: WommiColors.ink),
+                    onPressed: () => Navigator.of(context).pop(),
+                  ),
+                  const Spacer(),
+                ],
+              ),
+            ),
             // Progress bar
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
@@ -181,16 +195,36 @@ class OnboardingStep3Screen extends ConsumerWidget {
                 width: double.infinity,
                 child: ElevatedButton(
                   onPressed: () {
-                    // Initialize user state with onboarding data
-                    ref
-                        .read(userStateProvider.notifier)
-                        .initializeFromOnboarding(onboardingData.cycleDay);
+                    // Save to database asynchronously
+                    final repository = ref.read(repositoryProvider);
+                    repository.saveCycleProfile(
+                      startDate: DateTime.now(),
+                      cycleLength: 28,
+                      ttcStatus: onboardingData.conceptionStatus,
+                      ttcMethods: onboardingData.tryingMethods,
+                    ).then((_) {
+                      // Initialize user state with onboarding data
+                      ref
+                          .read(userStateProvider.notifier)
+                          .initializeFromOnboarding(onboardingData.cycleDay);
 
-                    // Navigate to home screen
-                    Navigator.of(context).pushNamedAndRemoveUntil(
-                      '/home',
-                      (route) => false,
-                    );
+                      // Navigate to home screen
+                      Navigator.of(context).pushNamedAndRemoveUntil(
+                        '/home',
+                        (route) => false,
+                      );
+                    }).catchError((error) {
+                      print('Error saving cycle profile: $error');
+                      // Still navigate even if save fails
+                      ref
+                          .read(userStateProvider.notifier)
+                          .initializeFromOnboarding(onboardingData.cycleDay);
+
+                      Navigator.of(context).pushNamedAndRemoveUntil(
+                        '/home',
+                        (route) => false,
+                      );
+                    });
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: WommiColors.cyan,
