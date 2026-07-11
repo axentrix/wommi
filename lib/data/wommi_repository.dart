@@ -64,8 +64,29 @@ class WommiRepository {
     return _db.isEmailTaken(email);
   }
 
-  Future<void> createUserProfile(String name, String email) async {
-    await _db.createUserProfile(name, email);
+  Future<int> createUserProfile(String name, String email) {
+    return _db.createUserProfile(name, email);
+  }
+
+  // Journeys
+  Future<void> saveJourneyRecord({
+    required int userProfileId,
+    required int journeyNumber,
+    required int gemsCollected,
+    required DateTime startDate,
+    required DateTime endDate,
+  }) async {
+    await _db.saveJourneyRecord(
+      userProfileId: userProfileId,
+      journeyNumber: journeyNumber,
+      gemsCollected: gemsCollected,
+      startDate: startDate,
+      endDate: endDate,
+    );
+  }
+
+  Future<List<JourneyRecord>> getJourneyRecordsForUser(int userProfileId) {
+    return _db.getJourneyRecordsForUser(userProfileId);
   }
 
   // Utility

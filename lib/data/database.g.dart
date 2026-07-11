@@ -1304,6 +1304,476 @@ class UserProfilesCompanion extends UpdateCompanion<UserProfile> {
   }
 }
 
+class $JourneyRecordsTable extends JourneyRecords
+    with TableInfo<$JourneyRecordsTable, JourneyRecord> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $JourneyRecordsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _userProfileIdMeta = const VerificationMeta(
+    'userProfileId',
+  );
+  @override
+  late final GeneratedColumn<int> userProfileId = GeneratedColumn<int>(
+    'user_profile_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES user_profiles (id)',
+    ),
+  );
+  static const VerificationMeta _journeyNumberMeta = const VerificationMeta(
+    'journeyNumber',
+  );
+  @override
+  late final GeneratedColumn<int> journeyNumber = GeneratedColumn<int>(
+    'journey_number',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _gemsCollectedMeta = const VerificationMeta(
+    'gemsCollected',
+  );
+  @override
+  late final GeneratedColumn<int> gemsCollected = GeneratedColumn<int>(
+    'gems_collected',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _startDateMeta = const VerificationMeta(
+    'startDate',
+  );
+  @override
+  late final GeneratedColumn<DateTime> startDate = GeneratedColumn<DateTime>(
+    'start_date',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _endDateMeta = const VerificationMeta(
+    'endDate',
+  );
+  @override
+  late final GeneratedColumn<DateTime> endDate = GeneratedColumn<DateTime>(
+    'end_date',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    userProfileId,
+    journeyNumber,
+    gemsCollected,
+    startDate,
+    endDate,
+    createdAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'journey_records';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<JourneyRecord> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('user_profile_id')) {
+      context.handle(
+        _userProfileIdMeta,
+        userProfileId.isAcceptableOrUnknown(
+          data['user_profile_id']!,
+          _userProfileIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_userProfileIdMeta);
+    }
+    if (data.containsKey('journey_number')) {
+      context.handle(
+        _journeyNumberMeta,
+        journeyNumber.isAcceptableOrUnknown(
+          data['journey_number']!,
+          _journeyNumberMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_journeyNumberMeta);
+    }
+    if (data.containsKey('gems_collected')) {
+      context.handle(
+        _gemsCollectedMeta,
+        gemsCollected.isAcceptableOrUnknown(
+          data['gems_collected']!,
+          _gemsCollectedMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_gemsCollectedMeta);
+    }
+    if (data.containsKey('start_date')) {
+      context.handle(
+        _startDateMeta,
+        startDate.isAcceptableOrUnknown(data['start_date']!, _startDateMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_startDateMeta);
+    }
+    if (data.containsKey('end_date')) {
+      context.handle(
+        _endDateMeta,
+        endDate.isAcceptableOrUnknown(data['end_date']!, _endDateMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_endDateMeta);
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  JourneyRecord map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return JourneyRecord(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      userProfileId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}user_profile_id'],
+      )!,
+      journeyNumber: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}journey_number'],
+      )!,
+      gemsCollected: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}gems_collected'],
+      )!,
+      startDate: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}start_date'],
+      )!,
+      endDate: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}end_date'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+    );
+  }
+
+  @override
+  $JourneyRecordsTable createAlias(String alias) {
+    return $JourneyRecordsTable(attachedDatabase, alias);
+  }
+}
+
+class JourneyRecord extends DataClass implements Insertable<JourneyRecord> {
+  final int id;
+  final int userProfileId;
+  final int journeyNumber;
+  final int gemsCollected;
+  final DateTime startDate;
+  final DateTime endDate;
+  final DateTime createdAt;
+  const JourneyRecord({
+    required this.id,
+    required this.userProfileId,
+    required this.journeyNumber,
+    required this.gemsCollected,
+    required this.startDate,
+    required this.endDate,
+    required this.createdAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['user_profile_id'] = Variable<int>(userProfileId);
+    map['journey_number'] = Variable<int>(journeyNumber);
+    map['gems_collected'] = Variable<int>(gemsCollected);
+    map['start_date'] = Variable<DateTime>(startDate);
+    map['end_date'] = Variable<DateTime>(endDate);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    return map;
+  }
+
+  JourneyRecordsCompanion toCompanion(bool nullToAbsent) {
+    return JourneyRecordsCompanion(
+      id: Value(id),
+      userProfileId: Value(userProfileId),
+      journeyNumber: Value(journeyNumber),
+      gemsCollected: Value(gemsCollected),
+      startDate: Value(startDate),
+      endDate: Value(endDate),
+      createdAt: Value(createdAt),
+    );
+  }
+
+  factory JourneyRecord.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return JourneyRecord(
+      id: serializer.fromJson<int>(json['id']),
+      userProfileId: serializer.fromJson<int>(json['userProfileId']),
+      journeyNumber: serializer.fromJson<int>(json['journeyNumber']),
+      gemsCollected: serializer.fromJson<int>(json['gemsCollected']),
+      startDate: serializer.fromJson<DateTime>(json['startDate']),
+      endDate: serializer.fromJson<DateTime>(json['endDate']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'userProfileId': serializer.toJson<int>(userProfileId),
+      'journeyNumber': serializer.toJson<int>(journeyNumber),
+      'gemsCollected': serializer.toJson<int>(gemsCollected),
+      'startDate': serializer.toJson<DateTime>(startDate),
+      'endDate': serializer.toJson<DateTime>(endDate),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+    };
+  }
+
+  JourneyRecord copyWith({
+    int? id,
+    int? userProfileId,
+    int? journeyNumber,
+    int? gemsCollected,
+    DateTime? startDate,
+    DateTime? endDate,
+    DateTime? createdAt,
+  }) => JourneyRecord(
+    id: id ?? this.id,
+    userProfileId: userProfileId ?? this.userProfileId,
+    journeyNumber: journeyNumber ?? this.journeyNumber,
+    gemsCollected: gemsCollected ?? this.gemsCollected,
+    startDate: startDate ?? this.startDate,
+    endDate: endDate ?? this.endDate,
+    createdAt: createdAt ?? this.createdAt,
+  );
+  JourneyRecord copyWithCompanion(JourneyRecordsCompanion data) {
+    return JourneyRecord(
+      id: data.id.present ? data.id.value : this.id,
+      userProfileId: data.userProfileId.present
+          ? data.userProfileId.value
+          : this.userProfileId,
+      journeyNumber: data.journeyNumber.present
+          ? data.journeyNumber.value
+          : this.journeyNumber,
+      gemsCollected: data.gemsCollected.present
+          ? data.gemsCollected.value
+          : this.gemsCollected,
+      startDate: data.startDate.present ? data.startDate.value : this.startDate,
+      endDate: data.endDate.present ? data.endDate.value : this.endDate,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('JourneyRecord(')
+          ..write('id: $id, ')
+          ..write('userProfileId: $userProfileId, ')
+          ..write('journeyNumber: $journeyNumber, ')
+          ..write('gemsCollected: $gemsCollected, ')
+          ..write('startDate: $startDate, ')
+          ..write('endDate: $endDate, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    userProfileId,
+    journeyNumber,
+    gemsCollected,
+    startDate,
+    endDate,
+    createdAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is JourneyRecord &&
+          other.id == this.id &&
+          other.userProfileId == this.userProfileId &&
+          other.journeyNumber == this.journeyNumber &&
+          other.gemsCollected == this.gemsCollected &&
+          other.startDate == this.startDate &&
+          other.endDate == this.endDate &&
+          other.createdAt == this.createdAt);
+}
+
+class JourneyRecordsCompanion extends UpdateCompanion<JourneyRecord> {
+  final Value<int> id;
+  final Value<int> userProfileId;
+  final Value<int> journeyNumber;
+  final Value<int> gemsCollected;
+  final Value<DateTime> startDate;
+  final Value<DateTime> endDate;
+  final Value<DateTime> createdAt;
+  const JourneyRecordsCompanion({
+    this.id = const Value.absent(),
+    this.userProfileId = const Value.absent(),
+    this.journeyNumber = const Value.absent(),
+    this.gemsCollected = const Value.absent(),
+    this.startDate = const Value.absent(),
+    this.endDate = const Value.absent(),
+    this.createdAt = const Value.absent(),
+  });
+  JourneyRecordsCompanion.insert({
+    this.id = const Value.absent(),
+    required int userProfileId,
+    required int journeyNumber,
+    required int gemsCollected,
+    required DateTime startDate,
+    required DateTime endDate,
+    this.createdAt = const Value.absent(),
+  }) : userProfileId = Value(userProfileId),
+       journeyNumber = Value(journeyNumber),
+       gemsCollected = Value(gemsCollected),
+       startDate = Value(startDate),
+       endDate = Value(endDate);
+  static Insertable<JourneyRecord> custom({
+    Expression<int>? id,
+    Expression<int>? userProfileId,
+    Expression<int>? journeyNumber,
+    Expression<int>? gemsCollected,
+    Expression<DateTime>? startDate,
+    Expression<DateTime>? endDate,
+    Expression<DateTime>? createdAt,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (userProfileId != null) 'user_profile_id': userProfileId,
+      if (journeyNumber != null) 'journey_number': journeyNumber,
+      if (gemsCollected != null) 'gems_collected': gemsCollected,
+      if (startDate != null) 'start_date': startDate,
+      if (endDate != null) 'end_date': endDate,
+      if (createdAt != null) 'created_at': createdAt,
+    });
+  }
+
+  JourneyRecordsCompanion copyWith({
+    Value<int>? id,
+    Value<int>? userProfileId,
+    Value<int>? journeyNumber,
+    Value<int>? gemsCollected,
+    Value<DateTime>? startDate,
+    Value<DateTime>? endDate,
+    Value<DateTime>? createdAt,
+  }) {
+    return JourneyRecordsCompanion(
+      id: id ?? this.id,
+      userProfileId: userProfileId ?? this.userProfileId,
+      journeyNumber: journeyNumber ?? this.journeyNumber,
+      gemsCollected: gemsCollected ?? this.gemsCollected,
+      startDate: startDate ?? this.startDate,
+      endDate: endDate ?? this.endDate,
+      createdAt: createdAt ?? this.createdAt,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (userProfileId.present) {
+      map['user_profile_id'] = Variable<int>(userProfileId.value);
+    }
+    if (journeyNumber.present) {
+      map['journey_number'] = Variable<int>(journeyNumber.value);
+    }
+    if (gemsCollected.present) {
+      map['gems_collected'] = Variable<int>(gemsCollected.value);
+    }
+    if (startDate.present) {
+      map['start_date'] = Variable<DateTime>(startDate.value);
+    }
+    if (endDate.present) {
+      map['end_date'] = Variable<DateTime>(endDate.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('JourneyRecordsCompanion(')
+          ..write('id: $id, ')
+          ..write('userProfileId: $userProfileId, ')
+          ..write('journeyNumber: $journeyNumber, ')
+          ..write('gemsCollected: $gemsCollected, ')
+          ..write('startDate: $startDate, ')
+          ..write('endDate: $endDate, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$WommiDatabase extends GeneratedDatabase {
   _$WommiDatabase(QueryExecutor e) : super(e);
   $WommiDatabaseManager get managers => $WommiDatabaseManager(this);
@@ -1312,6 +1782,7 @@ abstract class _$WommiDatabase extends GeneratedDatabase {
       $RitualCompletionsTable(this);
   late final $CharmsEarnedTable charmsEarned = $CharmsEarnedTable(this);
   late final $UserProfilesTable userProfiles = $UserProfilesTable(this);
+  late final $JourneyRecordsTable journeyRecords = $JourneyRecordsTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -1321,6 +1792,7 @@ abstract class _$WommiDatabase extends GeneratedDatabase {
     ritualCompletions,
     charmsEarned,
     userProfiles,
+    journeyRecords,
   ];
 }
 
@@ -1925,6 +2397,32 @@ typedef $$UserProfilesTableUpdateCompanionBuilder =
       Value<DateTime> createdAt,
     });
 
+final class $$UserProfilesTableReferences
+    extends BaseReferences<_$WommiDatabase, $UserProfilesTable, UserProfile> {
+  $$UserProfilesTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static MultiTypedResultKey<$JourneyRecordsTable, List<JourneyRecord>>
+  _journeyRecordsRefsTable(_$WommiDatabase db) => MultiTypedResultKey.fromTable(
+    db.journeyRecords,
+    aliasName: $_aliasNameGenerator(
+      db.userProfiles.id,
+      db.journeyRecords.userProfileId,
+    ),
+  );
+
+  $$JourneyRecordsTableProcessedTableManager get journeyRecordsRefs {
+    final manager = $$JourneyRecordsTableTableManager(
+      $_db,
+      $_db.journeyRecords,
+    ).filter((f) => f.userProfileId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_journeyRecordsRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+}
+
 class $$UserProfilesTableFilterComposer
     extends Composer<_$WommiDatabase, $UserProfilesTable> {
   $$UserProfilesTableFilterComposer({
@@ -1953,6 +2451,31 @@ class $$UserProfilesTableFilterComposer
     column: $table.createdAt,
     builder: (column) => ColumnFilters(column),
   );
+
+  Expression<bool> journeyRecordsRefs(
+    Expression<bool> Function($$JourneyRecordsTableFilterComposer f) f,
+  ) {
+    final $$JourneyRecordsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.journeyRecords,
+      getReferencedColumn: (t) => t.userProfileId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$JourneyRecordsTableFilterComposer(
+            $db: $db,
+            $table: $db.journeyRecords,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$UserProfilesTableOrderingComposer
@@ -2005,6 +2528,31 @@ class $$UserProfilesTableAnnotationComposer
 
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  Expression<T> journeyRecordsRefs<T extends Object>(
+    Expression<T> Function($$JourneyRecordsTableAnnotationComposer a) f,
+  ) {
+    final $$JourneyRecordsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.journeyRecords,
+      getReferencedColumn: (t) => t.userProfileId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$JourneyRecordsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.journeyRecords,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$UserProfilesTableTableManager
@@ -2018,12 +2566,9 @@ class $$UserProfilesTableTableManager
           $$UserProfilesTableAnnotationComposer,
           $$UserProfilesTableCreateCompanionBuilder,
           $$UserProfilesTableUpdateCompanionBuilder,
-          (
-            UserProfile,
-            BaseReferences<_$WommiDatabase, $UserProfilesTable, UserProfile>,
-          ),
+          (UserProfile, $$UserProfilesTableReferences),
           UserProfile,
-          PrefetchHooks Function()
+          PrefetchHooks Function({bool journeyRecordsRefs})
         > {
   $$UserProfilesTableTableManager(_$WommiDatabase db, $UserProfilesTable table)
     : super(
@@ -2061,9 +2606,47 @@ class $$UserProfilesTableTableManager
                 createdAt: createdAt,
               ),
           withReferenceMapper: (p0) => p0
-              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$UserProfilesTableReferences(db, table, e),
+                ),
+              )
               .toList(),
-          prefetchHooksCallback: null,
+          prefetchHooksCallback: ({journeyRecordsRefs = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [
+                if (journeyRecordsRefs) db.journeyRecords,
+              ],
+              addJoins: null,
+              getPrefetchedDataCallback: (items) async {
+                return [
+                  if (journeyRecordsRefs)
+                    await $_getPrefetchedData<
+                      UserProfile,
+                      $UserProfilesTable,
+                      JourneyRecord
+                    >(
+                      currentTable: table,
+                      referencedTable: $$UserProfilesTableReferences
+                          ._journeyRecordsRefsTable(db),
+                      managerFromTypedResult: (p0) =>
+                          $$UserProfilesTableReferences(
+                            db,
+                            table,
+                            p0,
+                          ).journeyRecordsRefs,
+                      referencedItemsForCurrentItem: (item, referencedItems) =>
+                          referencedItems.where(
+                            (e) => e.userProfileId == item.id,
+                          ),
+                      typedResults: items,
+                    ),
+                ];
+              },
+            );
+          },
         ),
       );
 }
@@ -2078,12 +2661,375 @@ typedef $$UserProfilesTableProcessedTableManager =
       $$UserProfilesTableAnnotationComposer,
       $$UserProfilesTableCreateCompanionBuilder,
       $$UserProfilesTableUpdateCompanionBuilder,
-      (
-        UserProfile,
-        BaseReferences<_$WommiDatabase, $UserProfilesTable, UserProfile>,
-      ),
+      (UserProfile, $$UserProfilesTableReferences),
       UserProfile,
-      PrefetchHooks Function()
+      PrefetchHooks Function({bool journeyRecordsRefs})
+    >;
+typedef $$JourneyRecordsTableCreateCompanionBuilder =
+    JourneyRecordsCompanion Function({
+      Value<int> id,
+      required int userProfileId,
+      required int journeyNumber,
+      required int gemsCollected,
+      required DateTime startDate,
+      required DateTime endDate,
+      Value<DateTime> createdAt,
+    });
+typedef $$JourneyRecordsTableUpdateCompanionBuilder =
+    JourneyRecordsCompanion Function({
+      Value<int> id,
+      Value<int> userProfileId,
+      Value<int> journeyNumber,
+      Value<int> gemsCollected,
+      Value<DateTime> startDate,
+      Value<DateTime> endDate,
+      Value<DateTime> createdAt,
+    });
+
+final class $$JourneyRecordsTableReferences
+    extends
+        BaseReferences<_$WommiDatabase, $JourneyRecordsTable, JourneyRecord> {
+  $$JourneyRecordsTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $UserProfilesTable _userProfileIdTable(_$WommiDatabase db) =>
+      db.userProfiles.createAlias(
+        $_aliasNameGenerator(
+          db.journeyRecords.userProfileId,
+          db.userProfiles.id,
+        ),
+      );
+
+  $$UserProfilesTableProcessedTableManager get userProfileId {
+    final $_column = $_itemColumn<int>('user_profile_id')!;
+
+    final manager = $$UserProfilesTableTableManager(
+      $_db,
+      $_db.userProfiles,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_userProfileIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$JourneyRecordsTableFilterComposer
+    extends Composer<_$WommiDatabase, $JourneyRecordsTable> {
+  $$JourneyRecordsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get journeyNumber => $composableBuilder(
+    column: $table.journeyNumber,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get gemsCollected => $composableBuilder(
+    column: $table.gemsCollected,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get startDate => $composableBuilder(
+    column: $table.startDate,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get endDate => $composableBuilder(
+    column: $table.endDate,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$UserProfilesTableFilterComposer get userProfileId {
+    final $$UserProfilesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.userProfileId,
+      referencedTable: $db.userProfiles,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$UserProfilesTableFilterComposer(
+            $db: $db,
+            $table: $db.userProfiles,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$JourneyRecordsTableOrderingComposer
+    extends Composer<_$WommiDatabase, $JourneyRecordsTable> {
+  $$JourneyRecordsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get journeyNumber => $composableBuilder(
+    column: $table.journeyNumber,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get gemsCollected => $composableBuilder(
+    column: $table.gemsCollected,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get startDate => $composableBuilder(
+    column: $table.startDate,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get endDate => $composableBuilder(
+    column: $table.endDate,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$UserProfilesTableOrderingComposer get userProfileId {
+    final $$UserProfilesTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.userProfileId,
+      referencedTable: $db.userProfiles,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$UserProfilesTableOrderingComposer(
+            $db: $db,
+            $table: $db.userProfiles,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$JourneyRecordsTableAnnotationComposer
+    extends Composer<_$WommiDatabase, $JourneyRecordsTable> {
+  $$JourneyRecordsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<int> get journeyNumber => $composableBuilder(
+    column: $table.journeyNumber,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get gemsCollected => $composableBuilder(
+    column: $table.gemsCollected,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get startDate =>
+      $composableBuilder(column: $table.startDate, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get endDate =>
+      $composableBuilder(column: $table.endDate, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  $$UserProfilesTableAnnotationComposer get userProfileId {
+    final $$UserProfilesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.userProfileId,
+      referencedTable: $db.userProfiles,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$UserProfilesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.userProfiles,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$JourneyRecordsTableTableManager
+    extends
+        RootTableManager<
+          _$WommiDatabase,
+          $JourneyRecordsTable,
+          JourneyRecord,
+          $$JourneyRecordsTableFilterComposer,
+          $$JourneyRecordsTableOrderingComposer,
+          $$JourneyRecordsTableAnnotationComposer,
+          $$JourneyRecordsTableCreateCompanionBuilder,
+          $$JourneyRecordsTableUpdateCompanionBuilder,
+          (JourneyRecord, $$JourneyRecordsTableReferences),
+          JourneyRecord,
+          PrefetchHooks Function({bool userProfileId})
+        > {
+  $$JourneyRecordsTableTableManager(
+    _$WommiDatabase db,
+    $JourneyRecordsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$JourneyRecordsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$JourneyRecordsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$JourneyRecordsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<int> userProfileId = const Value.absent(),
+                Value<int> journeyNumber = const Value.absent(),
+                Value<int> gemsCollected = const Value.absent(),
+                Value<DateTime> startDate = const Value.absent(),
+                Value<DateTime> endDate = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+              }) => JourneyRecordsCompanion(
+                id: id,
+                userProfileId: userProfileId,
+                journeyNumber: journeyNumber,
+                gemsCollected: gemsCollected,
+                startDate: startDate,
+                endDate: endDate,
+                createdAt: createdAt,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required int userProfileId,
+                required int journeyNumber,
+                required int gemsCollected,
+                required DateTime startDate,
+                required DateTime endDate,
+                Value<DateTime> createdAt = const Value.absent(),
+              }) => JourneyRecordsCompanion.insert(
+                id: id,
+                userProfileId: userProfileId,
+                journeyNumber: journeyNumber,
+                gemsCollected: gemsCollected,
+                startDate: startDate,
+                endDate: endDate,
+                createdAt: createdAt,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$JourneyRecordsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({userProfileId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (userProfileId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.userProfileId,
+                                referencedTable: $$JourneyRecordsTableReferences
+                                    ._userProfileIdTable(db),
+                                referencedColumn:
+                                    $$JourneyRecordsTableReferences
+                                        ._userProfileIdTable(db)
+                                        .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$JourneyRecordsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$WommiDatabase,
+      $JourneyRecordsTable,
+      JourneyRecord,
+      $$JourneyRecordsTableFilterComposer,
+      $$JourneyRecordsTableOrderingComposer,
+      $$JourneyRecordsTableAnnotationComposer,
+      $$JourneyRecordsTableCreateCompanionBuilder,
+      $$JourneyRecordsTableUpdateCompanionBuilder,
+      (JourneyRecord, $$JourneyRecordsTableReferences),
+      JourneyRecord,
+      PrefetchHooks Function({bool userProfileId})
     >;
 
 class $WommiDatabaseManager {
@@ -2097,4 +3043,6 @@ class $WommiDatabaseManager {
       $$CharmsEarnedTableTableManager(_db, _db.charmsEarned);
   $$UserProfilesTableTableManager get userProfiles =>
       $$UserProfilesTableTableManager(_db, _db.userProfiles);
+  $$JourneyRecordsTableTableManager get journeyRecords =>
+      $$JourneyRecordsTableTableManager(_db, _db.journeyRecords);
 }

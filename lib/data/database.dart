@@ -36,14 +36,34 @@ class UserProfiles extends Table {
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
 }
 
+// A completed journey, permanently attributed to the user profile that
+// completed it (a "journey" ends when the user marks their period as
+// started). Named JourneyRecords, not Journeys, to avoid colliding with
+// the in-memory Journey model in lib/models/journey.dart.
+class JourneyRecords extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  IntColumn get userProfileId => integer().references(UserProfiles, #id)();
+  IntColumn get journeyNumber => integer()();
+  IntColumn get gemsCollected => integer()();
+  DateTimeColumn get startDate => dateTime()();
+  DateTimeColumn get endDate => dateTime()();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+}
+
 @DriftDatabase(
-  tables: [CycleProfiles, RitualCompletions, CharmsEarned, UserProfiles],
+  tables: [
+    CycleProfiles,
+    RitualCompletions,
+    CharmsEarned,
+    UserProfiles,
+    JourneyRecords,
+  ],
 )
 class WommiDatabase extends _$WommiDatabase {
   WommiDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -51,6 +71,9 @@ class WommiDatabase extends _$WommiDatabase {
         onUpgrade: (Migrator m, int from, int to) async {
           if (from < 2) {
             await m.createTable(userProfiles);
+          }
+          if (from < 3) {
+            await m.createTable(journeyRecords);
           }
         },
       );
@@ -127,6 +150,34 @@ class WommiDatabase extends _$WommiDatabase {
     return await into(userProfiles).insert(
       UserProfilesCompanion.insert(name: name, email: email),
     );
+  }
+
+  // Journey Record queries
+  Future<int> saveJourneyRecord({
+    required int userProfileId,
+    required int journeyNumber,
+    required int gemsCollected,
+    required DateTime startDate,
+    required DateTime endDate,
+  }) async {
+    return await into(journeyRecords).insert(
+      JourneyRecordsCompanion.insert(
+        userProfileId: userProfileId,
+        journeyNumber: journeyNumber,
+        gemsCollected: gemsCollected,
+        startDate: startDate,
+        endDate: endDate,
+      ),
+    );
+  }
+
+  Future<List<JourneyRecord>> getJourneyRecordsForUser(
+    int userProfileId,
+  ) async {
+    return await (select(journeyRecords)
+          ..where((t) => t.userProfileId.equals(userProfileId))
+          ..orderBy([(t) => OrderingTerm.desc(t.endDate)]))
+        .get();
   }
 }
 
