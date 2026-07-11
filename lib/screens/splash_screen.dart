@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../models/journey.dart';
 import '../providers/repository_provider.dart';
 import '../providers/user_state_provider.dart';
 import '../theme.dart';
@@ -49,7 +50,23 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
     final repository = ref.read(repositoryProvider);
     final profile = await repository.getUserProfile();
     if (!mounted || profile == null) return;
-    ref.read(userStateProvider.notifier).hydrateProfile(profile.name, profile.email);
+
+    final notifier = ref.read(userStateProvider.notifier);
+    notifier.hydrateProfile(profile.id, profile.name, profile.email);
+
+    final records = await repository.getJourneyRecordsForUser(profile.id);
+    if (!mounted || records.isEmpty) return;
+    notifier.hydrateJourneyHistory(
+      records
+          .map((r) => Journey(
+                journeyNumber: r.journeyNumber,
+                gemsCollected: r.gemsCollected,
+                startDate: r.startDate,
+                endDate: r.endDate,
+                isActive: false,
+              ))
+          .toList(),
+    );
   }
 
   @override

@@ -11,6 +11,7 @@ class UserState {
   final List<Journey> journeyHistory;
   final String? name;
   final String? email;
+  final int? profileId;
 
   UserState({
     required this.currentDay,
@@ -23,6 +24,7 @@ class UserState {
     this.journeyHistory = const [],
     this.name,
     this.email,
+    this.profileId,
   });
 
   bool get hasProfile => name != null && email != null;
@@ -38,6 +40,7 @@ class UserState {
     List<Journey>? journeyHistory,
     String? name,
     String? email,
+    int? profileId,
   }) {
     return UserState(
       currentDay: currentDay ?? this.currentDay,
@@ -50,6 +53,7 @@ class UserState {
       journeyHistory: journeyHistory ?? this.journeyHistory,
       name: name ?? this.name,
       email: email ?? this.email,
+      profileId: profileId ?? this.profileId,
     );
   }
 }

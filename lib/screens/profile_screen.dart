@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../theme.dart';
 import '../providers/user_state_provider.dart';
 import '../providers/onboarding_provider.dart';
+import '../providers/repository_provider.dart';
 import '../widgets/edit_cycle_day_dialog.dart';
 import '../widgets/edit_conception_dialog.dart';
 import '../widgets/journey_completion_dialog.dart';
@@ -206,8 +207,21 @@ class ProfileScreen extends ConsumerWidget {
       barrierDismissible: false,
       builder: (context) => JourneyCompletionDialog(
         gemsCollected: userState.gemBalance,
-        onStartNewJourney: () {
+        onStartNewJourney: () async {
+          final profileId = userState.profileId;
+          if (profileId != null) {
+            // Attribute the completed journey to this user so it's kept
+            // permanently, even across app restarts or a new journey.
+            await ref.read(repositoryProvider).saveJourneyRecord(
+                  userProfileId: profileId,
+                  journeyNumber: userState.currentJourneyNumber,
+                  gemsCollected: userState.gemBalance,
+                  startDate: userState.lastOpenedDate ?? DateTime.now(),
+                  endDate: DateTime.now(),
+                );
+          }
           ref.read(userStateProvider.notifier).completeCurrentJourney();
+          if (!context.mounted) return;
           Navigator.pop(context);
           // Navigate to landing screen
           Navigator.of(context).pushNamedAndRemoveUntil(

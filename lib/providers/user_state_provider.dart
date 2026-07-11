@@ -14,8 +14,18 @@ class UserStateNotifier extends StateNotifier<UserState> {
 
   /// Restores the personal identifier (name/email) collected during a
   /// previous session. Email is only ever collected once per device.
-  void hydrateProfile(String name, String email) {
-    state = state.copyWith(name: name, email: email);
+  void hydrateProfile(int profileId, String name, String email) {
+    state = state.copyWith(profileId: profileId, name: name, email: email);
+  }
+
+  /// Restores past completed journeys (loaded from the database) that
+  /// belong to the current profile.
+  void hydrateJourneyHistory(List<Journey> journeyHistory) {
+    if (journeyHistory.isEmpty) return;
+    state = state.copyWith(
+      journeyHistory: journeyHistory,
+      currentJourneyNumber: journeyHistory.length + 1,
+    );
   }
 
   void addGems(int amount) {
@@ -90,9 +100,15 @@ class UserStateNotifier extends StateNotifier<UserState> {
         // not journey-specific state, so it survives a reset.
         name: state.name,
         email: state.email,
+        profileId: state.profileId,
       );
     } else {
-      state = UserState(currentDay: 1, name: state.name, email: state.email);
+      state = UserState(
+        currentDay: 1,
+        name: state.name,
+        email: state.email,
+        profileId: state.profileId,
+      );
     }
   }
 
@@ -119,8 +135,8 @@ class UserStateNotifier extends StateNotifier<UserState> {
     );
   }
 
-  void setProfile(String name, String email) {
-    state = state.copyWith(name: name, email: email);
+  void setProfile(int profileId, String name, String email) {
+    state = state.copyWith(profileId: profileId, name: name, email: email);
   }
 
   void updateCurrentDay(int day) {
