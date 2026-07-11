@@ -55,6 +55,19 @@ class WommiRepository {
     return _db.getCharmsForCycle();
   }
 
+  // User Profile
+  Future<UserProfile?> getUserProfile() {
+    return _db.getUserProfile();
+  }
+
+  Future<bool> isEmailTaken(String email) {
+    return _db.isEmailTaken(email);
+  }
+
+  Future<void> createUserProfile(String name, String email) async {
+    await _db.createUserProfile(name, email);
+  }
+
   // Utility
   Future<int> calculateCurrentCycleDay() async {
     final profile = await getCurrentCycleProfile();

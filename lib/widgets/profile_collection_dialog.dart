@@ -2,20 +2,23 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../theme.dart';
+import '../providers/repository_provider.dart';
 import '../providers/user_state_provider.dart';
 
-class ProfileCollectionDialog extends StatefulWidget {
+class ProfileCollectionDialog extends ConsumerStatefulWidget {
   const ProfileCollectionDialog({super.key});
 
   @override
-  State<ProfileCollectionDialog> createState() => _ProfileCollectionDialogState();
+  ConsumerState<ProfileCollectionDialog> createState() => _ProfileCollectionDialogState();
 }
 
-class _ProfileCollectionDialogState extends State<ProfileCollectionDialog> {
+class _ProfileCollectionDialogState extends ConsumerState<ProfileCollectionDialog> {
   final PageController _pageController = PageController();
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   int _currentPage = 0;
+  String? _emailError;
+  bool _isSubmitting = false;
 
   @override
   void dispose() {
@@ -33,6 +36,42 @@ class _ProfileCollectionDialogState extends State<ProfileCollectionDialog> {
       duration: const Duration(milliseconds: 300),
       curve: Curves.easeInOut,
     );
+  }
+
+  Future<void> _handleContinue() async {
+    if (_currentPage == 0) {
+      if (_nameController.text.trim().isNotEmpty) {
+        _nextPage();
+      }
+      return;
+    }
+
+    final email = _emailController.text.trim();
+    if (email.isEmpty) return;
+
+    setState(() {
+      _isSubmitting = true;
+      _emailError = null;
+    });
+
+    final repository = ref.read(repositoryProvider);
+    final alreadyUsed = await repository.isEmailTaken(email);
+    if (!mounted) return;
+
+    if (alreadyUsed) {
+      setState(() {
+        _isSubmitting = false;
+        _emailError = 'This email is already in use.';
+      });
+      return;
+    }
+
+    final name = _nameController.text.trim();
+    await repository.createUserProfile(name, email);
+    if (!mounted) return;
+
+    ref.read(userStateProvider.notifier).setProfile(name, email);
+    Navigator.of(context).pop();
   }
 
   @override
@@ -139,44 +178,25 @@ class _ProfileCollectionDialogState extends State<ProfileCollectionDialog> {
                     // Button
                     SizedBox(
                       width: double.infinity,
-                      child: Consumer(
-                        builder: (context, ref, child) {
-                          return ElevatedButton(
-                            onPressed: () {
-                              if (_currentPage == 0) {
-                                if (_nameController.text.trim().isNotEmpty) {
-                                  _nextPage();
-                                }
-                              } else {
-                                if (_emailController.text.trim().isNotEmpty) {
-                                  // Save profile
-                                  ref.read(userStateProvider.notifier).setProfile(
-                                        _nameController.text.trim(),
-                                        _emailController.text.trim(),
-                                      );
-                                  Navigator.of(context).pop();
-                                }
-                              }
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: WommiColors.cyan,
-                              foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(vertical: 16),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(100),
-                              ),
-                              elevation: 14,
-                              shadowColor: WommiColors.cyan.withOpacity(0.38),
-                            ),
-                            child: Text(
-                              _currentPage == 0 ? 'Next' : 'Complete',
-                              style: GoogleFonts.unbounded(
-                                fontWeight: FontWeight.w700,
-                                fontSize: 13.5,
-                              ),
-                            ),
-                          );
-                        },
+                      child: ElevatedButton(
+                        onPressed: _isSubmitting ? null : _handleContinue,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: WommiColors.cyan,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(100),
+                          ),
+                          elevation: 14,
+                          shadowColor: WommiColors.cyan.withOpacity(0.38),
+                        ),
+                        child: Text(
+                          _currentPage == 0 ? 'Next' : 'Complete',
+                          style: GoogleFonts.unbounded(
+                            fontWeight: FontWeight.w700,
+                            fontSize: 13.5,
+                          ),
+                        ),
                       ),
                     ),
                   ],
@@ -267,6 +287,11 @@ class _ProfileCollectionDialogState extends State<ProfileCollectionDialog> {
           controller: _emailController,
           autofocus: true,
           keyboardType: TextInputType.emailAddress,
+          onChanged: (_) {
+            if (_emailError != null) {
+              setState(() => _emailError = null);
+            }
+          },
           style: GoogleFonts.inter(
             fontSize: 15,
             color: WommiColors.ink,
@@ -277,6 +302,7 @@ class _ProfileCollectionDialogState extends State<ProfileCollectionDialog> {
               fontSize: 15,
               color: WommiColors.inkDim,
             ),
+            errorText: _emailError,
             filled: true,
             fillColor: Colors.white,
             border: OutlineInputBorder(

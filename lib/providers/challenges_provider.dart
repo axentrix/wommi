@@ -4,18 +4,22 @@ import '../models/challenge.dart';
 class ChallengesNotifier extends StateNotifier<List<Challenge>> {
   ChallengesNotifier() : super([]);
 
-  void generateChallengesForDay(int day) {
+  void generateChallengesForDay(int day, {List<String> completedIds = const []}) {
     final templates = ChallengeTemplates.getChallengesForDay(day);
     state = templates
         .asMap()
         .entries
-        .map((entry) => Challenge(
-              id: 'day_${day}_challenge_${entry.key}',
-              icon: entry.value['icon']!,
-              title: entry.value['title']!,
-              description: entry.value['description']!,
-              day: day,
-            ))
+        .map((entry) {
+          final id = 'day_${day}_challenge_${entry.key}';
+          return Challenge(
+            id: id,
+            icon: entry.value['icon']!,
+            title: entry.value['title']!,
+            description: entry.value['description']!,
+            day: day,
+            isCompleted: completedIds.contains(id),
+          );
+        })
         .toList();
   }
 

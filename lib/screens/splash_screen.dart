@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../providers/repository_provider.dart';
+import '../providers/user_state_provider.dart';
 import '../theme.dart';
 
 class SplashScreen extends ConsumerStatefulWidget {
@@ -31,12 +33,23 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
 
     _controller.forward();
 
+    // Restore a previously entered name/email, if any, so returning users
+    // are never asked to enter their email again.
+    _loadProfile();
+
     // Navigate to landing after 2.5 seconds
     Future.delayed(const Duration(milliseconds: 2500), () {
       if (mounted) {
         Navigator.of(context).pushReplacementNamed('/landing');
       }
     });
+  }
+
+  Future<void> _loadProfile() async {
+    final repository = ref.read(repositoryProvider);
+    final profile = await repository.getUserProfile();
+    if (!mounted || profile == null) return;
+    ref.read(userStateProvider.notifier).hydrateProfile(profile.name, profile.email);
   }
 
   @override

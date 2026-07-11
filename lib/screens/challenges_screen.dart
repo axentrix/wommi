@@ -20,11 +20,19 @@ class _ChallengesScreenState extends ConsumerState<ChallengesScreen> {
   @override
   void initState() {
     super.initState();
-    // Generate challenges for current day when screen loads
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    // Generate challenges for current day when screen loads, restoring
+    // completion state so progress survives navigating away and back
+    // (challenges are now completed one at a time, not all on one page).
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
       final userState = ref.read(userStateProvider);
+      final repository = ref.read(repositoryProvider);
+      final completedIds = await repository.getCompletedRitualIdsForDay(
+        userState.currentDay,
+      );
+      if (!mounted) return;
       ref.read(challengesProvider.notifier).generateChallengesForDay(
             userState.currentDay,
+            completedIds: completedIds,
           );
     });
   }
