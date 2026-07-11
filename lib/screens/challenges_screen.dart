@@ -34,7 +34,34 @@ class _ChallengesScreenState extends ConsumerState<ChallengesScreen> {
             userState.currentDay,
             completedIds: completedIds,
           );
+
+      // All rituals may already be complete from a previous visit whose
+      // award never fired (e.g. the user navigated away before it could).
+      // Catch up on the reward here so "all complete" never shows with 0
+      // gems.
+      final awarded = await _awardCharmIfNeeded();
+      if (awarded && mounted) _showWinDialog();
     });
+  }
+
+  /// Awards the day's charm/gem exactly once, independent of whether this
+  /// widget is still mounted by the time it resolves. Safe to call more
+  /// than once - it's a no-op if today's charm was already awarded.
+  /// Returns whether it was actually awarded just now.
+  Future<bool> _awardCharmIfNeeded() async {
+    final challengesNotifier = ref.read(challengesProvider.notifier);
+    if (challengesNotifier.totalCount == 0) return false;
+    if (challengesNotifier.completedCount != challengesNotifier.totalCount) {
+      return false;
+    }
+
+    final userState = ref.read(userStateProvider);
+    final repository = ref.read(repositoryProvider);
+    if (await repository.hasCharmForDay(userState.currentDay)) return false;
+
+    await repository.awardCharm(userState.currentDay, 'daily_charm');
+    ref.read(userStateProvider.notifier).addGems(1);
+    return true;
   }
 
   void _showWinDialog() {
@@ -69,15 +96,20 @@ class _ChallengesScreenState extends ConsumerState<ChallengesScreen> {
 
     final completedCount = challengesNotifier.completedCount;
     final totalCount = challengesNotifier.totalCount;
+    final justCompletedAll = completedCount == totalCount;
+
+    // Award the charm/gem as soon as we know the day is complete, rather
+    // than waiting on the delayed dialog below - that way the reward is
+    // granted even if the user navigates away before the dialog would show.
+    if (justCompletedAll) {
+      await _awardCharmIfNeeded();
+    }
 
     // Show dialog after a short delay
     Future.delayed(const Duration(milliseconds: 300), () {
       if (!mounted) return;
 
-      if (completedCount == totalCount) {
-        // All challenges complete - award charm and show full win dialog
-        repository.awardCharm(userState.currentDay, 'daily_charm');
-        ref.read(userStateProvider.notifier).addGems(1);
+      if (justCompletedAll) {
         _showWinDialog();
       } else {
         // Individual challenge complete - show simple completion dialog

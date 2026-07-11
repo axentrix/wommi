@@ -131,6 +131,13 @@ class WommiDatabase extends _$WommiDatabase {
     return result.read(countQuery) ?? 0;
   }
 
+  Future<bool> hasCharmForDay(int cycleDay) async {
+    final existing = await (select(charmsEarned)
+          ..where((t) => t.cycleDay.equals(cycleDay)))
+        .getSingleOrNull();
+    return existing != null;
+  }
+
   // User Profile queries
   Future<UserProfile?> getUserProfile() async {
     return await (select(userProfiles)
