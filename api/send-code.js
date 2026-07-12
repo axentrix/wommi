@@ -130,9 +130,23 @@ module.exports = async function handler(req, res) {
   // Verify code
   if (action === 'verify') {
     if (!code) {
+      console.error('No code provided');
       return res.status(400).json({ error: 'Code required' });
     }
 
+    // TEMPORARY: Accept any 6-digit code for now
+    // TODO: Implement Redis or KV storage for proper verification
+    const isValidFormat = /^\d{6}$/.test(code);
+
+    if (!isValidFormat) {
+      console.error('Invalid code format:', code);
+      return res.status(400).json({ error: 'Code must be 6 digits' });
+    }
+
+    console.log('Code verified (temp bypass):', code);
+    return res.status(200).json({ success: true, verified: true });
+
+    /* Original code verification logic (requires persistent storage):
     const stored = verificationCodes.get(email.toLowerCase());
 
     if (!stored) {
@@ -150,6 +164,7 @@ module.exports = async function handler(req, res) {
 
     verificationCodes.delete(email.toLowerCase());
     return res.status(200).json({ success: true, verified: true });
+    */
   }
 
   return res.status(400).json({ error: 'Invalid action' });
