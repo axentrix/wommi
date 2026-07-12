@@ -414,9 +414,11 @@ class ProfileScreen extends ConsumerWidget {
               if (!context.mounted) return;
               Navigator.pop(context);
 
-              // Navigate to landing screen (start fresh)
+              // Go all the way back to the splash screen, exactly like a
+              // brand new install - not straight to landing, which (even
+              // correctly reset) would skip the normal first-open flow.
               Navigator.of(context).pushNamedAndRemoveUntil(
-                '/landing',
+                '/',
                 (route) => false,
               );
             },

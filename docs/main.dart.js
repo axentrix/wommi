@@ -93089,7 +93089,7 @@ o.b4(0,$.hz().gd6(),t.sN).scI(0,new A.j1(13,null,B.l0,null))
 o=p.b
 if(o.e==null){s=1
 break}A.c3(o,!1).fw(null)
-A.c3(o,!1).m8("/landing",new A.agx(),t.X)
+A.c3(o,!1).m8("/",new A.agx(),t.X)
 case 1:return A.I(q,r)}})
 return A.J($async$$0,r)},
 $S:11}
