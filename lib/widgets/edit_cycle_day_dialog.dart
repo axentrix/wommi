@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../theme.dart';
 import '../providers/onboarding_provider.dart';
 import '../providers/user_state_provider.dart';
+import '../providers/repository_provider.dart';
 import '../widgets/number_scroll_picker.dart';
 
 class EditCycleDayDialog extends ConsumerWidget {
@@ -100,6 +101,16 @@ class EditCycleDayDialog extends ConsumerWidget {
                         // Update user state current day
                         ref.read(userStateProvider.notifier).updateCurrentDay(
                               onboardingData.cycleDay,
+                            );
+                        // Persist so a later login restores this day too,
+                        // instead of calculateCurrentCycleDay() recomputing
+                        // from the stale startDate saved at onboarding.
+                        ref.read(repositoryProvider).saveCycleProfile(
+                              startDate: DateTime.now()
+                                  .subtract(Duration(days: onboardingData.cycleDay - 1)),
+                              cycleLength: 28,
+                              ttcStatus: onboardingData.conceptionStatus,
+                              ttcMethods: onboardingData.tryingMethods,
                             );
                         Navigator.pop(context);
                       },

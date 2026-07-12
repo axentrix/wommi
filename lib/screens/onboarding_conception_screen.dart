@@ -149,7 +149,12 @@ class OnboardingConceptionScreen extends ConsumerWidget {
                             // Save to database asynchronously
                             final repository = ref.read(repositoryProvider);
                             repository.saveCycleProfile(
-                              startDate: DateTime.now(),
+                              // Back-date so "today" lands on the cycle day
+                              // the user actually picked, not day 1 - this
+                              // is what calculateCurrentCycleDay() uses to
+                              // restore the right day on a later login.
+                              startDate: DateTime.now()
+                                  .subtract(Duration(days: onboardingData.cycleDay - 1)),
                               cycleLength: 28,
                               ttcStatus: onboardingData.conceptionStatus,
                             ).then((_) {
