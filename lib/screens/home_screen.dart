@@ -23,9 +23,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    // Show profile collection dialog if profile is not complete
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final userState = ref.read(userStateProvider);
+
+      // A cycle day of 0 means onboarding was never actually completed -
+      // e.g. the user navigated here directly (URL bar, browser back/
+      // forward) without going through the cycle-day picker. Bounce back
+      // to landing instead of rendering a broken "Day 0" home screen.
+      if (userState.currentDay <= 0) {
+        print('[Home] No cycle day set - redirecting to landing/onboarding');
+        Navigator.of(context).pushNamedAndRemoveUntil('/landing', (route) => false);
+        return;
+      }
+
+      // Show profile collection dialog if profile is not complete
       print('[Home] Checking profile - hasProfile: ${userState.hasProfile}, name: ${userState.name}, email: ${userState.email}');
       if (!userState.hasProfile) {
         print('[Home] Showing profile collection dialog');
@@ -41,6 +52,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final userState = ref.watch(userStateProvider);
+
+    if (userState.currentDay <= 0) {
+      // Avoid flashing broken "Day 0" content while the redirect above
+      // (scheduled after the first frame) takes effect.
+      return Scaffold(
+        backgroundColor: WommiColors.bg,
+        body: const Center(child: CircularProgressIndicator()),
+      );
+    }
 
     return Scaffold(
       backgroundColor: WommiColors.bg,
