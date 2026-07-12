@@ -6,6 +6,8 @@ import 'dart:convert';
 import '../theme.dart';
 import '../providers/repository_provider.dart';
 import '../providers/user_state_provider.dart';
+import '../services/device_storage.dart';
+import '../models/journey.dart';
 
 const String apiUrl = 'https://wommi.vercel.app/api/send-code';
 
@@ -107,28 +109,55 @@ class _ProfileCollectionDialogState extends ConsumerState<ProfileCollectionDialo
       if (response.statusCode == 200) {
         final responseData = json.decode(response.body);
         if (responseData['verified'] == true) {
-          // Check if email is already in database
           final repository = ref.read(repositoryProvider);
-          final alreadyUsed = await repository.isEmailTaken(email);
+          final notifier = ref.read(userStateProvider.notifier);
+
+          // Check if profile exists for this email (device sync)
+          final existingProfile = await repository.getUserProfileByEmail(email);
           if (!mounted) return;
 
-          if (alreadyUsed) {
-            setState(() {
-              _isSubmitting = false;
-              _codeError = 'This email is already in use.';
-            });
-            return;
+          if (existingProfile != null) {
+            // Existing user - sync their data
+            print('[ProfileDialog] Found existing profile for $email, syncing data');
+            notifier.hydrateProfile(
+                existingProfile.id, existingProfile.name, existingProfile.email);
+
+            // Load their journey history
+            final records =
+                await repository.getJourneyRecordsForUser(existingProfile.id);
+            if (!mounted) return;
+
+            if (records.isNotEmpty) {
+              notifier.hydrateJourneyHistory(
+                records
+                    .map((r) => Journey(
+                          journeyNumber: r.journeyNumber,
+                          gemsCollected: r.gemsCollected,
+                          startDate: r.startDate,
+                          endDate: r.endDate,
+                          isActive: false,
+                        ))
+                    .toList(),
+              );
+            }
+
+            // Save email to device
+            await DeviceStorage.saveEmail(email);
+            print('[ProfileDialog] Email saved to device, data synced');
+          } else {
+            // New user - create profile
+            final name = _nameController.text.trim();
+            print('[ProfileDialog] Creating new profile: $name ($email)');
+            final profileId = await repository.createUserProfile(name, email);
+            if (!mounted) return;
+
+            notifier.setProfile(profileId, name, email);
+
+            // Save email to device
+            await DeviceStorage.saveEmail(email);
+            print('[ProfileDialog] New profile created and saved to device');
           }
 
-          // Create profile
-          final name = _nameController.text.trim();
-          print('[ProfileDialog] Creating profile: $name ($email)');
-          final profileId = await repository.createUserProfile(name, email);
-          if (!mounted) return;
-
-          print('[ProfileDialog] Profile created with ID: $profileId');
-          ref.read(userStateProvider.notifier).setProfile(profileId, name, email);
-          print('[ProfileDialog] Profile set in state');
           Navigator.of(context).pop();
         } else {
           setState(() {

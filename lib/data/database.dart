@@ -167,6 +167,16 @@ class WommiDatabase extends _$WommiDatabase {
     );
   }
 
+  Future<UserProfile?> getUserProfileByEmail(String email) async {
+    return await (select(userProfiles)
+          ..where((t) => t.email.equals(email)))
+        .getSingleOrNull();
+  }
+
+  Future<void> deleteUserProfile(int profileId) async {
+    await (delete(userProfiles)..where((t) => t.id.equals(profileId))).go();
+  }
+
   // Journey Record queries
   Future<int> saveJourneyRecord({
     required int userProfileId,
@@ -193,6 +203,20 @@ class WommiDatabase extends _$WommiDatabase {
           ..where((t) => t.userProfileId.equals(userProfileId))
           ..orderBy([(t) => OrderingTerm.desc(t.endDate)]))
         .get();
+  }
+
+  Future<void> deleteJourneyRecordsForUser(int userProfileId) async {
+    await (delete(journeyRecords)
+          ..where((t) => t.userProfileId.equals(userProfileId)))
+        .go();
+  }
+
+  /// Delete all user data (for account deletion)
+  Future<void> deleteAllUserData(int userProfileId) async {
+    await deleteJourneyRecordsForUser(userProfileId);
+    await deleteUserProfile(userProfileId);
+    await clearAllRitualCompletions();
+    await clearAllCharms();
   }
 }
 

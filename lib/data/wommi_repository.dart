@@ -72,6 +72,14 @@ class WommiRepository {
     return _db.createUserProfile(name, email);
   }
 
+  Future<UserProfile?> getUserProfileByEmail(String email) {
+    return _db.getUserProfileByEmail(email);
+  }
+
+  Future<void> deleteAllUserData(int userProfileId) {
+    return _db.deleteAllUserData(userProfileId);
+  }
+
   // Journeys
   Future<void> saveJourneyRecord({
     required int userProfileId,

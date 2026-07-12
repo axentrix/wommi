@@ -10,6 +10,7 @@ import '../widgets/edit_conception_dialog.dart';
 import '../widgets/journey_completion_dialog.dart';
 import '../widgets/pregnancy_win_dialog.dart';
 import '../widgets/continue_journey_question_dialog.dart';
+import '../services/device_storage.dart';
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
@@ -203,6 +204,27 @@ class ProfileScreen extends ConsumerWidget {
               subtitle: onboardingData.conceptionStatus?.label ?? 'Not set',
               onTap: () => _showEditConception(context),
             ),
+            const SizedBox(height: 48),
+            // Delete account link
+            Center(
+              child: TextButton(
+                onPressed: () => _showDeleteAccountDialog(context, ref),
+                style: TextButton.styleFrom(
+                  foregroundColor: Colors.red,
+                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                ),
+                child: Text(
+                  'Delete Account',
+                  style: GoogleFonts.inter(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    decoration: TextDecoration.underline,
+                    decorationColor: Colors.red,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
           ],
         ),
       ),
@@ -329,6 +351,76 @@ class ProfileScreen extends ConsumerWidget {
           // Switch to achievements tab (tab index 3)
           // Note: This will require updating the home screen to accept initial tab
         },
+      ),
+    );
+  }
+
+  void _showDeleteAccountDialog(BuildContext context, WidgetRef ref) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(
+          'Delete Account?',
+          style: GoogleFonts.unbounded(
+            fontSize: 18,
+            fontWeight: FontWeight.w800,
+            color: Colors.red,
+          ),
+        ),
+        content: Text(
+          'This will permanently delete your account, all journey history, and progress. This action cannot be undone.',
+          style: GoogleFonts.inter(
+            fontSize: 14,
+            color: WommiColors.ink,
+            height: 1.5,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(
+              'Cancel',
+              style: GoogleFonts.unbounded(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          TextButton(
+            onPressed: () async {
+              final userState = ref.read(userStateProvider);
+              final profileId = userState.profileId;
+
+              if (profileId != null) {
+                // Delete all user data
+                await ref.read(repositoryProvider).deleteAllUserData(profileId);
+              }
+
+              // Clear device storage
+              await DeviceStorage.clearEmail();
+
+              // Reset user state
+              ref.read(userStateProvider.notifier).resetState();
+
+              if (!context.mounted) return;
+              Navigator.pop(context);
+
+              // Navigate to landing screen (start fresh)
+              Navigator.of(context).pushNamedAndRemoveUntil(
+                '/landing',
+                (route) => false,
+              );
+            },
+            child: Text(
+              'Delete',
+              style: GoogleFonts.unbounded(
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+                color: Colors.red,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/journey.dart';
 import '../providers/repository_provider.dart';
 import '../providers/user_state_provider.dart';
+import '../services/device_storage.dart';
 import '../theme.dart';
 
 class SplashScreen extends ConsumerStatefulWidget {
@@ -53,38 +54,76 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
   Future<void> _loadProfile() async {
     try {
       final repository = ref.read(repositoryProvider);
-      final profile = await repository.getUserProfile();
 
-      if (profile == null) {
-        print('[Splash] No profile found in database');
-        return;
+      // Check if device has a stored email (device memory)
+      final storedEmail = await DeviceStorage.getEmail();
+
+      if (storedEmail != null) {
+        print('[Splash] Found stored email on device: $storedEmail');
+        // Try to load profile for this email
+        final profile = await repository.getUserProfileByEmail(storedEmail);
+
+        if (profile != null) {
+          print('[Splash] Auto-login with profile: ${profile.name}');
+          if (!mounted) return;
+
+          final notifier = ref.read(userStateProvider.notifier);
+          notifier.hydrateProfile(profile.id, profile.name, profile.email);
+
+          // Load journey history
+          final records = await repository.getJourneyRecordsForUser(profile.id);
+          if (!mounted) return;
+
+          print('[Splash] Found ${records.length} journey records');
+          if (records.isNotEmpty) {
+            notifier.hydrateJourneyHistory(
+              records
+                  .map((r) => Journey(
+                        journeyNumber: r.journeyNumber,
+                        gemsCollected: r.gemsCollected,
+                        startDate: r.startDate,
+                        endDate: r.endDate,
+                        isActive: false,
+                      ))
+                  .toList(),
+            );
+          }
+
+          // Auto-login successful - will navigate to home via landing
+          return;
+        } else {
+          print('[Splash] No profile found for stored email, clearing device storage');
+          await DeviceStorage.clearEmail();
+        }
       }
 
-      if (!mounted) return;
+      // Fallback: check for any profile in database (legacy behavior)
+      final profile = await repository.getUserProfile();
+      if (profile != null) {
+        print('[Splash] Found legacy profile: ${profile.name}');
+        if (!mounted) return;
 
-      print('[Splash] Loading profile: ${profile.name} (${profile.email})');
-      final notifier = ref.read(userStateProvider.notifier);
-      notifier.hydrateProfile(profile.id, profile.name, profile.email);
+        final notifier = ref.read(userStateProvider.notifier);
+        notifier.hydrateProfile(profile.id, profile.name, profile.email);
 
-      final records = await repository.getJourneyRecordsForUser(profile.id);
-      if (!mounted) return;
+        final records = await repository.getJourneyRecordsForUser(profile.id);
+        if (!mounted) return;
 
-      print('[Splash] Found ${records.length} journey records');
-      if (records.isNotEmpty) {
-        notifier.hydrateJourneyHistory(
-          records
-              .map((r) => Journey(
-                    journeyNumber: r.journeyNumber,
-                    gemsCollected: r.gemsCollected,
-                    startDate: r.startDate,
-                    endDate: r.endDate,
-                    isActive: false,
-                  ))
-              .toList(),
-        );
+        if (records.isNotEmpty) {
+          notifier.hydrateJourneyHistory(
+            records
+                .map((r) => Journey(
+                      journeyNumber: r.journeyNumber,
+                      gemsCollected: r.gemsCollected,
+                      startDate: r.startDate,
+                      endDate: r.endDate,
+                      isActive: false,
+                    ))
+                .toList(),
+          );
+        }
       }
     } catch (e, stackTrace) {
-      // If profile loading fails, just continue to landing
       print('[Splash] Error loading profile: $e');
       print('[Splash] Stack trace: $stackTrace');
     }
