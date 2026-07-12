@@ -42,16 +42,24 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
   Future<void> _loadProfileAndNavigate() async {
     // Wait for animation (minimum 2.5s) and profile loading in parallel
     final animationDelay = Future.delayed(const Duration(milliseconds: 2500));
-    final profileLoad = _loadProfile();
+    final autoLoginSuccess = await _loadProfile();
 
-    await Future.wait([animationDelay, profileLoad]);
+    await animationDelay;
 
     if (mounted) {
-      Navigator.of(context).pushReplacementNamed('/landing');
+      if (autoLoginSuccess) {
+        // Device recognized - go directly to home screen
+        print('[Splash] ✅ Auto-login successful, navigating to home');
+        Navigator.of(context).pushReplacementNamed('/home');
+      } else {
+        // New device or no profile - show landing screen
+        print('[Splash] 📱 New device, navigating to landing');
+        Navigator.of(context).pushReplacementNamed('/landing');
+      }
     }
   }
 
-  Future<void> _loadProfile() async {
+  Future<bool> _loadProfile() async {
     try {
       final repository = ref.read(repositoryProvider);
 
@@ -65,14 +73,14 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
 
         if (profile != null) {
           print('[Splash] Auto-login with profile: ${profile.name}');
-          if (!mounted) return;
+          if (!mounted) return false;
 
           final notifier = ref.read(userStateProvider.notifier);
           notifier.hydrateProfile(profile.id, profile.name, profile.email);
 
           // Load journey history
           final records = await repository.getJourneyRecordsForUser(profile.id);
-          if (!mounted) return;
+          if (!mounted) return false;
 
           print('[Splash] Found ${records.length} journey records');
           if (records.isNotEmpty) {
@@ -89,8 +97,8 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
             );
           }
 
-          // Auto-login successful - will navigate to home via landing
-          return;
+          // Auto-login successful
+          return true;
         } else {
           print('[Splash] No profile found for stored email, clearing device storage');
           await DeviceStorage.clearEmail();
@@ -101,13 +109,13 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
       final profile = await repository.getUserProfile();
       if (profile != null) {
         print('[Splash] Found legacy profile: ${profile.name}');
-        if (!mounted) return;
+        if (!mounted) return false;
 
         final notifier = ref.read(userStateProvider.notifier);
         notifier.hydrateProfile(profile.id, profile.name, profile.email);
 
         final records = await repository.getJourneyRecordsForUser(profile.id);
-        if (!mounted) return;
+        if (!mounted) return false;
 
         if (records.isNotEmpty) {
           notifier.hydrateJourneyHistory(
@@ -122,10 +130,17 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                 .toList(),
           );
         }
+
+        // Legacy profile found - auto-login successful
+        return true;
       }
+
+      // No profile found
+      return false;
     } catch (e, stackTrace) {
       print('[Splash] Error loading profile: $e');
       print('[Splash] Stack trace: $stackTrace');
+      return false;
     }
   }
 
