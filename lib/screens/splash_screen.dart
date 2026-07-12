@@ -73,32 +73,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
 
         if (profile != null) {
           print('[Splash] Auto-login with profile: ${profile.name}');
-          if (!mounted) return false;
-
-          final notifier = ref.read(userStateProvider.notifier);
-          notifier.hydrateProfile(profile.id, profile.name, profile.email);
-
-          // Load journey history
-          final records = await repository.getJourneyRecordsForUser(profile.id);
-          if (!mounted) return false;
-
-          print('[Splash] Found ${records.length} journey records');
-          if (records.isNotEmpty) {
-            notifier.hydrateJourneyHistory(
-              records
-                  .map((r) => Journey(
-                        journeyNumber: r.journeyNumber,
-                        gemsCollected: r.gemsCollected,
-                        startDate: r.startDate,
-                        endDate: r.endDate,
-                        isActive: false,
-                      ))
-                  .toList(),
-            );
-          }
-
-          // Auto-login successful
-          return true;
+          return _hydrateFromProfile(profile.id, profile.name, profile.email);
         } else {
           print('[Splash] No profile found for stored email, clearing device storage');
           await DeviceStorage.clearEmail();
@@ -109,30 +84,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
       final profile = await repository.getUserProfile();
       if (profile != null) {
         print('[Splash] Found legacy profile: ${profile.name}');
-        if (!mounted) return false;
-
-        final notifier = ref.read(userStateProvider.notifier);
-        notifier.hydrateProfile(profile.id, profile.name, profile.email);
-
-        final records = await repository.getJourneyRecordsForUser(profile.id);
-        if (!mounted) return false;
-
-        if (records.isNotEmpty) {
-          notifier.hydrateJourneyHistory(
-            records
-                .map((r) => Journey(
-                      journeyNumber: r.journeyNumber,
-                      gemsCollected: r.gemsCollected,
-                      startDate: r.startDate,
-                      endDate: r.endDate,
-                      isActive: false,
-                    ))
-                .toList(),
-          );
-        }
-
-        // Legacy profile found - auto-login successful
-        return true;
+        return _hydrateFromProfile(profile.id, profile.name, profile.email);
       }
 
       // No profile found
@@ -142,6 +94,43 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
       print('[Splash] Stack trace: $stackTrace');
       return false;
     }
+  }
+
+  /// Restores everything tied to this profile: identity, completed journey
+  /// history, and the currently in-progress journey's live day/gem count
+  /// (which has no JourneyRecord of its own since it isn't finished yet).
+  Future<bool> _hydrateFromProfile(int profileId, String name, String email) async {
+    final repository = ref.read(repositoryProvider);
+    final notifier = ref.read(userStateProvider.notifier);
+    if (!mounted) return false;
+
+    notifier.hydrateProfile(profileId, name, email);
+
+    final records = await repository.getJourneyRecordsForUser(profileId);
+    if (!mounted) return false;
+
+    print('[Splash] Found ${records.length} journey records');
+    if (records.isNotEmpty) {
+      notifier.hydrateJourneyHistory(
+        records
+            .map((r) => Journey(
+                  journeyNumber: r.journeyNumber,
+                  gemsCollected: r.gemsCollected,
+                  startDate: r.startDate,
+                  endDate: r.endDate,
+                  isActive: false,
+                ))
+            .toList(),
+      );
+    }
+
+    final gemBalance = await repository.getCharmCount();
+    final currentDay = await repository.calculateCurrentCycleDay();
+    if (!mounted) return false;
+    print('[Splash] Restoring active journey: day $currentDay, $gemBalance gems');
+    notifier.hydrateActiveJourney(currentDay: currentDay, gemBalance: gemBalance);
+
+    return true;
   }
 
   @override
