@@ -11,6 +11,7 @@ import '../widgets/journey_completion_dialog.dart';
 import '../widgets/pregnancy_win_dialog.dart';
 import '../widgets/continue_journey_question_dialog.dart';
 import '../services/device_storage.dart';
+import '../services/local_backup_storage.dart';
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
@@ -279,6 +280,9 @@ class ProfileScreen extends ConsumerWidget {
                   startDate: userState.lastOpenedDate ?? DateTime.now(),
                   endDate: DateTime.now(),
                 );
+
+            // Backup to localStorage
+            await _backupJourneyData(ref, profileId);
           }
           // Clear all ritual completions and charms for the new journey
           await ref.read(repositoryProvider).clearJourneyProgress();
@@ -335,6 +339,9 @@ class ProfileScreen extends ConsumerWidget {
                   startDate: userState.lastOpenedDate ?? DateTime.now(),
                   endDate: DateTime.now(),
                 );
+
+            // Backup to localStorage
+            await _backupJourneyData(ref, profileId);
           }
 
           // Clear progress for next journey
@@ -396,8 +403,9 @@ class ProfileScreen extends ConsumerWidget {
                 await ref.read(repositoryProvider).deleteAllUserData(profileId);
               }
 
-              // Clear device storage
+              // Clear device storage and backup
               await DeviceStorage.clearEmail();
+              await LocalBackupStorage.clearAll();
 
               // Reset user state
               ref.read(userStateProvider.notifier).resetState();
@@ -422,6 +430,34 @@ class ProfileScreen extends ConsumerWidget {
           ),
         ],
       ),
+    );
+  }
+
+  /// Backup user profile and journey data to localStorage
+  Future<void> _backupJourneyData(WidgetRef ref, int profileId) async {
+    final userState = ref.read(userStateProvider);
+    final repository = ref.read(repositoryProvider);
+
+    // Backup profile
+    if (userState.name != null && userState.email != null) {
+      await LocalBackupStorage.saveUserProfile(
+        profileId: profileId,
+        name: userState.name!,
+        email: userState.email!,
+      );
+    }
+
+    // Backup all journeys
+    final records = await repository.getJourneyRecordsForUser(profileId);
+    await LocalBackupStorage.saveJourneyHistory(
+      records
+          .map((r) => {
+                'journeyNumber': r.journeyNumber,
+                'gemsCollected': r.gemsCollected,
+                'startDate': r.startDate.toIso8601String(),
+                'endDate': r.endDate.toIso8601String(),
+              })
+          .toList(),
     );
   }
 }

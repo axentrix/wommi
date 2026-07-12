@@ -7,6 +7,7 @@ import '../theme.dart';
 import '../providers/repository_provider.dart';
 import '../providers/user_state_provider.dart';
 import '../services/device_storage.dart';
+import '../services/local_backup_storage.dart';
 import '../models/journey.dart';
 
 const String apiUrl = 'https://wommi.vercel.app/api/send-code';
@@ -120,6 +121,34 @@ class _ProfileCollectionDialogState extends ConsumerState<ProfileCollectionDialo
             print('[ProfileDialog]   - Profile ${p.id}: ${p.name} (${p.email})');
           }
 
+          // Check localStorage backup if IndexedDB is empty
+          if (allProfiles.isEmpty) {
+            print('[ProfileDialog] 💡 IndexedDB empty, checking localStorage backup...');
+            final backupProfile = await LocalBackupStorage.getUserProfile();
+            if (backupProfile != null) {
+              print('[ProfileDialog] 🎉 Found backup! Restoring from localStorage...');
+              // Restore profile to IndexedDB
+              final restoredId = await repository.createUserProfile(
+                backupProfile['name'] as String,
+                backupProfile['email'] as String,
+              );
+              print('[ProfileDialog] ✅ Profile restored to IndexedDB with ID: $restoredId');
+
+              // Restore journey history
+              final backupJourneys = await LocalBackupStorage.getJourneyHistory();
+              for (var journey in backupJourneys) {
+                await repository.saveJourneyRecord(
+                  userProfileId: restoredId,
+                  journeyNumber: journey['journeyNumber'] as int,
+                  gemsCollected: journey['gemsCollected'] as int,
+                  startDate: DateTime.parse(journey['startDate'] as String),
+                  endDate: DateTime.parse(journey['endDate'] as String),
+                );
+              }
+              print('[ProfileDialog] ✅ Restored ${backupJourneys.length} journeys from backup');
+            }
+          }
+
           // Check if profile exists for this email (device sync)
           final existingProfile = await repository.getUserProfileByEmail(email);
           if (!mounted) return;
@@ -155,6 +184,23 @@ class _ProfileCollectionDialogState extends ConsumerState<ProfileCollectionDialo
               );
             }
 
+            // Save to localStorage backup (survives IndexedDB clearing)
+            await LocalBackupStorage.saveUserProfile(
+              profileId: existingProfile.id,
+              name: existingProfile.name,
+              email: existingProfile.email,
+            );
+            await LocalBackupStorage.saveJourneyHistory(
+              records
+                  .map((r) => {
+                        'journeyNumber': r.journeyNumber,
+                        'gemsCollected': r.gemsCollected,
+                        'startDate': r.startDate.toIso8601String(),
+                        'endDate': r.endDate.toIso8601String(),
+                      })
+                  .toList(),
+            );
+
             // Save email to device
             await DeviceStorage.saveEmail(email);
             print('[ProfileDialog] 💾 Email saved to device, data synced');
@@ -168,6 +214,14 @@ class _ProfileCollectionDialogState extends ConsumerState<ProfileCollectionDialo
             print('[ProfileDialog] ✅ New profile created with ID: $profileId');
 
             notifier.setProfile(profileId, name, email);
+
+            // Save to localStorage backup
+            await LocalBackupStorage.saveUserProfile(
+              profileId: profileId,
+              name: name,
+              email: email,
+            );
+            await LocalBackupStorage.saveJourneyHistory([]);
 
             // Save email to device
             await DeviceStorage.saveEmail(email);
