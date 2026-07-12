@@ -1,0 +1,10 @@
+{
+  "name": "wommi-api",
+  "version": "1.0.0",
+  "description": "Email verification API for Wommi",
+  "type": "module",
+  "scripts": {
+    "dev": "vercel dev"
+  },
+  "dependencies": {}
+}
