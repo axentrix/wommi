@@ -26,6 +26,7 @@ class _ProfileCollectionDialogState extends ConsumerState<ProfileCollectionDialo
   String? _codeError;
   bool _isSubmitting = false;
   bool _isSendingCode = false;
+  String? _verificationCode; // For displaying the code in test mode
 
   @override
   void dispose() {
@@ -63,6 +64,10 @@ class _ProfileCollectionDialogState extends ConsumerState<ProfileCollectionDialo
       if (!mounted) return;
 
       if (response.statusCode == 200) {
+        final responseData = json.decode(response.body);
+        setState(() {
+          _verificationCode = responseData['code']?.toString();
+        });
         _nextPage();
       } else {
         setState(() {
@@ -487,6 +492,33 @@ class _ProfileCollectionDialogState extends ConsumerState<ProfileCollectionDialo
             color: WommiColors.inkDim,
           ),
         ),
+        if (_verificationCode != null) ...[
+          const SizedBox(height: 8),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: WommiColors.goldSoft.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: WommiColors.gold, width: 1),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.info_outline, size: 16, color: WommiColors.gold),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Test Mode: Your code is $_verificationCode',
+                    style: GoogleFonts.inter(
+                      fontSize: 11,
+                      color: WommiColors.ink,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
         const SizedBox(height: 12),
         TextField(
           controller: _codeController,
