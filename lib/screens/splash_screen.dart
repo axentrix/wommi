@@ -54,14 +54,22 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
     try {
       final repository = ref.read(repositoryProvider);
       final profile = await repository.getUserProfile();
-      if (!mounted || profile == null) return;
 
+      if (profile == null) {
+        print('[Splash] No profile found in database');
+        return;
+      }
+
+      if (!mounted) return;
+
+      print('[Splash] Loading profile: ${profile.name} (${profile.email})');
       final notifier = ref.read(userStateProvider.notifier);
       notifier.hydrateProfile(profile.id, profile.name, profile.email);
 
       final records = await repository.getJourneyRecordsForUser(profile.id);
       if (!mounted) return;
 
+      print('[Splash] Found ${records.length} journey records');
       if (records.isNotEmpty) {
         notifier.hydrateJourneyHistory(
           records
@@ -75,9 +83,10 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
               .toList(),
         );
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
       // If profile loading fails, just continue to landing
-      print('Error loading profile: $e');
+      print('[Splash] Error loading profile: $e');
+      print('[Splash] Stack trace: $stackTrace');
     }
   }
 

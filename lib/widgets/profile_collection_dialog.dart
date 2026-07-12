@@ -67,10 +67,13 @@ class _ProfileCollectionDialogState extends ConsumerState<ProfileCollectionDialo
     }
 
     final name = _nameController.text.trim();
+    print('[ProfileDialog] Creating profile: $name ($email)');
     final profileId = await repository.createUserProfile(name, email);
     if (!mounted) return;
 
+    print('[ProfileDialog] Profile created with ID: $profileId');
     ref.read(userStateProvider.notifier).setProfile(profileId, name, email);
+    print('[ProfileDialog] Profile set in state');
     Navigator.of(context).pop();
   }
 

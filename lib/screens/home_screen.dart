@@ -25,7 +25,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     // Show profile collection dialog if profile is not complete
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final userState = ref.read(userStateProvider);
+      print('[Home] Checking profile - hasProfile: ${userState.hasProfile}, name: ${userState.name}, email: ${userState.email}');
       if (!userState.hasProfile) {
+        print('[Home] Showing profile collection dialog');
         showDialog(
           context: context,
           barrierDismissible: false,
