@@ -1,25 +1,23 @@
-import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:html' as html;
 
 /// Device-specific storage for remembering last logged-in email
+/// Uses browser's localStorage for Flutter Web
 class DeviceStorage {
   static const String _keyEmail = 'last_logged_in_email';
 
   /// Store email on device
   static Future<void> saveEmail(String email) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_keyEmail, email);
+    html.window.localStorage[_keyEmail] = email;
   }
 
   /// Get stored email from device
   static Future<String?> getEmail() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString(_keyEmail);
+    return html.window.localStorage[_keyEmail];
   }
 
   /// Clear stored email (on logout/delete account)
   static Future<void> clearEmail() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(_keyEmail);
+    html.window.localStorage.remove(_keyEmail);
   }
 
   /// Check if device has a stored email
