@@ -1,0 +1,275 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_fonts/google_fonts.dart';
+import '../theme.dart';
+import '../providers/user_state_provider.dart';
+import '../providers/onboarding_provider.dart';
+import 'cycle_day_info_dialog.dart';
+
+/// Journey map with 35 cycle day positions
+/// This is a placeholder that will be replaced with Rive animation
+class JourneyMapWidget extends ConsumerWidget {
+  const JourneyMapWidget({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final userState = ref.watch(userStateProvider);
+    final currentDay = userState.currentDay;
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(20),
+      child: Center(
+        child: Container(
+          constraints: const BoxConstraints(maxWidth: 400),
+          child: CustomPaint(
+            painter: _PathPainter(currentDay),
+            child: SizedBox(
+              height: 1400, // Height for 35 positions
+              child: Stack(
+                children: [
+                  for (int day = 1; day <= 35; day++)
+                    _buildMapPosition(context, ref, day, currentDay),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMapPosition(
+      BuildContext context, WidgetRef ref, int day, int currentDay) {
+    final position = _getPositionForDay(day);
+    final userState = ref.watch(userStateProvider);
+
+    final isCurrent = day == currentDay;
+    final isPast = day < currentDay;
+    final isFuture = day > currentDay;
+
+    // Check if this day's missions are completed
+    final isCompleted = userState.completedDays.contains(day);
+
+    // Day is clickable if it's current or past (for replaying missions)
+    final isClickable = !isFuture;
+
+    return Positioned(
+      left: position.dx - 25,
+      top: position.dy - 25,
+      child: GestureDetector(
+        onTap: isClickable
+            ? () => _showCycleDayInfo(context, ref, day, isCompleted)
+            : null,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Position marker
+            Container(
+              width: 50,
+              height: 50,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: isCurrent
+                    ? WommiColors.cyan
+                    : isCompleted
+                        ? WommiColors.gold.withOpacity(0.3)
+                        : isPast
+                            ? WommiColors.lilac.withOpacity(0.3)
+                            : WommiColors.bgSoft,
+                border: Border.all(
+                  color: isCurrent
+                      ? WommiColors.cyan
+                      : isCompleted
+                          ? WommiColors.gold
+                          : isClickable
+                              ? WommiColors.line
+                              : WommiColors.line.withOpacity(0.3),
+                  width: isCurrent ? 3 : 2,
+                ),
+                boxShadow: isCurrent
+                    ? [
+                        BoxShadow(
+                          color: WommiColors.cyan.withOpacity(0.4),
+                          blurRadius: 12,
+                          spreadRadius: 2,
+                        )
+                      ]
+                    : null,
+              ),
+              child: Center(
+                child: isClickable
+                    ? Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          Text(
+                            '$day',
+                            style: GoogleFonts.unbounded(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w700,
+                              color: isCurrent
+                                  ? Colors.white
+                                  : isCompleted
+                                      ? WommiColors.ink
+                                      : WommiColors.inkDim,
+                            ),
+                          ),
+                          if (isCompleted)
+                            Positioned(
+                              top: 0,
+                              right: 0,
+                              child: Container(
+                                padding: const EdgeInsets.all(2),
+                                decoration: BoxDecoration(
+                                  color: WommiColors.gold,
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Icon(
+                                  Icons.check,
+                                  size: 10,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                        ],
+                      )
+                    : Icon(
+                        Icons.lock,
+                        size: 20,
+                        color: WommiColors.inkDim.withOpacity(0.4),
+                      ),
+              ),
+            ),
+            // Day label
+            if (isCurrent) ...[
+              const SizedBox(height: 4),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                decoration: BoxDecoration(
+                  color: WommiColors.cyan,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  'YOU',
+                  style: GoogleFonts.spaceMono(
+                    fontSize: 8,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
+                    letterSpacing: 1,
+                  ),
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showCycleDayInfo(
+      BuildContext context, WidgetRef ref, int day, bool isCompleted) {
+    final onboardingData = ref.read(onboardingProvider);
+    final userState = ref.read(userStateProvider);
+    final isCurrent = day == userState.currentDay;
+
+    showDialog(
+      context: context,
+      builder: (context) => CycleDayInfoDialog(
+        day: day,
+        conceptionStatus: onboardingData.conceptionStatus,
+        isCompleted: isCompleted,
+        isCurrent: isCurrent,
+        onCompleteMissions: () {
+          // Mark this day as completed and award gems
+          ref.read(userStateProvider.notifier).completeDay(day);
+          // Award gems for completing the day (e.g., 10 gems per day)
+          ref.read(userStateProvider.notifier).addGems(10);
+          Navigator.pop(context);
+
+          // If this is the current day, advance to next day
+          if (isCurrent) {
+            ref.read(userStateProvider.notifier).advanceDay();
+          }
+        },
+      ),
+    );
+  }
+
+  /// Calculate position for each day in a winding path
+  Offset _getPositionForDay(int day) {
+    const double width = 350;
+    const double startX = 175; // Center
+    const double verticalSpacing = 40;
+
+    // Create a winding S-curve path
+    final row = (day - 1) ~/ 5; // 5 positions per row
+    final col = (day - 1) % 5;
+
+    double x;
+    if (row % 2 == 0) {
+      // Left to right
+      x = startX - 120 + (col * 60);
+    } else {
+      // Right to left
+      x = startX + 120 - (col * 60);
+    }
+
+    final y = 40 + (row * verticalSpacing);
+
+    return Offset(x, y);
+  }
+}
+
+/// Custom painter to draw the path between positions
+class _PathPainter extends CustomPainter {
+  final int currentDay;
+
+  _PathPainter(this.currentDay);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = WommiColors.line.withOpacity(0.3)
+      ..strokeWidth = 2
+      ..style = PaintingStyle.stroke;
+
+    final paintActive = Paint()
+      ..color = WommiColors.lilac.withOpacity(0.5)
+      ..strokeWidth = 3
+      ..style = PaintingStyle.stroke;
+
+    // Draw connecting lines between positions
+    for (int day = 1; day < 35; day++) {
+      final start = _getPositionForDay(day);
+      final end = _getPositionForDay(day + 1);
+
+      // Use active paint for completed path segments
+      final activePaint = day < currentDay ? paintActive : paint;
+
+      canvas.drawLine(start, end, activePaint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(_PathPainter oldDelegate) =>
+      oldDelegate.currentDay != currentDay;
+
+  Offset _getPositionForDay(int day) {
+    const double width = 350;
+    const double startX = 175;
+    const double verticalSpacing = 40;
+
+    final row = (day - 1) ~/ 5;
+    final col = (day - 1) % 5;
+
+    double x;
+    if (row % 2 == 0) {
+      x = startX - 120 + (col * 60);
+    } else {
+      x = startX + 120 - (col * 60);
+    }
+
+    final y = 40 + (row * verticalSpacing);
+
+    return Offset(x, y);
+  }
+}

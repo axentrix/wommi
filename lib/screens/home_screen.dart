@@ -5,6 +5,7 @@ import '../theme.dart';
 import '../providers/user_state_provider.dart';
 import '../widgets/bottom_navigation_bar.dart';
 import '../widgets/profile_collection_dialog.dart';
+import '../widgets/journey_map_widget.dart';
 import 'challenges_screen.dart';
 import 'achievements_screen.dart';
 import 'profile_screen.dart';
@@ -157,53 +158,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ],
         ),
       ),
-      child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              width: 200,
-              height: 200,
-              decoration: BoxDecoration(
-                color: WommiColors.bgSoft,
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(
-                  color: WommiColors.line,
-                  width: 2,
-                ),
-              ),
-              child: Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      '🗺️',
-                      style: TextStyle(fontSize: 48),
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      'Rive Map',
-                      style: GoogleFonts.unbounded(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                        color: WommiColors.ink,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'Coming soon',
-                      style: GoogleFonts.spaceMono(
-                        fontSize: 11,
-                        color: WommiColors.inkDim,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
+      child: const JourneyMapWidget(),
     );
   }
 
