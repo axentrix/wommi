@@ -39,10 +39,28 @@ module.exports = async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { email, action, code } = req.body;
+  // Log request body for debugging
+  console.log('Request body:', JSON.stringify(req.body));
+  console.log('Request body type:', typeof req.body);
 
-  if (!email || !email.includes('@')) {
-    return res.status(400).json({ error: 'Valid email required' });
+  const { email, action, code } = req.body || {};
+
+  console.log('Parsed values:', { email, action, code });
+
+  if (!email || typeof email !== 'string' || !email.includes('@')) {
+    console.error('Invalid email:', email, 'Type:', typeof email);
+    return res.status(400).json({
+      error: 'Valid email required',
+      received: { email, action, code, bodyType: typeof req.body }
+    });
+  }
+
+  if (!action || (action !== 'send' && action !== 'verify')) {
+    console.error('Invalid action:', action);
+    return res.status(400).json({
+      error: 'Valid action required (send or verify)',
+      received: { email, action, code }
+    });
   }
 
   cleanupExpiredCodes();
