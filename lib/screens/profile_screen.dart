@@ -395,20 +395,21 @@ class ProfileScreen extends ConsumerWidget {
           ),
           TextButton(
             onPressed: () async {
-              final userState = ref.read(userStateProvider);
-              final profileId = userState.profileId;
-
-              if (profileId != null) {
-                // Delete all user data
-                await ref.read(repositoryProvider).deleteAllUserData(profileId);
-              }
+              // Wipe the entire local database, not just this profile's
+              // rows - deleting an account must not leave old journeys,
+              // rituals, charms, or cycle info behind for the next one.
+              await ref.read(repositoryProvider).resetEverything();
 
               // Clear device storage and backup
               await DeviceStorage.clearEmail();
               await LocalBackupStorage.clearAll();
 
-              // Reset user state
-              ref.read(userStateProvider.notifier).resetState();
+              // Fully reset in-memory state. resetState() is intentionally
+              // *not* used here - it exists to carry journey history and
+              // identity across a legitimate "start a new journey", which
+              // is the opposite of what deleting an account should do.
+              ref.read(userStateProvider.notifier).hardReset();
+              ref.read(onboardingProvider.notifier).reset();
 
               if (!context.mounted) return;
               Navigator.pop(context);
