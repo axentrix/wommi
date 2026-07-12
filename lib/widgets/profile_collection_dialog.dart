@@ -184,6 +184,17 @@ class _ProfileCollectionDialogState extends ConsumerState<ProfileCollectionDialo
               );
             }
 
+            // Restore the currently in-progress journey's live day/gem
+            // count - it has no JourneyRecord yet since it isn't finished,
+            // so without this a returning user's active progress would
+            // appear to reset to day 1 / 0 gems even though their profile
+            // and past journeys were just found.
+            final gemBalance = await repository.getCharmCount();
+            final currentDay = await repository.calculateCurrentCycleDay();
+            if (!mounted) return;
+            print('[ProfileDialog] 🔄 Restoring active journey: day $currentDay, $gemBalance gems');
+            notifier.hydrateActiveJourney(currentDay: currentDay, gemBalance: gemBalance);
+
             // Save to localStorage backup (survives IndexedDB clearing)
             await LocalBackupStorage.saveUserProfile(
               profileId: existingProfile.id,

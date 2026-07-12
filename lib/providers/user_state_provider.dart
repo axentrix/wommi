@@ -28,6 +28,16 @@ class UserStateNotifier extends StateNotifier<UserState> {
     );
   }
 
+  /// Restores the currently *in-progress* journey's live progress (cycle
+  /// day and gems earned so far). Completed journeys are recorded in
+  /// JourneyRecords via hydrateJourneyHistory, but the active, not-yet-
+  /// completed journey has no record of its own - without this, a
+  /// returning user's day/gem progress would appear to reset to 0 even
+  /// though they're recognized and their past journeys load correctly.
+  void hydrateActiveJourney({required int currentDay, required int gemBalance}) {
+    state = state.copyWith(currentDay: currentDay, gemBalance: gemBalance);
+  }
+
   void addGems(int amount) {
     state = state.copyWith(gemBalance: state.gemBalance + amount);
   }
