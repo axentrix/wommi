@@ -110,6 +110,10 @@ class WommiDatabase extends _$WommiDatabase {
     return await select(ritualCompletions).get();
   }
 
+  Future<void> clearAllRitualCompletions() async {
+    await delete(ritualCompletions).go();
+  }
+
   // Charms Earned queries
   Future<List<CharmsEarnedData>> getCharmsForCycle() async {
     return await select(charmsEarned).get();
@@ -136,6 +140,10 @@ class WommiDatabase extends _$WommiDatabase {
           ..where((t) => t.cycleDay.equals(cycleDay)))
         .getSingleOrNull();
     return existing != null;
+  }
+
+  Future<void> clearAllCharms() async {
+    await delete(charmsEarned).go();
   }
 
   // User Profile queries

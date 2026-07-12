@@ -220,6 +220,8 @@ class ProfileScreen extends ConsumerWidget {
                   endDate: DateTime.now(),
                 );
           }
+          // Clear all ritual completions and charms for the new journey
+          await ref.read(repositoryProvider).clearJourneyProgress();
           ref.read(userStateProvider.notifier).completeCurrentJourney();
           if (!context.mounted) return;
           Navigator.pop(context);

@@ -109,6 +109,10 @@ class LandingScreen extends ConsumerWidget {
                               );
                         }
 
+                        // Clear all ritual completions and charms for the new journey
+                        print('[Landing] Clearing journey progress for new journey');
+                        await ref.read(repositoryProvider).clearJourneyProgress();
+
                         // Now reset and start new journey
                         ref.read(userStateProvider.notifier).resetState();
                         Navigator.of(context).pushReplacementNamed('/onboarding');

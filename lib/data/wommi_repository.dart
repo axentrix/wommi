@@ -93,6 +93,12 @@ class WommiRepository {
     return _db.getJourneyRecordsForUser(userProfileId);
   }
 
+  /// Clear all ritual completions and charms when starting a new journey
+  Future<void> clearJourneyProgress() async {
+    await _db.clearAllRitualCompletions();
+    await _db.clearAllCharms();
+  }
+
   // Utility
   Future<int> calculateCurrentCycleDay() async {
     final profile = await getCurrentCycleProfile();
