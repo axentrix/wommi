@@ -34,39 +34,51 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
 
     _controller.forward();
 
-    // Restore a previously entered name/email, if any, so returning users
-    // are never asked to enter their email again.
-    _loadProfile();
+    // Load profile data and navigate once ready (or after timeout)
+    _loadProfileAndNavigate();
+  }
 
-    // Navigate to landing after 2.5 seconds
-    Future.delayed(const Duration(milliseconds: 2500), () {
-      if (mounted) {
-        Navigator.of(context).pushReplacementNamed('/landing');
-      }
-    });
+  Future<void> _loadProfileAndNavigate() async {
+    // Wait for animation (minimum 2.5s) and profile loading in parallel
+    final animationDelay = Future.delayed(const Duration(milliseconds: 2500));
+    final profileLoad = _loadProfile();
+
+    await Future.wait([animationDelay, profileLoad]);
+
+    if (mounted) {
+      Navigator.of(context).pushReplacementNamed('/landing');
+    }
   }
 
   Future<void> _loadProfile() async {
-    final repository = ref.read(repositoryProvider);
-    final profile = await repository.getUserProfile();
-    if (!mounted || profile == null) return;
+    try {
+      final repository = ref.read(repositoryProvider);
+      final profile = await repository.getUserProfile();
+      if (!mounted || profile == null) return;
 
-    final notifier = ref.read(userStateProvider.notifier);
-    notifier.hydrateProfile(profile.id, profile.name, profile.email);
+      final notifier = ref.read(userStateProvider.notifier);
+      notifier.hydrateProfile(profile.id, profile.name, profile.email);
 
-    final records = await repository.getJourneyRecordsForUser(profile.id);
-    if (!mounted || records.isEmpty) return;
-    notifier.hydrateJourneyHistory(
-      records
-          .map((r) => Journey(
-                journeyNumber: r.journeyNumber,
-                gemsCollected: r.gemsCollected,
-                startDate: r.startDate,
-                endDate: r.endDate,
-                isActive: false,
-              ))
-          .toList(),
-    );
+      final records = await repository.getJourneyRecordsForUser(profile.id);
+      if (!mounted) return;
+
+      if (records.isNotEmpty) {
+        notifier.hydrateJourneyHistory(
+          records
+              .map((r) => Journey(
+                    journeyNumber: r.journeyNumber,
+                    gemsCollected: r.gemsCollected,
+                    startDate: r.startDate,
+                    endDate: r.endDate,
+                    isActive: false,
+                  ))
+              .toList(),
+        );
+      }
+    } catch (e) {
+      // If profile loading fails, just continue to landing
+      print('Error loading profile: $e');
+    }
   }
 
   @override
