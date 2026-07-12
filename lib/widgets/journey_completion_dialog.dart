@@ -161,31 +161,57 @@ class JourneyCompletionDialog extends StatelessWidget {
                 ],
               ),
             ),
-            // Button
+            // Buttons
             Padding(
               padding: const EdgeInsets.all(28),
-              child: SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: onStartNewJourney,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: WommiColors.cyan,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(100),
+              child: Column(
+                children: [
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: onStartNewJourney,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: WommiColors.cyan,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(100),
+                        ),
+                        elevation: 14,
+                        shadowColor: WommiColors.cyan.withOpacity(0.38),
+                      ),
+                      child: Text(
+                        'Start New Journey',
+                        style: GoogleFonts.unbounded(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 14,
+                        ),
+                      ),
                     ),
-                    elevation: 14,
-                    shadowColor: WommiColors.cyan.withOpacity(0.38),
                   ),
-                  child: Text(
-                    'Start New Journey',
-                    style: GoogleFonts.unbounded(
-                      fontWeight: FontWeight.w700,
-                      fontSize: 14,
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: WommiColors.ink,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        side: BorderSide(color: WommiColors.line, width: 2),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(100),
+                        ),
+                      ),
+                      child: Text(
+                        'Continue Journey',
+                        style: GoogleFonts.unbounded(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 14,
+                        ),
+                      ),
                     ),
                   ),
-                ),
+                ],
               ),
             ),
           ],

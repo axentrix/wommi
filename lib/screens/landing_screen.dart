@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../theme.dart';
 import '../providers/user_state_provider.dart';
+import '../providers/repository_provider.dart';
 
 class LandingScreen extends ConsumerWidget {
   const LandingScreen({super.key});
@@ -92,8 +93,23 @@ class LandingScreen extends ConsumerWidget {
                   SizedBox(
                     width: double.infinity,
                     child: OutlinedButton(
-                      onPressed: () {
-                        // Reset user state when starting new journey
+                      onPressed: () async {
+                        final userState = ref.read(userStateProvider);
+                        final profileId = userState.profileId;
+
+                        // Save current journey to database if user has a profile
+                        if (profileId != null && userState.gemBalance > 0) {
+                          print('[Landing] Saving current journey before starting new one');
+                          await ref.read(repositoryProvider).saveJourneyRecord(
+                                userProfileId: profileId,
+                                journeyNumber: userState.currentJourneyNumber,
+                                gemsCollected: userState.gemBalance,
+                                startDate: userState.lastOpenedDate ?? DateTime.now(),
+                                endDate: DateTime.now(),
+                              );
+                        }
+
+                        // Now reset and start new journey
                         ref.read(userStateProvider.notifier).resetState();
                         Navigator.of(context).pushReplacementNamed('/onboarding');
                       },

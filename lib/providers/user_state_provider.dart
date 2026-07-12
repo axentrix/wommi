@@ -80,36 +80,19 @@ class UserStateNotifier extends StateNotifier<UserState> {
   }
 
   void resetState() {
-    // Save current journey to history if it has gems
-    if (state.gemBalance > 0) {
-      final completedJourney = Journey(
-        journeyNumber: state.currentJourneyNumber,
-        gemsCollected: state.gemBalance,
-        startDate: state.lastOpenedDate ?? DateTime.now(),
-        endDate: DateTime.now(),
-        isActive: false,
-      );
-
-      final updatedHistory = [...state.journeyHistory, completedJourney];
-
-      state = UserState(
-        currentDay: 1,
-        journeyHistory: updatedHistory,
-        currentJourneyNumber: state.currentJourneyNumber + 1,
-        // The profile is the user's persistent identity across journeys,
-        // not journey-specific state, so it survives a reset.
-        name: state.name,
-        email: state.email,
-        profileId: state.profileId,
-      );
-    } else {
-      state = UserState(
-        currentDay: 1,
-        name: state.name,
-        email: state.email,
-        profileId: state.profileId,
-      );
-    }
+    print('[UserState] Resetting state - preserving ${state.journeyHistory.length} past journeys');
+    // Always preserve journey history and profile across resets
+    // (the actual journey saving to database happens in the UI layer before calling this)
+    state = UserState(
+      currentDay: 1,
+      journeyHistory: state.journeyHistory,
+      currentJourneyNumber: state.currentJourneyNumber + 1,
+      // The profile is the user's persistent identity across journeys,
+      // not journey-specific state, so it survives a reset.
+      name: state.name,
+      email: state.email,
+      profileId: state.profileId,
+    );
   }
 
   void completeCurrentJourney() {
