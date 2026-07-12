@@ -25,6 +25,10 @@ class OnboardingNotifier extends StateNotifier<OnboardingData> {
   void setDaysIntoWait(int days) {
     state = state.copyWith(daysIntoWait: days);
   }
+
+  void reset() {
+    state = OnboardingData();
+  }
 }
 
 final onboardingProvider =

@@ -111,6 +111,11 @@ class WommiRepository {
     await _db.clearAllCharms();
   }
 
+  /// Wipes every table, regardless of profile. Testing only.
+  Future<void> resetEverything() {
+    return _db.deleteEverything();
+  }
+
   // Utility
   Future<int> calculateCurrentCycleDay() async {
     final profile = await getCurrentCycleProfile();

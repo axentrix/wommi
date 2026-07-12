@@ -3,7 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../theme.dart';
 import '../providers/user_state_provider.dart';
+import '../providers/onboarding_provider.dart';
 import '../providers/repository_provider.dart';
+import '../services/device_storage.dart';
+import '../services/local_backup_storage.dart';
 
 class LandingScreen extends ConsumerWidget {
   const LandingScreen({super.key});
@@ -140,11 +143,83 @@ class LandingScreen extends ConsumerWidget {
                     ),
                   ),
                 ],
-                const SizedBox(height: 48),
+                const SizedBox(height: 24),
+                TextButton(
+                  onPressed: () => _showResetAllDataDialog(context, ref),
+                  style: TextButton.styleFrom(
+                    foregroundColor: WommiColors.inkDim,
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                  ),
+                  child: Text(
+                    'Reset all data (testing)',
+                    style: GoogleFonts.inter(
+                      fontSize: 12,
+                      decoration: TextDecoration.underline,
+                      decorationColor: WommiColors.inkDim,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 24),
               ],
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  void _showResetAllDataDialog(BuildContext context, WidgetRef ref) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(
+          'Reset all data?',
+          style: GoogleFonts.unbounded(
+            fontSize: 18,
+            fontWeight: FontWeight.w800,
+            color: Colors.red,
+          ),
+        ),
+        content: Text(
+          'This wipes every profile, journey, and ritual/charm record in '
+          'the local database, plus the remembered email on this device. '
+          'For testing only - this cannot be undone.',
+          style: GoogleFonts.inter(
+            fontSize: 14,
+            color: WommiColors.ink,
+            height: 1.5,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(
+              'Cancel',
+              style: GoogleFonts.unbounded(fontSize: 13, fontWeight: FontWeight.w600),
+            ),
+          ),
+          TextButton(
+            onPressed: () async {
+              await ref.read(repositoryProvider).resetEverything();
+              await DeviceStorage.clearEmail();
+              await LocalBackupStorage.clearAll();
+              ref.read(userStateProvider.notifier).hardReset();
+              ref.read(onboardingProvider.notifier).reset();
+
+              if (!context.mounted) return;
+              Navigator.pop(context);
+              Navigator.of(context).pushNamedAndRemoveUntil('/landing', (route) => false);
+            },
+            child: Text(
+              'Reset',
+              style: GoogleFonts.unbounded(
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+                color: Colors.red,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

@@ -226,6 +226,17 @@ class WommiDatabase extends _$WommiDatabase {
     await clearAllRitualCompletions();
     await clearAllCharms();
   }
+
+  /// Wipes every table, regardless of profile. For testing only - lets a
+  /// tester start over from a completely clean database without needing
+  /// dev tools to clear browser storage by hand.
+  Future<void> deleteEverything() async {
+    await delete(journeyRecords).go();
+    await delete(userProfiles).go();
+    await delete(cycleProfiles).go();
+    await clearAllRitualCompletions();
+    await clearAllCharms();
+  }
 }
 
 QueryExecutor _openConnection() {

@@ -135,6 +135,13 @@ class UserStateNotifier extends StateNotifier<UserState> {
   void updateCurrentDay(int day) {
     state = state.copyWith(currentDay: day);
   }
+
+  /// Full reset for testing - wipes everything in memory, including
+  /// profile/journey history. Unlike resetState(), which intentionally
+  /// preserves those across a legitimate "start new journey".
+  void hardReset() {
+    state = UserState(currentDay: 0);
+  }
 }
 
 final userStateProvider =
