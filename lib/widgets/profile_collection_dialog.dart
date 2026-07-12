@@ -89,7 +89,7 @@ class _ProfileCollectionDialogState extends ConsumerState<ProfileCollectionDialo
   }
 
   Future<void> _verifyCode() async {
-    final email = _emailController.text.trim();
+    final email = _emailController.text.trim().toLowerCase(); // Normalize email
     final code = _codeController.text.trim();
 
     setState(() {
@@ -112,13 +112,22 @@ class _ProfileCollectionDialogState extends ConsumerState<ProfileCollectionDialo
           final repository = ref.read(repositoryProvider);
           final notifier = ref.read(userStateProvider.notifier);
 
+          // DEBUG: Check all profiles in database
+          print('[ProfileDialog] 🔍 Checking database for email: $email');
+          final allProfiles = await repository.getAllUserProfiles();
+          print('[ProfileDialog] 📊 Total profiles in database: ${allProfiles.length}');
+          for (var p in allProfiles) {
+            print('[ProfileDialog]   - Profile ${p.id}: ${p.name} (${p.email})');
+          }
+
           // Check if profile exists for this email (device sync)
           final existingProfile = await repository.getUserProfileByEmail(email);
           if (!mounted) return;
 
           if (existingProfile != null) {
             // Existing user - sync their data
-            print('[ProfileDialog] Found existing profile for $email, syncing data');
+            print('[ProfileDialog] ✅ Found existing profile #${existingProfile.id} for $email');
+            print('[ProfileDialog]    Name: ${existingProfile.name}');
             notifier.hydrateProfile(
                 existingProfile.id, existingProfile.name, existingProfile.email);
 
@@ -126,6 +135,11 @@ class _ProfileCollectionDialogState extends ConsumerState<ProfileCollectionDialo
             final records =
                 await repository.getJourneyRecordsForUser(existingProfile.id);
             if (!mounted) return;
+
+            print('[ProfileDialog] 📚 Loading ${records.length} journey records');
+            for (var r in records) {
+              print('[ProfileDialog]   - Journey #${r.journeyNumber}: ${r.gemsCollected} gems');
+            }
 
             if (records.isNotEmpty) {
               notifier.hydrateJourneyHistory(
@@ -143,19 +157,21 @@ class _ProfileCollectionDialogState extends ConsumerState<ProfileCollectionDialo
 
             // Save email to device
             await DeviceStorage.saveEmail(email);
-            print('[ProfileDialog] Email saved to device, data synced');
+            print('[ProfileDialog] 💾 Email saved to device, data synced');
+            print('[ProfileDialog] 🎉 Login successful! Journey count: ${records.length}');
           } else {
             // New user - create profile
             final name = _nameController.text.trim();
-            print('[ProfileDialog] Creating new profile: $name ($email)');
+            print('[ProfileDialog] 🆕 Creating new profile: $name ($email)');
             final profileId = await repository.createUserProfile(name, email);
             if (!mounted) return;
+            print('[ProfileDialog] ✅ New profile created with ID: $profileId');
 
             notifier.setProfile(profileId, name, email);
 
             // Save email to device
             await DeviceStorage.saveEmail(email);
-            print('[ProfileDialog] New profile created and saved to device');
+            print('[ProfileDialog] 💾 New profile created and saved to device');
           }
 
           Navigator.of(context).pop();
@@ -173,6 +189,7 @@ class _ProfileCollectionDialogState extends ConsumerState<ProfileCollectionDialo
         });
       }
     } catch (e) {
+      print('[ProfileDialog] ❌ Error during verification: $e');
       if (!mounted) return;
       setState(() {
         _isSubmitting = false;

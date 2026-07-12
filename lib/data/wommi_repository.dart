@@ -76,6 +76,10 @@ class WommiRepository {
     return _db.getUserProfileByEmail(email);
   }
 
+  Future<List<UserProfile>> getAllUserProfiles() {
+    return _db.getAllUserProfiles();
+  }
+
   Future<void> deleteAllUserData(int userProfileId) {
     return _db.deleteAllUserData(userProfileId);
   }

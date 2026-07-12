@@ -162,15 +162,23 @@ class WommiDatabase extends _$WommiDatabase {
   }
 
   Future<int> createUserProfile(String name, String email) async {
+    // Normalize email to lowercase for consistent lookups
+    final normalizedEmail = email.toLowerCase().trim();
     return await into(userProfiles).insert(
-      UserProfilesCompanion.insert(name: name, email: email),
+      UserProfilesCompanion.insert(name: name, email: normalizedEmail),
     );
   }
 
   Future<UserProfile?> getUserProfileByEmail(String email) async {
+    // Normalize email to lowercase for consistent lookups
+    final normalizedEmail = email.toLowerCase().trim();
     return await (select(userProfiles)
-          ..where((t) => t.email.equals(email)))
+          ..where((t) => t.email.equals(normalizedEmail)))
         .getSingleOrNull();
+  }
+
+  Future<List<UserProfile>> getAllUserProfiles() async {
+    return await select(userProfiles).get();
   }
 
   Future<void> deleteUserProfile(int profileId) async {
