@@ -8,6 +8,8 @@ import '../providers/repository_provider.dart';
 import '../widgets/edit_cycle_day_dialog.dart';
 import '../widgets/edit_conception_dialog.dart';
 import '../widgets/journey_completion_dialog.dart';
+import '../widgets/pregnancy_win_dialog.dart';
+import '../widgets/continue_journey_question_dialog.dart';
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
@@ -103,6 +105,42 @@ class ProfileScreen extends ConsumerWidget {
                     onChanged: (value) {
                       if (value) {
                         _showJourneyCompletionDialog(context, ref);
+                      }
+                    },
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+            // Pregnancy detected toggle
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                border: Border.all(
+                  color: WommiColors.line,
+                  width: 1.5,
+                ),
+                borderRadius: BorderRadius.circular(100),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'Pregnancy detected',
+                    style: GoogleFonts.unbounded(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: WommiColors.ink,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Switch(
+                    value: false,
+                    activeColor: WommiColors.rose,
+                    onChanged: (value) {
+                      if (value) {
+                        _showPregnancyWinDialog(context, ref);
                       }
                     },
                   ),
@@ -230,6 +268,66 @@ class ProfileScreen extends ConsumerWidget {
             '/landing',
             (route) => false,
           );
+        },
+      ),
+    );
+  }
+
+  void _showPregnancyWinDialog(BuildContext context, WidgetRef ref) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => PregnancyWinDialog(
+        onShare: () {
+          // Share functionality - disabled for now
+          Navigator.pop(context);
+          _showContinueJourneyDialog(context, ref);
+        },
+        onNoThanks: () {
+          Navigator.pop(context);
+          _showContinueJourneyDialog(context, ref);
+        },
+      ),
+    );
+  }
+
+  void _showContinueJourneyDialog(BuildContext context, WidgetRef ref) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => ContinueJourneyQuestionDialog(
+        onContinue: () {
+          // Continue journey - go back to home
+          Navigator.pop(context);
+        },
+        onComplete: () async {
+          // Complete journey - save and go to achievements
+          final userState = ref.read(userStateProvider);
+          final profileId = userState.profileId;
+
+          if (profileId != null && userState.gemBalance > 0) {
+            await ref.read(repositoryProvider).saveJourneyRecord(
+                  userProfileId: profileId,
+                  journeyNumber: userState.currentJourneyNumber,
+                  gemsCollected: userState.gemBalance,
+                  startDate: userState.lastOpenedDate ?? DateTime.now(),
+                  endDate: DateTime.now(),
+                );
+          }
+
+          // Clear progress for next journey
+          await ref.read(repositoryProvider).clearJourneyProgress();
+          ref.read(userStateProvider.notifier).completeCurrentJourney();
+
+          if (!context.mounted) return;
+          Navigator.pop(context);
+          // Navigate to achievements screen
+          Navigator.of(context).pushNamedAndRemoveUntil(
+            '/home',
+            (route) => false,
+          );
+          // Switch to achievements tab (tab index 3)
+          // Note: This will require updating the home screen to accept initial tab
         },
       ),
     );
