@@ -144,47 +144,14 @@ class _CurrentJourneyCard extends StatelessWidget {
       child: Column(
         children: [
           // Necklace circle
-          Container(
-            width: 100,
-            height: 100,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              border: Border.all(
-                color: WommiColors.cyan,
-                width: 3,
-              ),
-              color: Colors.white,
-            ),
-            child: Stack(
-              children: [
-                // Gems arranged in circle
-                ..._buildNecklaceGems(gemsCollected),
-                // Center text
-                Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        '$gemsCollected',
-                        style: GoogleFonts.unbounded(
-                          fontSize: 32,
-                          fontWeight: FontWeight.w800,
-                          color: WommiColors.ink,
-                        ),
-                      ),
-                      Text(
-                        gemsCollected == 1 ? 'gem' : 'gems',
-                        style: GoogleFonts.spaceMono(
-                          fontSize: 9,
-                          color: WommiColors.inkDim,
-                          letterSpacing: 0.5,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
+          _NecklaceCircle(
+            diameter: 100,
+            gemsCollected: gemsCollected,
+            borderColor: WommiColors.cyan,
+            borderWidth: 3,
+            color: Colors.white,
+            countFontSize: 32,
+            labelFontSize: 9,
           ),
           const SizedBox(height: 16),
           // Title
@@ -233,14 +200,84 @@ class _CurrentJourneyCard extends StatelessWidget {
       ),
     );
   }
+}
 
-  List<Widget> _buildNecklaceGems(int count) {
+/// A circular "necklace" of gem icons arranged around the rim, with the
+/// total count shown in the middle. Shared by the in-progress journey card
+/// and past journey cards so every journey's achievements render the same
+/// way, just at a different size.
+class _NecklaceCircle extends StatelessWidget {
+  final double diameter;
+  final int gemsCollected;
+  final Color borderColor;
+  final double borderWidth;
+  final Color? color;
+  final Gradient? gradient;
+  final double countFontSize;
+  final double labelFontSize;
+
+  const _NecklaceCircle({
+    required this.diameter,
+    required this.gemsCollected,
+    required this.borderColor,
+    this.borderWidth = 2.5,
+    this.color,
+    this.gradient,
+    this.countFontSize = 22,
+    this.labelFontSize = 7,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: diameter,
+      height: diameter,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        border: Border.all(color: borderColor, width: borderWidth),
+        color: gradient == null ? (color ?? Colors.white) : null,
+        gradient: gradient,
+      ),
+      child: Stack(
+        children: [
+          ..._buildNecklaceGems(gemsCollected, diameter),
+          Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  '$gemsCollected',
+                  style: GoogleFonts.unbounded(
+                    fontSize: countFontSize,
+                    fontWeight: FontWeight.w800,
+                    color: WommiColors.ink,
+                  ),
+                ),
+                Text(
+                  gemsCollected == 1 ? 'gem' : 'gems',
+                  style: GoogleFonts.spaceMono(
+                    fontSize: labelFontSize,
+                    color: WommiColors.inkDim,
+                    letterSpacing: 0.3,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  List<Widget> _buildNecklaceGems(int count, double diameter) {
     if (count == 0) return [];
 
     final maxVisible = 12;
     final gemsToShow = count > maxVisible ? maxVisible : count;
     final List<Widget> gems = [];
-    final radius = 35.0;
+    final center = diameter / 2;
+    final radius = diameter * 0.35;
+    final gemSize = diameter * 0.12;
 
     for (int i = 0; i < gemsToShow; i++) {
       final angle = (i / maxVisible) * 2 * math.pi - (math.pi / 2);
@@ -249,11 +286,11 @@ class _CurrentJourneyCard extends StatelessWidget {
 
       gems.add(
         Positioned(
-          left: 50 + x - 6,
-          top: 50 + y - 6,
+          left: center + x - gemSize / 2,
+          top: center + y - gemSize / 2,
           child: Text(
             '💎',
-            style: TextStyle(fontSize: 12),
+            style: TextStyle(fontSize: gemSize),
           ),
         ),
       );
@@ -295,44 +332,15 @@ class _PastJourneyCard extends StatelessWidget {
       child: Row(
         children: [
           // Necklace circle (smaller)
-          Container(
-            width: 70,
-            height: 70,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              border: Border.all(
-                color: WommiColors.gold,
-                width: 2.5,
-              ),
-              gradient: RadialGradient(
-                colors: [
-                  Colors.white,
-                  WommiColors.goldSoft.withOpacity(0.3),
-                ],
-              ),
-            ),
-            child: Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    '${journey.gemsCollected}',
-                    style: GoogleFonts.unbounded(
-                      fontSize: 22,
-                      fontWeight: FontWeight.w800,
-                      color: WommiColors.ink,
-                    ),
-                  ),
-                  Text(
-                    journey.gemsCollected == 1 ? 'gem' : 'gems',
-                    style: GoogleFonts.spaceMono(
-                      fontSize: 7,
-                      color: WommiColors.inkDim,
-                      letterSpacing: 0.3,
-                    ),
-                  ),
-                ],
-              ),
+          _NecklaceCircle(
+            diameter: 70,
+            gemsCollected: journey.gemsCollected,
+            borderColor: WommiColors.gold,
+            gradient: RadialGradient(
+              colors: [
+                Colors.white,
+                WommiColors.goldSoft.withOpacity(0.3),
+              ],
             ),
           ),
           const SizedBox(width: 14),
