@@ -10,28 +10,39 @@ import '../widgets/win_state_dialog.dart';
 import '../widgets/challenge_completion_dialog.dart';
 
 class ChallengesScreen extends ConsumerStatefulWidget {
-  const ChallengesScreen({super.key});
+  /// When null, this shows *today's* challenges as the Challenges tab.
+  /// When set, it shows a specific past cycle day's missions instead -
+  /// opened from tapping a day on the journey map - as a standalone screen
+  /// with its own app bar and back button.
+  final int? day;
+
+  const ChallengesScreen({super.key, this.day});
 
   @override
   ConsumerState<ChallengesScreen> createState() => _ChallengesScreenState();
 }
 
 class _ChallengesScreenState extends ConsumerState<ChallengesScreen> {
+  bool get _isSpecificDay => widget.day != null;
+
+  StateNotifierProvider<ChallengesNotifier, List<Challenge>> get _provider =>
+      _isSpecificDay ? dayChallengesProvider : challengesProvider;
+
+  int _resolveDay() => widget.day ?? ref.read(userStateProvider).currentDay;
+
   @override
   void initState() {
     super.initState();
-    // Generate challenges for current day when screen loads, restoring
+    // Generate challenges for the target day when screen loads, restoring
     // completion state so progress survives navigating away and back
     // (challenges are now completed one at a time, not all on one page).
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      final userState = ref.read(userStateProvider);
+      final day = _resolveDay();
       final repository = ref.read(repositoryProvider);
-      final completedIds = await repository.getCompletedRitualIdsForDay(
-        userState.currentDay,
-      );
+      final completedIds = await repository.getCompletedRitualIdsForDay(day);
       if (!mounted) return;
-      ref.read(challengesProvider.notifier).generateChallengesForDay(
-            userState.currentDay,
+      ref.read(_provider.notifier).generateChallengesForDay(
+            day,
             completedIds: completedIds,
           );
 
@@ -46,21 +57,25 @@ class _ChallengesScreenState extends ConsumerState<ChallengesScreen> {
 
   /// Awards the day's charm/gem exactly once, independent of whether this
   /// widget is still mounted by the time it resolves. Safe to call more
-  /// than once - it's a no-op if today's charm was already awarded.
+  /// than once - it's a no-op if that day's charm was already awarded.
   /// Returns whether it was actually awarded just now.
   Future<bool> _awardCharmIfNeeded() async {
-    final challengesNotifier = ref.read(challengesProvider.notifier);
+    final challengesNotifier = ref.read(_provider.notifier);
     if (challengesNotifier.totalCount == 0) return false;
     if (challengesNotifier.completedCount != challengesNotifier.totalCount) {
       return false;
     }
 
-    final userState = ref.read(userStateProvider);
+    final day = _resolveDay();
     final repository = ref.read(repositoryProvider);
-    if (await repository.hasCharmForDay(userState.currentDay)) return false;
+    if (await repository.hasCharmForDay(day)) return false;
 
-    await repository.awardCharm(userState.currentDay, 'daily_charm');
+    await repository.awardCharm(day, 'daily_charm');
     ref.read(userStateProvider.notifier).addGems(1);
+    if (_isSpecificDay) {
+      // Marks this day's node as completed on the journey map.
+      ref.read(userStateProvider.notifier).completeDay(day);
+    }
     return true;
   }
 
@@ -70,7 +85,7 @@ class _ChallengesScreenState extends ConsumerState<ChallengesScreen> {
       context: context,
       barrierDismissible: false,
       builder: (context) => WinStateDialog(
-        currentDay: userState.currentDay,
+        currentDay: _resolveDay(),
         gemBalance: userState.gemBalance,
         streakDays: userState.streakDays,
         onContinue: () {
@@ -81,9 +96,9 @@ class _ChallengesScreenState extends ConsumerState<ChallengesScreen> {
   }
 
   void _toggleChallenge(String challengeId) async {
-    final challengesNotifier = ref.read(challengesProvider.notifier);
-    final userState = ref.read(userStateProvider);
-    final challenge = ref.read(challengesProvider).firstWhere((c) => c.id == challengeId);
+    final challengesNotifier = ref.read(_provider.notifier);
+    final day = _resolveDay();
+    final challenge = ref.read(_provider).firstWhere((c) => c.id == challengeId);
     final wasCompleted = challenge.isCompleted;
 
     if (wasCompleted) return; // Don't untoggle
@@ -92,7 +107,7 @@ class _ChallengesScreenState extends ConsumerState<ChallengesScreen> {
 
     // Save to database
     final repository = ref.read(repositoryProvider);
-    await repository.markRitualComplete(userState.currentDay, challengeId);
+    await repository.markRitualComplete(day, challengeId);
 
     final completedCount = challengesNotifier.completedCount;
     final totalCount = challengesNotifier.totalCount;
@@ -133,32 +148,62 @@ class _ChallengesScreenState extends ConsumerState<ChallengesScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final challenges = ref.watch(challengesProvider);
+    final challenges = ref.watch(_provider);
     final userState = ref.watch(userStateProvider);
-    final challengesNotifier = ref.watch(challengesProvider.notifier);
+    final challengesNotifier = ref.watch(_provider.notifier);
+    final day = widget.day ?? userState.currentDay;
+    final isToday = day == userState.currentDay;
 
-    if (challenges.isEmpty) {
-      return const Center(
-        child: CircularProgressIndicator(),
-      );
+    final Widget body = challenges.isEmpty
+        ? const Center(child: CircularProgressIndicator())
+        : _buildContent(challenges, challengesNotifier, day, isToday);
+
+    if (!_isSpecificDay) {
+      // Embedded as the Challenges tab inside HomeScreen's own Scaffold.
+      return Container(color: WommiColors.bg, child: body);
     }
 
-    final phaseName = ChallengeTemplates.getPhaseNameForDay(userState.currentDay);
+    return Scaffold(
+      backgroundColor: WommiColors.bg,
+      appBar: AppBar(
+        backgroundColor: WommiColors.bg,
+        elevation: 0,
+        leading: const BackButton(),
+        title: Text(
+          'Day $day',
+          style: GoogleFonts.unbounded(
+            fontSize: 16,
+            fontWeight: FontWeight.w700,
+            color: WommiColors.ink,
+          ),
+        ),
+      ),
+      body: SafeArea(child: body),
+    );
+  }
+
+  Widget _buildContent(
+    List<Challenge> challenges,
+    ChallengesNotifier challengesNotifier,
+    int day,
+    bool isToday,
+  ) {
+    final phaseName = ChallengeTemplates.getPhaseNameForDay(day);
     final completedCount = challengesNotifier.completedCount;
     final totalCount = challengesNotifier.totalCount;
 
-    return Container(
-      color: WommiColors.bg,
-      child: Column(
-        children: [
-          // Header
+    return Column(
+      children: [
+        // Header - the standalone screen already shows "Day N" in its app
+        // bar, so skip the redundant eyebrow/title there.
+        if (!_isSpecificDay)
           Padding(
             padding: const EdgeInsets.fromLTRB(22, 20, 22, 4),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'CYCLE DAY ${userState.currentDay}',
+                  'CYCLE DAY $day',
                   style: GoogleFonts.spaceMono(
                     fontSize: 10.5,
                     letterSpacing: 1.68,
@@ -178,165 +223,166 @@ class _ChallengesScreenState extends ConsumerState<ChallengesScreen> {
               ],
             ),
           ),
-          const SizedBox(height: 18),
-          // Progress ring hero
-          Padding(
-            padding: const EdgeInsets.fromLTRB(22, 0, 22, 6),
-            child: Row(
-              children: [
-                // Big progress ring
-                Container(
-                  width: 74,
-                  height: 74,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: SweepGradient(
-                      startAngle: -1.5708,
-                      colors: [
-                        WommiColors.cyan,
-                        WommiColors.cyan,
-                        WommiColors.line,
-                        WommiColors.line,
-                      ],
-                      stops: [
-                        0.0,
-                        completedCount / totalCount,
-                        completedCount / totalCount,
-                        1.0,
-                      ],
-                    ),
+        const SizedBox(height: 18),
+        // Progress ring hero
+        Padding(
+          padding: const EdgeInsets.fromLTRB(22, 0, 22, 6),
+          child: Row(
+            children: [
+              // Big progress ring
+              Container(
+                width: 74,
+                height: 74,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: SweepGradient(
+                    startAngle: -1.5708,
+                    colors: [
+                      WommiColors.cyan,
+                      WommiColors.cyan,
+                      WommiColors.line,
+                      WommiColors.line,
+                    ],
+                    stops: [
+                      0.0,
+                      completedCount / totalCount,
+                      completedCount / totalCount,
+                      1.0,
+                    ],
                   ),
-                  child: Center(
-                    child: Container(
-                      width: 58,
-                      height: 58,
-                      decoration: const BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: Colors.white,
-                      ),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            '$completedCount/$totalCount',
-                            style: GoogleFonts.unbounded(
-                              fontSize: 17,
-                              fontWeight: FontWeight.w800,
-                              color: WommiColors.ink,
-                            ),
+                ),
+                child: Center(
+                  child: Container(
+                    width: 58,
+                    height: 58,
+                    decoration: const BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Colors.white,
+                    ),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          '$completedCount/$totalCount',
+                          style: GoogleFonts.unbounded(
+                            fontSize: 17,
+                            fontWeight: FontWeight.w800,
+                            color: WommiColors.ink,
                           ),
-                          Text(
-                            'TODAY',
-                            style: GoogleFonts.spaceMono(
-                              fontSize: 8,
-                              color: WommiColors.inkDim,
-                              letterSpacing: 0.4,
-                            ),
+                        ),
+                        Text(
+                          isToday ? 'TODAY' : 'DAY $day',
+                          style: GoogleFonts.spaceMono(
+                            fontSize: 8,
+                            color: WommiColors.inkDim,
+                            letterSpacing: 0.4,
                           ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
-                const SizedBox(width: 16),
-                // Caption
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+              ),
+              const SizedBox(width: 16),
+              // Caption
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      completedCount == totalCount
+                          ? 'All done!'
+                          : completedCount > 0
+                              ? 'Almost there'
+                              : 'Start your rituals',
+                      style: GoogleFonts.unbounded(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                        color: WommiColors.ink,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      completedCount == totalCount
+                          ? 'You\'ve completed all rituals. Amazing work!'
+                          : 'Complete ${totalCount - completedCount} more ${totalCount - completedCount == 1 ? 'ritual' : 'rituals'} to earn your gem.',
+                      style: GoogleFonts.inter(
+                        fontSize: 12,
+                        color: WommiColors.inkDim,
+                        height: 1.5,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 12),
+        // Current challenge (only show next uncompleted)
+        Expanded(
+          child: Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(22, 0, 22, 16),
+              child: () {
+                // Find next uncompleted challenge or show completion message
+                final nextChallenge = challenges.firstWhere(
+                  (c) => !c.isCompleted,
+                  orElse: () => challenges.last,
+                );
+
+                if (completedCount == totalCount) {
+                  // All done - show completion message
+                  return Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Text(
-                        completedCount == totalCount
-                            ? 'All done for today!'
-                            : completedCount > 0
-                                ? 'Almost there'
-                                : 'Start your rituals',
+                        '✨',
+                        style: TextStyle(fontSize: 64),
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        'All rituals complete!',
                         style: GoogleFonts.unbounded(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w700,
+                          fontSize: 20,
+                          fontWeight: FontWeight.w800,
                           color: WommiColors.ink,
                         ),
                       ),
-                      const SizedBox(height: 3),
+                      const SizedBox(height: 8),
                       Text(
-                        completedCount == totalCount
-                            ? 'You\'ve completed all rituals. Amazing work!'
-                            : 'Complete ${totalCount - completedCount} more ${totalCount - completedCount == 1 ? 'ritual' : 'rituals'} to earn your gem.',
+                        isToday
+                            ? 'Come back tomorrow for new rituals'
+                            : 'Nice work catching up on this day',
+                        textAlign: TextAlign.center,
                         style: GoogleFonts.inter(
-                          fontSize: 12,
+                          fontSize: 14,
                           color: WommiColors.inkDim,
                           height: 1.5,
                         ),
                       ),
                     ],
-                  ),
-                ),
-              ],
+                  );
+                }
+
+                return ChallengeCard(
+                  challenge: nextChallenge,
+                  onToggle: () => _toggleChallenge(nextChallenge.id),
+                );
+              }(),
             ),
           ),
-          const SizedBox(height: 12),
-          // Current challenge (only show next uncompleted)
-          Expanded(
-            child: Center(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(22, 0, 22, 16),
-                child: () {
-                  // Find next uncompleted challenge or show completion message
-                  final nextChallenge = challenges.firstWhere(
-                    (c) => !c.isCompleted,
-                    orElse: () => challenges.last,
-                  );
-
-                  if (completedCount == totalCount) {
-                    // All done - show completion message
-                    return Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          '✨',
-                          style: TextStyle(fontSize: 64),
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          'All rituals complete!',
-                          style: GoogleFonts.unbounded(
-                            fontSize: 20,
-                            fontWeight: FontWeight.w800,
-                            color: WommiColors.ink,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Come back tomorrow for new rituals',
-                          textAlign: TextAlign.center,
-                          style: GoogleFonts.inter(
-                            fontSize: 14,
-                            color: WommiColors.inkDim,
-                            height: 1.5,
-                          ),
-                        ),
-                      ],
-                    );
-                  }
-
-                  return _ChallengeCard(
-                    challenge: nextChallenge,
-                    onToggle: () => _toggleChallenge(nextChallenge.id),
-                  );
-                }(),
-              ),
-            ),
-          ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
 
-class _ChallengeCard extends StatelessWidget {
+class ChallengeCard extends StatelessWidget {
   final Challenge challenge;
   final VoidCallback onToggle;
 
-  const _ChallengeCard({
+  const ChallengeCard({
     required this.challenge,
     required this.onToggle,
   });

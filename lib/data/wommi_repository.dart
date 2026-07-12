@@ -55,6 +55,10 @@ class WommiRepository {
     return _db.hasCharmForDay(cycleDay);
   }
 
+  Future<Set<int>> getDaysWithCharms() {
+    return _db.getDaysWithCharms();
+  }
+
   Future<List<CharmsEarnedData>> getAllCharms() {
     return _db.getCharmsForCycle();
   }

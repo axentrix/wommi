@@ -38,6 +38,14 @@ class UserStateNotifier extends StateNotifier<UserState> {
     state = state.copyWith(currentDay: currentDay, gemBalance: gemBalance);
   }
 
+  /// Restores which cycle days already have their missions completed, so
+  /// the journey map's checkmarks survive a reload instead of only living
+  /// in memory for the current session.
+  void hydrateCompletedDays(Set<int> days) {
+    if (days.isEmpty) return;
+    state = state.copyWith(completedDays: days.toList());
+  }
+
   void addGems(int amount) {
     state = state.copyWith(gemBalance: state.gemBalance + amount);
   }

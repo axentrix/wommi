@@ -146,6 +146,14 @@ class WommiDatabase extends _$WommiDatabase {
     await delete(charmsEarned).go();
   }
 
+  /// Which cycle days already have their charm earned - used to mark days
+  /// as completed on the journey map, so that persists across reloads
+  /// instead of only living in in-memory UserState.completedDays.
+  Future<Set<int>> getDaysWithCharms() async {
+    final rows = await select(charmsEarned).get();
+    return rows.map((r) => r.cycleDay).toSet();
+  }
+
   // User Profile queries
   Future<UserProfile?> getUserProfile() async {
     return await (select(userProfiles)
