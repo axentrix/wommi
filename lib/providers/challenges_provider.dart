@@ -49,3 +49,12 @@ final challengesProvider =
     StateNotifierProvider<ChallengesNotifier, List<Challenge>>((ref) {
   return ChallengesNotifier();
 });
+
+/// Separate instance for completing a specific *past* cycle day's missions
+/// from the journey map. Keeping it distinct from [challengesProvider]
+/// means opening a past day never overwrites today's in-progress state on
+/// the Challenges tab.
+final dayChallengesProvider =
+    StateNotifierProvider<ChallengesNotifier, List<Challenge>>((ref) {
+  return ChallengesNotifier();
+});

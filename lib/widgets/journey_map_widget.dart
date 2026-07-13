@@ -3,8 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../theme.dart';
 import '../providers/user_state_provider.dart';
-import '../providers/onboarding_provider.dart';
-import 'cycle_day_info_dialog.dart';
+import '../screens/challenges_screen.dart';
 
 /// Journey map with 35 cycle day positions
 /// This is a placeholder that will be replaced with Rive animation
@@ -57,9 +56,7 @@ class JourneyMapWidget extends ConsumerWidget {
       left: position.dx - 25,
       top: position.dy - 25,
       child: GestureDetector(
-        onTap: isClickable
-            ? () => _showCycleDayInfo(context, ref, day, isCompleted)
-            : null,
+        onTap: isClickable ? () => _openDayChallenges(context, day) : null,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -165,32 +162,13 @@ class JourneyMapWidget extends ConsumerWidget {
     );
   }
 
-  void _showCycleDayInfo(
-      BuildContext context, WidgetRef ref, int day, bool isCompleted) {
-    final onboardingData = ref.read(onboardingProvider);
-    final userState = ref.read(userStateProvider);
-    final isCurrent = day == userState.currentDay;
-
-    showDialog(
-      context: context,
-      builder: (context) => CycleDayInfoDialog(
-        day: day,
-        conceptionStatus: onboardingData.conceptionStatus,
-        isCompleted: isCompleted,
-        isCurrent: isCurrent,
-        onCompleteMissions: () {
-          // Mark this day as completed and award gems
-          ref.read(userStateProvider.notifier).completeDay(day);
-          // Award gems for completing the day (e.g., 10 gems per day)
-          ref.read(userStateProvider.notifier).addGems(10);
-          Navigator.pop(context);
-
-          // If this is the current day, advance to next day
-          if (isCurrent) {
-            ref.read(userStateProvider.notifier).advanceDay();
-          }
-        },
-      ),
+  void _openDayChallenges(BuildContext context, int day) {
+    // Same 3 daily missions/rituals as the Challenges tab, just scoped to
+    // this specific day and pushed as its own screen with a back button.
+    // Awards exactly 1 gem, same as any other day, only once all 3 are
+    // complete.
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (context) => ChallengesScreen(day: day)),
     );
   }
 

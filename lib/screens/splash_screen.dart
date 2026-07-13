@@ -130,6 +130,10 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
     print('[Splash] Restoring active journey: day $currentDay, $gemBalance gems');
     notifier.hydrateActiveJourney(currentDay: currentDay, gemBalance: gemBalance);
 
+    final completedDays = await repository.getDaysWithCharms();
+    if (!mounted) return false;
+    notifier.hydrateCompletedDays(completedDays);
+
     return true;
   }
 

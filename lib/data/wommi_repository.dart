@@ -55,6 +55,10 @@ class WommiRepository {
     return _db.hasCharmForDay(cycleDay);
   }
 
+  Future<Set<int>> getDaysWithCharms() {
+    return _db.getDaysWithCharms();
+  }
+
   Future<List<CharmsEarnedData>> getAllCharms() {
     return _db.getCharmsForCycle();
   }
@@ -109,6 +113,11 @@ class WommiRepository {
   Future<void> clearJourneyProgress() async {
     await _db.clearAllRitualCompletions();
     await _db.clearAllCharms();
+  }
+
+  /// Wipes every table, regardless of profile. Testing only.
+  Future<void> resetEverything() {
+    return _db.deleteEverything();
   }
 
   // Utility

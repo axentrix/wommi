@@ -195,6 +195,10 @@ class _ProfileCollectionDialogState extends ConsumerState<ProfileCollectionDialo
             print('[ProfileDialog] 🔄 Restoring active journey: day $currentDay, $gemBalance gems');
             notifier.hydrateActiveJourney(currentDay: currentDay, gemBalance: gemBalance);
 
+            final completedDays = await repository.getDaysWithCharms();
+            if (!mounted) return;
+            notifier.hydrateCompletedDays(completedDays);
+
             // Save to localStorage backup (survives IndexedDB clearing)
             await LocalBackupStorage.saveUserProfile(
               profileId: existingProfile.id,
