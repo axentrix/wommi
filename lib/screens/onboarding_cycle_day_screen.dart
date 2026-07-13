@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../theme.dart';
+import '../models/onboarding_state.dart';
 import '../widgets/number_scroll_picker.dart';
 import '../providers/onboarding_provider.dart';
 
@@ -11,6 +12,7 @@ class OnboardingCycleDayScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final onboardingData = ref.watch(onboardingProvider);
     final selectedDay = onboardingData.cycleDay;
+    final disclosure = onboardingData.cycleDayDisclosure;
 
     return Scaffold(
       backgroundColor: WommiColors.bg,
@@ -115,13 +117,19 @@ class OnboardingCycleDayScreen extends ConsumerWidget {
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            NumberScrollPicker(
-                              minValue: 1,
-                              maxValue: 35,
-                              initialValue: selectedDay,
-                              onChanged: (value) {
-                                ref.read(onboardingProvider.notifier).setCycleDay(value);
-                              },
+                            Opacity(
+                              opacity: disclosure == null ? 1.0 : 0.35,
+                              child: IgnorePointer(
+                                ignoring: disclosure != null,
+                                child: NumberScrollPicker(
+                                  minValue: 1,
+                                  maxValue: 35,
+                                  initialValue: selectedDay,
+                                  onChanged: (value) {
+                                    ref.read(onboardingProvider.notifier).setCycleDay(value);
+                                  },
+                                ),
+                              ),
                             ),
                             const SizedBox(height: 8),
                             Text(
@@ -133,6 +141,27 @@ class OnboardingCycleDayScreen extends ConsumerWidget {
                                 color: WommiColors.inkDim,
                                 fontWeight: FontWeight.w400,
                               ),
+                            ),
+                            const SizedBox(height: 20),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                _DisclosureChip(
+                                  label: CycleDayDisclosure.preferNotToSay.label,
+                                  isSelected: disclosure == CycleDayDisclosure.preferNotToSay,
+                                  onTap: () => ref
+                                      .read(onboardingProvider.notifier)
+                                      .toggleCycleDayDisclosure(CycleDayDisclosure.preferNotToSay),
+                                ),
+                                const SizedBox(width: 10),
+                                _DisclosureChip(
+                                  label: CycleDayDisclosure.irrelevant.label,
+                                  isSelected: disclosure == CycleDayDisclosure.irrelevant,
+                                  onTap: () => ref
+                                      .read(onboardingProvider.notifier)
+                                      .toggleCycleDayDisclosure(CycleDayDisclosure.irrelevant),
+                                ),
+                              ],
                             ),
                           ],
                         ),
@@ -174,6 +203,45 @@ class OnboardingCycleDayScreen extends ConsumerWidget {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _DisclosureChip extends StatelessWidget {
+  final String label;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  const _DisclosureChip({
+    required this.label,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        decoration: BoxDecoration(
+          color: isSelected ? WommiColors.cyan.withOpacity(0.1) : Colors.white,
+          border: Border.all(
+            color: isSelected ? WommiColors.cyan : WommiColors.line,
+            width: 1.5,
+          ),
+          borderRadius: BorderRadius.circular(100),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontFamily: 'Inter',
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            color: isSelected ? WommiColors.cyanDark : WommiColors.inkDim,
+          ),
         ),
       ),
     );

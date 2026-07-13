@@ -154,14 +154,14 @@ class OnboardingConceptionScreen extends ConsumerWidget {
                               // is what calculateCurrentCycleDay() uses to
                               // restore the right day on a later login.
                               startDate: DateTime.now()
-                                  .subtract(Duration(days: onboardingData.cycleDay - 1)),
+                                  .subtract(Duration(days: onboardingData.effectiveCycleDay - 1)),
                               cycleLength: 28,
                               ttcStatus: onboardingData.conceptionStatus,
                             ).then((_) {
                               // Initialize user state and go to home
                               ref
                                   .read(userStateProvider.notifier)
-                                  .initializeFromOnboarding(onboardingData.cycleDay);
+                                  .initializeFromOnboarding(onboardingData.effectiveCycleDay);
 
                               Navigator.of(context).pushNamedAndRemoveUntil(
                                 '/home',
@@ -172,7 +172,7 @@ class OnboardingConceptionScreen extends ConsumerWidget {
                               // Still navigate even if save fails
                               ref
                                   .read(userStateProvider.notifier)
-                                  .initializeFromOnboarding(onboardingData.cycleDay);
+                                  .initializeFromOnboarding(onboardingData.effectiveCycleDay);
 
                               Navigator.of(context).pushNamedAndRemoveUntil(
                                 '/home',
