@@ -459,8 +459,25 @@ class $RitualCompletionsTable extends RitualCompletions
     requiredDuringInsert: false,
     defaultValue: currentDateAndTime,
   );
+  static const VerificationMeta _cycleProfileIdMeta = const VerificationMeta(
+    'cycleProfileId',
+  );
   @override
-  List<GeneratedColumn> get $columns => [id, cycleDay, ritualId, completedAt];
+  late final GeneratedColumn<int> cycleProfileId = GeneratedColumn<int>(
+    'cycle_profile_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    cycleDay,
+    ritualId,
+    completedAt,
+    cycleProfileId,
+  ];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -501,6 +518,15 @@ class $RitualCompletionsTable extends RitualCompletions
         ),
       );
     }
+    if (data.containsKey('cycle_profile_id')) {
+      context.handle(
+        _cycleProfileIdMeta,
+        cycleProfileId.isAcceptableOrUnknown(
+          data['cycle_profile_id']!,
+          _cycleProfileIdMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -526,6 +552,10 @@ class $RitualCompletionsTable extends RitualCompletions
         DriftSqlType.dateTime,
         data['${effectivePrefix}completed_at'],
       )!,
+      cycleProfileId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}cycle_profile_id'],
+      ),
     );
   }
 
@@ -541,11 +571,13 @@ class RitualCompletion extends DataClass
   final int cycleDay;
   final String ritualId;
   final DateTime completedAt;
+  final int? cycleProfileId;
   const RitualCompletion({
     required this.id,
     required this.cycleDay,
     required this.ritualId,
     required this.completedAt,
+    this.cycleProfileId,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -554,6 +586,9 @@ class RitualCompletion extends DataClass
     map['cycle_day'] = Variable<int>(cycleDay);
     map['ritual_id'] = Variable<String>(ritualId);
     map['completed_at'] = Variable<DateTime>(completedAt);
+    if (!nullToAbsent || cycleProfileId != null) {
+      map['cycle_profile_id'] = Variable<int>(cycleProfileId);
+    }
     return map;
   }
 
@@ -563,6 +598,9 @@ class RitualCompletion extends DataClass
       cycleDay: Value(cycleDay),
       ritualId: Value(ritualId),
       completedAt: Value(completedAt),
+      cycleProfileId: cycleProfileId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(cycleProfileId),
     );
   }
 
@@ -576,6 +614,7 @@ class RitualCompletion extends DataClass
       cycleDay: serializer.fromJson<int>(json['cycleDay']),
       ritualId: serializer.fromJson<String>(json['ritualId']),
       completedAt: serializer.fromJson<DateTime>(json['completedAt']),
+      cycleProfileId: serializer.fromJson<int?>(json['cycleProfileId']),
     );
   }
   @override
@@ -586,6 +625,7 @@ class RitualCompletion extends DataClass
       'cycleDay': serializer.toJson<int>(cycleDay),
       'ritualId': serializer.toJson<String>(ritualId),
       'completedAt': serializer.toJson<DateTime>(completedAt),
+      'cycleProfileId': serializer.toJson<int?>(cycleProfileId),
     };
   }
 
@@ -594,11 +634,15 @@ class RitualCompletion extends DataClass
     int? cycleDay,
     String? ritualId,
     DateTime? completedAt,
+    Value<int?> cycleProfileId = const Value.absent(),
   }) => RitualCompletion(
     id: id ?? this.id,
     cycleDay: cycleDay ?? this.cycleDay,
     ritualId: ritualId ?? this.ritualId,
     completedAt: completedAt ?? this.completedAt,
+    cycleProfileId: cycleProfileId.present
+        ? cycleProfileId.value
+        : this.cycleProfileId,
   );
   RitualCompletion copyWithCompanion(RitualCompletionsCompanion data) {
     return RitualCompletion(
@@ -608,6 +652,9 @@ class RitualCompletion extends DataClass
       completedAt: data.completedAt.present
           ? data.completedAt.value
           : this.completedAt,
+      cycleProfileId: data.cycleProfileId.present
+          ? data.cycleProfileId.value
+          : this.cycleProfileId,
     );
   }
 
@@ -617,13 +664,15 @@ class RitualCompletion extends DataClass
           ..write('id: $id, ')
           ..write('cycleDay: $cycleDay, ')
           ..write('ritualId: $ritualId, ')
-          ..write('completedAt: $completedAt')
+          ..write('completedAt: $completedAt, ')
+          ..write('cycleProfileId: $cycleProfileId')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(id, cycleDay, ritualId, completedAt);
+  int get hashCode =>
+      Object.hash(id, cycleDay, ritualId, completedAt, cycleProfileId);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -631,7 +680,8 @@ class RitualCompletion extends DataClass
           other.id == this.id &&
           other.cycleDay == this.cycleDay &&
           other.ritualId == this.ritualId &&
-          other.completedAt == this.completedAt);
+          other.completedAt == this.completedAt &&
+          other.cycleProfileId == this.cycleProfileId);
 }
 
 class RitualCompletionsCompanion extends UpdateCompanion<RitualCompletion> {
@@ -639,17 +689,20 @@ class RitualCompletionsCompanion extends UpdateCompanion<RitualCompletion> {
   final Value<int> cycleDay;
   final Value<String> ritualId;
   final Value<DateTime> completedAt;
+  final Value<int?> cycleProfileId;
   const RitualCompletionsCompanion({
     this.id = const Value.absent(),
     this.cycleDay = const Value.absent(),
     this.ritualId = const Value.absent(),
     this.completedAt = const Value.absent(),
+    this.cycleProfileId = const Value.absent(),
   });
   RitualCompletionsCompanion.insert({
     this.id = const Value.absent(),
     required int cycleDay,
     required String ritualId,
     this.completedAt = const Value.absent(),
+    this.cycleProfileId = const Value.absent(),
   }) : cycleDay = Value(cycleDay),
        ritualId = Value(ritualId);
   static Insertable<RitualCompletion> custom({
@@ -657,12 +710,14 @@ class RitualCompletionsCompanion extends UpdateCompanion<RitualCompletion> {
     Expression<int>? cycleDay,
     Expression<String>? ritualId,
     Expression<DateTime>? completedAt,
+    Expression<int>? cycleProfileId,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
       if (cycleDay != null) 'cycle_day': cycleDay,
       if (ritualId != null) 'ritual_id': ritualId,
       if (completedAt != null) 'completed_at': completedAt,
+      if (cycleProfileId != null) 'cycle_profile_id': cycleProfileId,
     });
   }
 
@@ -671,12 +726,14 @@ class RitualCompletionsCompanion extends UpdateCompanion<RitualCompletion> {
     Value<int>? cycleDay,
     Value<String>? ritualId,
     Value<DateTime>? completedAt,
+    Value<int?>? cycleProfileId,
   }) {
     return RitualCompletionsCompanion(
       id: id ?? this.id,
       cycleDay: cycleDay ?? this.cycleDay,
       ritualId: ritualId ?? this.ritualId,
       completedAt: completedAt ?? this.completedAt,
+      cycleProfileId: cycleProfileId ?? this.cycleProfileId,
     );
   }
 
@@ -695,6 +752,9 @@ class RitualCompletionsCompanion extends UpdateCompanion<RitualCompletion> {
     if (completedAt.present) {
       map['completed_at'] = Variable<DateTime>(completedAt.value);
     }
+    if (cycleProfileId.present) {
+      map['cycle_profile_id'] = Variable<int>(cycleProfileId.value);
+    }
     return map;
   }
 
@@ -704,7 +764,8 @@ class RitualCompletionsCompanion extends UpdateCompanion<RitualCompletion> {
           ..write('id: $id, ')
           ..write('cycleDay: $cycleDay, ')
           ..write('ritualId: $ritualId, ')
-          ..write('completedAt: $completedAt')
+          ..write('completedAt: $completedAt, ')
+          ..write('cycleProfileId: $cycleProfileId')
           ..write(')'))
         .toString();
   }
@@ -763,8 +824,25 @@ class $CharmsEarnedTable extends CharmsEarned
     requiredDuringInsert: false,
     defaultValue: currentDateAndTime,
   );
+  static const VerificationMeta _cycleProfileIdMeta = const VerificationMeta(
+    'cycleProfileId',
+  );
   @override
-  List<GeneratedColumn> get $columns => [id, cycleDay, charmName, earnedAt];
+  late final GeneratedColumn<int> cycleProfileId = GeneratedColumn<int>(
+    'cycle_profile_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    cycleDay,
+    charmName,
+    earnedAt,
+    cycleProfileId,
+  ];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -802,6 +880,15 @@ class $CharmsEarnedTable extends CharmsEarned
         earnedAt.isAcceptableOrUnknown(data['earned_at']!, _earnedAtMeta),
       );
     }
+    if (data.containsKey('cycle_profile_id')) {
+      context.handle(
+        _cycleProfileIdMeta,
+        cycleProfileId.isAcceptableOrUnknown(
+          data['cycle_profile_id']!,
+          _cycleProfileIdMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -827,6 +914,10 @@ class $CharmsEarnedTable extends CharmsEarned
         DriftSqlType.dateTime,
         data['${effectivePrefix}earned_at'],
       )!,
+      cycleProfileId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}cycle_profile_id'],
+      ),
     );
   }
 
@@ -842,11 +933,13 @@ class CharmsEarnedData extends DataClass
   final int cycleDay;
   final String charmName;
   final DateTime earnedAt;
+  final int? cycleProfileId;
   const CharmsEarnedData({
     required this.id,
     required this.cycleDay,
     required this.charmName,
     required this.earnedAt,
+    this.cycleProfileId,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -855,6 +948,9 @@ class CharmsEarnedData extends DataClass
     map['cycle_day'] = Variable<int>(cycleDay);
     map['charm_name'] = Variable<String>(charmName);
     map['earned_at'] = Variable<DateTime>(earnedAt);
+    if (!nullToAbsent || cycleProfileId != null) {
+      map['cycle_profile_id'] = Variable<int>(cycleProfileId);
+    }
     return map;
   }
 
@@ -864,6 +960,9 @@ class CharmsEarnedData extends DataClass
       cycleDay: Value(cycleDay),
       charmName: Value(charmName),
       earnedAt: Value(earnedAt),
+      cycleProfileId: cycleProfileId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(cycleProfileId),
     );
   }
 
@@ -877,6 +976,7 @@ class CharmsEarnedData extends DataClass
       cycleDay: serializer.fromJson<int>(json['cycleDay']),
       charmName: serializer.fromJson<String>(json['charmName']),
       earnedAt: serializer.fromJson<DateTime>(json['earnedAt']),
+      cycleProfileId: serializer.fromJson<int?>(json['cycleProfileId']),
     );
   }
   @override
@@ -887,6 +987,7 @@ class CharmsEarnedData extends DataClass
       'cycleDay': serializer.toJson<int>(cycleDay),
       'charmName': serializer.toJson<String>(charmName),
       'earnedAt': serializer.toJson<DateTime>(earnedAt),
+      'cycleProfileId': serializer.toJson<int?>(cycleProfileId),
     };
   }
 
@@ -895,11 +996,15 @@ class CharmsEarnedData extends DataClass
     int? cycleDay,
     String? charmName,
     DateTime? earnedAt,
+    Value<int?> cycleProfileId = const Value.absent(),
   }) => CharmsEarnedData(
     id: id ?? this.id,
     cycleDay: cycleDay ?? this.cycleDay,
     charmName: charmName ?? this.charmName,
     earnedAt: earnedAt ?? this.earnedAt,
+    cycleProfileId: cycleProfileId.present
+        ? cycleProfileId.value
+        : this.cycleProfileId,
   );
   CharmsEarnedData copyWithCompanion(CharmsEarnedCompanion data) {
     return CharmsEarnedData(
@@ -907,6 +1012,9 @@ class CharmsEarnedData extends DataClass
       cycleDay: data.cycleDay.present ? data.cycleDay.value : this.cycleDay,
       charmName: data.charmName.present ? data.charmName.value : this.charmName,
       earnedAt: data.earnedAt.present ? data.earnedAt.value : this.earnedAt,
+      cycleProfileId: data.cycleProfileId.present
+          ? data.cycleProfileId.value
+          : this.cycleProfileId,
     );
   }
 
@@ -916,13 +1024,15 @@ class CharmsEarnedData extends DataClass
           ..write('id: $id, ')
           ..write('cycleDay: $cycleDay, ')
           ..write('charmName: $charmName, ')
-          ..write('earnedAt: $earnedAt')
+          ..write('earnedAt: $earnedAt, ')
+          ..write('cycleProfileId: $cycleProfileId')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(id, cycleDay, charmName, earnedAt);
+  int get hashCode =>
+      Object.hash(id, cycleDay, charmName, earnedAt, cycleProfileId);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -930,7 +1040,8 @@ class CharmsEarnedData extends DataClass
           other.id == this.id &&
           other.cycleDay == this.cycleDay &&
           other.charmName == this.charmName &&
-          other.earnedAt == this.earnedAt);
+          other.earnedAt == this.earnedAt &&
+          other.cycleProfileId == this.cycleProfileId);
 }
 
 class CharmsEarnedCompanion extends UpdateCompanion<CharmsEarnedData> {
@@ -938,17 +1049,20 @@ class CharmsEarnedCompanion extends UpdateCompanion<CharmsEarnedData> {
   final Value<int> cycleDay;
   final Value<String> charmName;
   final Value<DateTime> earnedAt;
+  final Value<int?> cycleProfileId;
   const CharmsEarnedCompanion({
     this.id = const Value.absent(),
     this.cycleDay = const Value.absent(),
     this.charmName = const Value.absent(),
     this.earnedAt = const Value.absent(),
+    this.cycleProfileId = const Value.absent(),
   });
   CharmsEarnedCompanion.insert({
     this.id = const Value.absent(),
     required int cycleDay,
     required String charmName,
     this.earnedAt = const Value.absent(),
+    this.cycleProfileId = const Value.absent(),
   }) : cycleDay = Value(cycleDay),
        charmName = Value(charmName);
   static Insertable<CharmsEarnedData> custom({
@@ -956,12 +1070,14 @@ class CharmsEarnedCompanion extends UpdateCompanion<CharmsEarnedData> {
     Expression<int>? cycleDay,
     Expression<String>? charmName,
     Expression<DateTime>? earnedAt,
+    Expression<int>? cycleProfileId,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
       if (cycleDay != null) 'cycle_day': cycleDay,
       if (charmName != null) 'charm_name': charmName,
       if (earnedAt != null) 'earned_at': earnedAt,
+      if (cycleProfileId != null) 'cycle_profile_id': cycleProfileId,
     });
   }
 
@@ -970,12 +1086,14 @@ class CharmsEarnedCompanion extends UpdateCompanion<CharmsEarnedData> {
     Value<int>? cycleDay,
     Value<String>? charmName,
     Value<DateTime>? earnedAt,
+    Value<int?>? cycleProfileId,
   }) {
     return CharmsEarnedCompanion(
       id: id ?? this.id,
       cycleDay: cycleDay ?? this.cycleDay,
       charmName: charmName ?? this.charmName,
       earnedAt: earnedAt ?? this.earnedAt,
+      cycleProfileId: cycleProfileId ?? this.cycleProfileId,
     );
   }
 
@@ -994,6 +1112,9 @@ class CharmsEarnedCompanion extends UpdateCompanion<CharmsEarnedData> {
     if (earnedAt.present) {
       map['earned_at'] = Variable<DateTime>(earnedAt.value);
     }
+    if (cycleProfileId.present) {
+      map['cycle_profile_id'] = Variable<int>(cycleProfileId.value);
+    }
     return map;
   }
 
@@ -1003,7 +1124,8 @@ class CharmsEarnedCompanion extends UpdateCompanion<CharmsEarnedData> {
           ..write('id: $id, ')
           ..write('cycleDay: $cycleDay, ')
           ..write('charmName: $charmName, ')
-          ..write('earnedAt: $earnedAt')
+          ..write('earnedAt: $earnedAt, ')
+          ..write('cycleProfileId: $cycleProfileId')
           ..write(')'))
         .toString();
   }
@@ -2019,6 +2141,7 @@ typedef $$RitualCompletionsTableCreateCompanionBuilder =
       required int cycleDay,
       required String ritualId,
       Value<DateTime> completedAt,
+      Value<int?> cycleProfileId,
     });
 typedef $$RitualCompletionsTableUpdateCompanionBuilder =
     RitualCompletionsCompanion Function({
@@ -2026,6 +2149,7 @@ typedef $$RitualCompletionsTableUpdateCompanionBuilder =
       Value<int> cycleDay,
       Value<String> ritualId,
       Value<DateTime> completedAt,
+      Value<int?> cycleProfileId,
     });
 
 class $$RitualCompletionsTableFilterComposer
@@ -2054,6 +2178,11 @@ class $$RitualCompletionsTableFilterComposer
 
   ColumnFilters<DateTime> get completedAt => $composableBuilder(
     column: $table.completedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get cycleProfileId => $composableBuilder(
+    column: $table.cycleProfileId,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -2086,6 +2215,11 @@ class $$RitualCompletionsTableOrderingComposer
     column: $table.completedAt,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<int> get cycleProfileId => $composableBuilder(
+    column: $table.cycleProfileId,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$RitualCompletionsTableAnnotationComposer
@@ -2108,6 +2242,11 @@ class $$RitualCompletionsTableAnnotationComposer
 
   GeneratedColumn<DateTime> get completedAt => $composableBuilder(
     column: $table.completedAt,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get cycleProfileId => $composableBuilder(
+    column: $table.cycleProfileId,
     builder: (column) => column,
   );
 }
@@ -2156,11 +2295,13 @@ class $$RitualCompletionsTableTableManager
                 Value<int> cycleDay = const Value.absent(),
                 Value<String> ritualId = const Value.absent(),
                 Value<DateTime> completedAt = const Value.absent(),
+                Value<int?> cycleProfileId = const Value.absent(),
               }) => RitualCompletionsCompanion(
                 id: id,
                 cycleDay: cycleDay,
                 ritualId: ritualId,
                 completedAt: completedAt,
+                cycleProfileId: cycleProfileId,
               ),
           createCompanionCallback:
               ({
@@ -2168,11 +2309,13 @@ class $$RitualCompletionsTableTableManager
                 required int cycleDay,
                 required String ritualId,
                 Value<DateTime> completedAt = const Value.absent(),
+                Value<int?> cycleProfileId = const Value.absent(),
               }) => RitualCompletionsCompanion.insert(
                 id: id,
                 cycleDay: cycleDay,
                 ritualId: ritualId,
                 completedAt: completedAt,
+                cycleProfileId: cycleProfileId,
               ),
           withReferenceMapper: (p0) => p0
               .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
@@ -2209,6 +2352,7 @@ typedef $$CharmsEarnedTableCreateCompanionBuilder =
       required int cycleDay,
       required String charmName,
       Value<DateTime> earnedAt,
+      Value<int?> cycleProfileId,
     });
 typedef $$CharmsEarnedTableUpdateCompanionBuilder =
     CharmsEarnedCompanion Function({
@@ -2216,6 +2360,7 @@ typedef $$CharmsEarnedTableUpdateCompanionBuilder =
       Value<int> cycleDay,
       Value<String> charmName,
       Value<DateTime> earnedAt,
+      Value<int?> cycleProfileId,
     });
 
 class $$CharmsEarnedTableFilterComposer
@@ -2244,6 +2389,11 @@ class $$CharmsEarnedTableFilterComposer
 
   ColumnFilters<DateTime> get earnedAt => $composableBuilder(
     column: $table.earnedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get cycleProfileId => $composableBuilder(
+    column: $table.cycleProfileId,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -2276,6 +2426,11 @@ class $$CharmsEarnedTableOrderingComposer
     column: $table.earnedAt,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<int> get cycleProfileId => $composableBuilder(
+    column: $table.cycleProfileId,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$CharmsEarnedTableAnnotationComposer
@@ -2298,6 +2453,11 @@ class $$CharmsEarnedTableAnnotationComposer
 
   GeneratedColumn<DateTime> get earnedAt =>
       $composableBuilder(column: $table.earnedAt, builder: (column) => column);
+
+  GeneratedColumn<int> get cycleProfileId => $composableBuilder(
+    column: $table.cycleProfileId,
+    builder: (column) => column,
+  );
 }
 
 class $$CharmsEarnedTableTableManager
@@ -2339,11 +2499,13 @@ class $$CharmsEarnedTableTableManager
                 Value<int> cycleDay = const Value.absent(),
                 Value<String> charmName = const Value.absent(),
                 Value<DateTime> earnedAt = const Value.absent(),
+                Value<int?> cycleProfileId = const Value.absent(),
               }) => CharmsEarnedCompanion(
                 id: id,
                 cycleDay: cycleDay,
                 charmName: charmName,
                 earnedAt: earnedAt,
+                cycleProfileId: cycleProfileId,
               ),
           createCompanionCallback:
               ({
@@ -2351,11 +2513,13 @@ class $$CharmsEarnedTableTableManager
                 required int cycleDay,
                 required String charmName,
                 Value<DateTime> earnedAt = const Value.absent(),
+                Value<int?> cycleProfileId = const Value.absent(),
               }) => CharmsEarnedCompanion.insert(
                 id: id,
                 cycleDay: cycleDay,
                 charmName: charmName,
                 earnedAt: earnedAt,
+                cycleProfileId: cycleProfileId,
               ),
           withReferenceMapper: (p0) => p0
               .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
