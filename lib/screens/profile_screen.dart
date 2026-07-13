@@ -345,7 +345,7 @@ class ProfileScreen extends ConsumerWidget {
           final userState = ref.read(userStateProvider);
           final profileId = userState.profileId;
 
-          if (profileId != null && userState.gemBalance > 0) {
+          if (profileId != null) {
             await ref.read(repositoryProvider).saveJourneyRecord(
                   userProfileId: profileId,
                   journeyNumber: userState.currentJourneyNumber,

@@ -27,14 +27,24 @@ class WommiRepository {
     await _db.createCycleProfile(companion);
   }
 
+  /// The active journey's cycle profile id, used to scope rituals/charms so
+  /// stale rows from a previous journey (e.g. left behind by a cross-tab
+  /// write racing clearJourneyProgress()) can never surface in this one.
+  Future<int?> _currentCycleProfileId() async {
+    return (await getCurrentCycleProfile())?.id;
+  }
+
   // Rituals
   Future<List<String>> getCompletedRitualIdsForDay(int day) async {
-    final completions = await _db.getRitualCompletionsForDay(day);
+    final cycleProfileId = await _currentCycleProfileId();
+    final completions =
+        await _db.getRitualCompletionsForDay(day, cycleProfileId);
     return completions.map((c) => c.ritualId).toList();
   }
 
   Future<void> markRitualComplete(int cycleDay, String ritualId) async {
-    await _db.markRitualComplete(cycleDay, ritualId);
+    final cycleProfileId = await _currentCycleProfileId();
+    await _db.markRitualComplete(cycleDay, ritualId, cycleProfileId);
   }
 
   Future<int> getTotalRitualsCompleted() async {
@@ -43,20 +53,24 @@ class WommiRepository {
   }
 
   // Charms
-  Future<int> getCharmCount() {
-    return _db.getCharmCount();
+  Future<int> getCharmCount() async {
+    final cycleProfileId = await _currentCycleProfileId();
+    return _db.getCharmCount(cycleProfileId);
   }
 
   Future<void> awardCharm(int cycleDay, String charmName) async {
-    await _db.awardCharm(cycleDay, charmName);
+    final cycleProfileId = await _currentCycleProfileId();
+    await _db.awardCharm(cycleDay, charmName, cycleProfileId);
   }
 
-  Future<bool> hasCharmForDay(int cycleDay) {
-    return _db.hasCharmForDay(cycleDay);
+  Future<bool> hasCharmForDay(int cycleDay) async {
+    final cycleProfileId = await _currentCycleProfileId();
+    return _db.hasCharmForDay(cycleDay, cycleProfileId);
   }
 
-  Future<Set<int>> getDaysWithCharms() {
-    return _db.getDaysWithCharms();
+  Future<Set<int>> getDaysWithCharms() async {
+    final cycleProfileId = await _currentCycleProfileId();
+    return _db.getDaysWithCharms(cycleProfileId);
   }
 
   Future<List<CharmsEarnedData>> getAllCharms() {

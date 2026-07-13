@@ -18,6 +18,11 @@ class RitualCompletions extends Table {
   IntColumn get cycleDay => integer()();
   TextColumn get ritualId => text()();
   DateTimeColumn get completedAt => dateTime().withDefault(currentDateAndTime)();
+  // Ties this completion to the journey it happened in, so a row that
+  // survives clearJourneyProgress() (e.g. via a stale-tab write racing the
+  // delete) can never bleed into a later journey's map - queries always
+  // scope to the currently active cycle profile.
+  IntColumn get cycleProfileId => integer().nullable()();
 }
 
 class CharmsEarned extends Table {
@@ -25,6 +30,8 @@ class CharmsEarned extends Table {
   IntColumn get cycleDay => integer()();
   TextColumn get charmName => text()();
   DateTimeColumn get earnedAt => dateTime().withDefault(currentDateAndTime)();
+  // See RitualCompletions.cycleProfileId.
+  IntColumn get cycleProfileId => integer().nullable()();
 }
 
 class UserProfiles extends Table {
@@ -63,7 +70,7 @@ class WommiDatabase extends _$WommiDatabase {
   WommiDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 4;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -75,13 +82,37 @@ class WommiDatabase extends _$WommiDatabase {
           if (from < 3) {
             await m.createTable(journeyRecords);
           }
+          if (from < 4) {
+            await m.addColumn(ritualCompletions, ritualCompletions.cycleProfileId);
+            await m.addColumn(charmsEarned, charmsEarned.cycleProfileId);
+            // Backfill: pre-migration rows weren't scoped to a journey at
+            // all, so attribute them to whatever is currently the active
+            // cycle profile - that's what the app already treats as "the
+            // current journey" today, so nothing visible changes.
+            final currentProfile = await getCurrentCycleProfile();
+            if (currentProfile != null) {
+              await update(ritualCompletions).write(
+                RitualCompletionsCompanion(
+                  cycleProfileId: Value(currentProfile.id),
+                ),
+              );
+              await update(charmsEarned).write(
+                CharmsEarnedCompanion(cycleProfileId: Value(currentProfile.id)),
+              );
+            }
+          }
         },
       );
 
   // Cycle Profile queries
   Future<CycleProfile?> getCurrentCycleProfile() async {
+    // Ordered by id, not createdAt: createdAt only has second resolution,
+    // so two profiles created within the same second (e.g. completing one
+    // journey and immediately starting the next) tie and can resolve to
+    // the wrong "current" profile. id is monotonically increasing and
+    // never ties.
     return await (select(cycleProfiles)
-          ..orderBy([(t) => OrderingTerm.desc(t.createdAt)])
+          ..orderBy([(t) => OrderingTerm.desc(t.id)])
           ..limit(1))
         .getSingleOrNull();
   }
@@ -90,18 +121,30 @@ class WommiDatabase extends _$WommiDatabase {
     return await into(cycleProfiles).insert(profile);
   }
 
-  // Ritual Completions queries
-  Future<List<RitualCompletion>> getRitualCompletionsForDay(int day) async {
+  // Ritual Completions queries - all scoped to a cycle profile (journey) so
+  // a row that outlives clearJourneyProgress() can't surface in a later
+  // journey. Pass the id of whatever getCurrentCycleProfile() returns.
+  Future<List<RitualCompletion>> getRitualCompletionsForDay(
+    int day,
+    int? cycleProfileId,
+  ) async {
     return await (select(ritualCompletions)
-          ..where((t) => t.cycleDay.equals(day)))
+          ..where((t) =>
+              t.cycleDay.equals(day) &
+              t.cycleProfileId.equalsNullable(cycleProfileId)))
         .get();
   }
 
-  Future<int> markRitualComplete(int cycleDay, String ritualId) async {
+  Future<int> markRitualComplete(
+    int cycleDay,
+    String ritualId,
+    int? cycleProfileId,
+  ) async {
     return await into(ritualCompletions).insert(
       RitualCompletionsCompanion.insert(
         cycleDay: cycleDay,
         ritualId: ritualId,
+        cycleProfileId: Value(cycleProfileId),
       ),
     );
   }
@@ -119,25 +162,34 @@ class WommiDatabase extends _$WommiDatabase {
     return await select(charmsEarned).get();
   }
 
-  Future<int> awardCharm(int cycleDay, String charmName) async {
+  Future<int> awardCharm(
+    int cycleDay,
+    String charmName,
+    int? cycleProfileId,
+  ) async {
     return await into(charmsEarned).insert(
       CharmsEarnedCompanion.insert(
         cycleDay: cycleDay,
         charmName: charmName,
+        cycleProfileId: Value(cycleProfileId),
       ),
     );
   }
 
-  Future<int> getCharmCount() async {
+  Future<int> getCharmCount(int? cycleProfileId) async {
     final countQuery = charmsEarned.id.count();
-    final query = selectOnly(charmsEarned)..addColumns([countQuery]);
+    final query = selectOnly(charmsEarned)
+      ..addColumns([countQuery])
+      ..where(charmsEarned.cycleProfileId.equalsNullable(cycleProfileId));
     final result = await query.getSingle();
     return result.read(countQuery) ?? 0;
   }
 
-  Future<bool> hasCharmForDay(int cycleDay) async {
+  Future<bool> hasCharmForDay(int cycleDay, int? cycleProfileId) async {
     final existing = await (select(charmsEarned)
-          ..where((t) => t.cycleDay.equals(cycleDay)))
+          ..where((t) =>
+              t.cycleDay.equals(cycleDay) &
+              t.cycleProfileId.equalsNullable(cycleProfileId)))
         .getSingleOrNull();
     return existing != null;
   }
@@ -146,18 +198,22 @@ class WommiDatabase extends _$WommiDatabase {
     await delete(charmsEarned).go();
   }
 
-  /// Which cycle days already have their charm earned - used to mark days
-  /// as completed on the journey map, so that persists across reloads
-  /// instead of only living in in-memory UserState.completedDays.
-  Future<Set<int>> getDaysWithCharms() async {
-    final rows = await select(charmsEarned).get();
+  /// Which cycle days already have their charm earned in the given journey
+  /// - used to mark days as completed on the journey map, so that persists
+  /// across reloads instead of only living in in-memory UserState.
+  /// completedDays.
+  Future<Set<int>> getDaysWithCharms(int? cycleProfileId) async {
+    final rows = await (select(charmsEarned)
+          ..where((t) => t.cycleProfileId.equalsNullable(cycleProfileId)))
+        .get();
     return rows.map((r) => r.cycleDay).toSet();
   }
 
   // User Profile queries
   Future<UserProfile?> getUserProfile() async {
+    // See getCurrentCycleProfile() for why id, not createdAt.
     return await (select(userProfiles)
-          ..orderBy([(t) => OrderingTerm.desc(t.createdAt)])
+          ..orderBy([(t) => OrderingTerm.desc(t.id)])
           ..limit(1))
         .getSingleOrNull();
   }
