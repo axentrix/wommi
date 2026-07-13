@@ -6,6 +6,7 @@ import '../providers/user_state_provider.dart';
 import '../widgets/bottom_navigation_bar.dart';
 import '../widgets/profile_collection_dialog.dart';
 import '../widgets/journey_map_widget.dart';
+import '../widgets/gem_balance_popup.dart';
 import 'challenges_screen.dart';
 import 'achievements_screen.dart';
 import 'profile_screen.dart';
@@ -68,7 +69,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         child: Column(
           children: [
             // Header
-            _buildHeader(userState.currentDay, userState.gemBalance),
+            _buildHeader(
+              userState.currentDay,
+              userState.gemBalance,
+              userState.streakDays,
+            ),
             // Main content area
             Expanded(
               child: _buildContent(),
@@ -87,7 +92,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  Widget _buildHeader(int currentDay, int gemBalance) {
+  Widget _buildHeader(int currentDay, int gemBalance, int streakDays) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 16),
       child: Row(
@@ -117,37 +122,81 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               ),
             ],
           ),
-          // Gem balance
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-            decoration: BoxDecoration(
-              color: WommiColors.goldSoft,
-              border: Border.all(
-                color: WommiColors.gold,
-                width: 1.5,
-              ),
-              borderRadius: BorderRadius.circular(100),
-            ),
-            child: Row(
-              children: [
-                Text(
-                  '💎',
-                  style: TextStyle(fontSize: 16),
-                ),
-                const SizedBox(width: 6),
-                Text(
-                  '$gemBalance',
-                  style: GoogleFonts.unbounded(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700,
-                    color: WommiColors.ink,
+          // Gem balance - tap to see the necklace mini dashboard
+          Builder(
+            builder: (badgeContext) => GestureDetector(
+              onTap: () =>
+                  _showGemPopup(badgeContext, gemBalance, streakDays),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                decoration: BoxDecoration(
+                  color: WommiColors.goldSoft,
+                  border: Border.all(
+                    color: WommiColors.gold,
+                    width: 1.5,
                   ),
+                  borderRadius: BorderRadius.circular(100),
                 ),
-              ],
+                child: Row(
+                  children: [
+                    Text(
+                      '💎',
+                      style: TextStyle(fontSize: 16),
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      '$gemBalance',
+                      style: GoogleFonts.unbounded(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        color: WommiColors.ink,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
           ),
         ],
       ),
+    );
+  }
+
+  void _showGemPopup(BuildContext badgeContext, int gemBalance, int streakDays) {
+    final button = badgeContext.findRenderObject() as RenderBox;
+    final overlay =
+        Overlay.of(badgeContext).context.findRenderObject() as RenderBox;
+
+    final position = RelativeRect.fromRect(
+      Rect.fromPoints(
+        button.localToGlobal(
+          button.size.bottomLeft(const Offset(0, 8)),
+          ancestor: overlay,
+        ),
+        button.localToGlobal(
+          button.size.bottomRight(const Offset(0, 8)),
+          ancestor: overlay,
+        ),
+      ),
+      Offset.zero & overlay.size,
+    );
+
+    showMenu(
+      context: badgeContext,
+      color: Colors.transparent,
+      elevation: 0,
+      surfaceTintColor: Colors.transparent,
+      position: position,
+      items: [
+        PopupMenuItem(
+          enabled: false,
+          padding: EdgeInsets.zero,
+          child: GemBalancePopupContent(
+            gemBalance: gemBalance,
+            streakDays: streakDays,
+          ),
+        ),
+      ],
     );
   }
 
