@@ -93755,7 +93755,7 @@ for(;;)switch(s){case 0:k=p.b
 j=$.dm()
 i=k.b5(0,j,t.g)
 h=i.z
-s=h!=null&&i.c>0?3:4
+s=h!=null?3:4
 break
 case 3:o=k.b5(0,$.fo(),t.G)
 n=i.f
