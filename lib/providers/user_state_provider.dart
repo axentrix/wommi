@@ -113,7 +113,7 @@ class UserStateNotifier extends StateNotifier<UserState> {
     );
   }
 
-  void completeCurrentJourney() {
+  void completeCurrentJourney({int startDay = 1}) {
     // Save current journey to history
     final completedJourney = Journey(
       journeyNumber: state.currentJourneyNumber,
@@ -127,7 +127,7 @@ class UserStateNotifier extends StateNotifier<UserState> {
 
     // Start new journey
     state = state.copyWith(
-      currentDay: 1,
+      currentDay: startDay,
       gemBalance: 0,
       completedDays: [],
       journeyHistory: updatedHistory,

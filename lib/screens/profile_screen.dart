@@ -10,6 +10,7 @@ import '../widgets/edit_conception_dialog.dart';
 import '../widgets/journey_completion_dialog.dart';
 import '../widgets/pregnancy_win_dialog.dart';
 import '../widgets/continue_journey_question_dialog.dart';
+import '../widgets/start_new_journey_day_dialog.dart';
 import '../services/device_storage.dart';
 import '../services/local_backup_storage.dart';
 
@@ -326,7 +327,20 @@ class ProfileScreen extends ConsumerWidget {
           // Continue journey - go back to home
           Navigator.pop(context);
         },
-        onComplete: () async {
+        onComplete: () {
+          Navigator.pop(context);
+          _showStartNewJourneyDayDialog(context, ref);
+        },
+      ),
+    );
+  }
+
+  void _showStartNewJourneyDayDialog(BuildContext context, WidgetRef ref) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => StartNewJourneyDayDialog(
+        onConfirm: (startDay) async {
           // Complete journey - save and go to achievements
           final userState = ref.read(userStateProvider);
           final profileId = userState.profileId;
@@ -346,7 +360,18 @@ class ProfileScreen extends ConsumerWidget {
 
           // Clear progress for next journey
           await ref.read(repositoryProvider).clearJourneyProgress();
-          ref.read(userStateProvider.notifier).completeCurrentJourney();
+          ref
+              .read(userStateProvider.notifier)
+              .completeCurrentJourney(startDay: startDay);
+          // Persist the chosen start day so calculateCurrentCycleDay()
+          // restores it correctly on a later login, same as onboarding.
+          await ref.read(repositoryProvider).saveCycleProfile(
+                startDate:
+                    DateTime.now().subtract(Duration(days: startDay - 1)),
+                cycleLength: 28,
+                ttcStatus: ref.read(onboardingProvider).conceptionStatus,
+                ttcMethods: ref.read(onboardingProvider).tryingMethods,
+              );
 
           if (!context.mounted) return;
           Navigator.pop(context);

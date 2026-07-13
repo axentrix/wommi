@@ -8,6 +8,14 @@ class OnboardingNotifier extends StateNotifier<OnboardingData> {
     state = state.copyWith(cycleDay: day);
   }
 
+  /// Toggles an opt-out choice: selecting an already-selected option
+  /// clears it back to "no opt-out" (specific day picked).
+  void toggleCycleDayDisclosure(CycleDayDisclosure disclosure) {
+    state = state.withCycleDayDisclosure(
+      state.cycleDayDisclosure == disclosure ? null : disclosure,
+    );
+  }
+
   void setConceptionStatus(ConceptionStatus status) {
     state = state.copyWith(conceptionStatus: status);
   }
