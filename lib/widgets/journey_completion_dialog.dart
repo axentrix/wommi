@@ -229,7 +229,8 @@ class JourneyCompletionDialog extends StatelessWidget {
     final radius = 55.0;
 
     for (int i = 0; i < gemsToShow; i++) {
-      final angle = (i / maxVisible) * 2 * math.pi - (math.pi / 2);
+      // Start at the bottom center (+pi/2), same as the shared NecklaceCircle.
+      final angle = (i / maxVisible) * 2 * math.pi + (math.pi / 2);
       final x = radius * math.cos(angle);
       final y = radius * math.sin(angle);
 
