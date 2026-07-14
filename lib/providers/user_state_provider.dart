@@ -22,9 +22,17 @@ class UserStateNotifier extends StateNotifier<UserState> {
   /// belong to the current profile.
   void hydrateJourneyHistory(List<Journey> journeyHistory) {
     if (journeyHistory.isEmpty) return;
+    // Next journey number must continue from the highest one seen, not
+    // from the count of records - if a journey was ever lost (e.g. an old
+    // bug that dropped 0-gem journeys), the count would be lower than the
+    // highest existing number, and the next journey would silently reuse
+    // and collide with an already-completed journey's number.
+    final highestJourneyNumber = journeyHistory
+        .map((j) => j.journeyNumber)
+        .reduce((a, b) => a > b ? a : b);
     state = state.copyWith(
       journeyHistory: journeyHistory,
-      currentJourneyNumber: journeyHistory.length + 1,
+      currentJourneyNumber: highestJourneyNumber + 1,
     );
   }
 
