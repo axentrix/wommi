@@ -48,6 +48,9 @@ class JourneyMapWidget extends ConsumerWidget {
 
     // Check if this day's missions are completed
     final isCompleted = userState.completedDays.contains(day);
+    // Started (at least one challenge done) but not all three yet - shown
+    // with a rose accent instead of the plain "untouched" styling.
+    final isInProgress = !isCompleted && userState.inProgressDays.contains(day);
 
     // Day is clickable if it's current or past (for replaying missions)
     final isClickable = !isFuture;
@@ -70,18 +73,22 @@ class JourneyMapWidget extends ConsumerWidget {
                     ? WommiColors.cyan
                     : isCompleted
                         ? WommiColors.gold.withOpacity(0.3)
-                        : isPast
-                            ? WommiColors.lilac.withOpacity(0.3)
-                            : WommiColors.bgSoft,
+                        : isInProgress
+                            ? WommiColors.roseSoft
+                            : isPast
+                                ? WommiColors.lilac.withOpacity(0.3)
+                                : WommiColors.bgSoft,
                 border: Border.all(
                   color: isCurrent
                       ? WommiColors.cyan
                       : isCompleted
                           ? WommiColors.gold
-                          : isClickable
-                              ? WommiColors.line
-                              : WommiColors.line.withOpacity(0.3),
-                  width: isCurrent ? 3 : 2,
+                          : isInProgress
+                              ? WommiColors.rose
+                              : isClickable
+                                  ? WommiColors.line
+                                  : WommiColors.line.withOpacity(0.3),
+                  width: isCurrent || isInProgress ? 3 : 2,
                 ),
                 boxShadow: isCurrent
                     ? [
@@ -124,6 +131,23 @@ class JourneyMapWidget extends ConsumerWidget {
                                   Icons.check,
                                   size: 10,
                                   color: Colors.white,
+                                ),
+                              ),
+                            )
+                          else if (isInProgress)
+                            Positioned(
+                              top: 0,
+                              right: 0,
+                              child: Container(
+                                width: 12,
+                                height: 12,
+                                decoration: BoxDecoration(
+                                  color: WommiColors.rose,
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
+                                    color: Colors.white,
+                                    width: 1.5,
+                                  ),
                                 ),
                               ),
                             ),

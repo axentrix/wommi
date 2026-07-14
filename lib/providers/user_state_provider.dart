@@ -54,6 +54,22 @@ class UserStateNotifier extends StateNotifier<UserState> {
     state = state.copyWith(completedDays: days.toList());
   }
 
+  /// Restores which cycle days have partial (but not full) progress, so
+  /// the journey map's "in progress" indicator survives a reload too.
+  void hydrateInProgressDays(Set<int> days) {
+    if (days.isEmpty) return;
+    state = state.copyWith(inProgressDays: days.toList());
+  }
+
+  /// Marks that at least one challenge has been done for [day] without all
+  /// three being complete yet. Harmless to call again once the day is
+  /// fully completed - completedDays takes visual priority over this.
+  void markDayInProgress(int day) {
+    if (!state.inProgressDays.contains(day)) {
+      state = state.copyWith(inProgressDays: [...state.inProgressDays, day]);
+    }
+  }
+
   void addGems(int amount) {
     state = state.copyWith(gemBalance: state.gemBalance + amount);
   }
@@ -138,6 +154,7 @@ class UserStateNotifier extends StateNotifier<UserState> {
       currentDay: startDay,
       gemBalance: 0,
       completedDays: [],
+      inProgressDays: [],
       journeyHistory: updatedHistory,
       currentJourneyNumber: state.currentJourneyNumber + 1,
       lastOpenedDate: DateTime.now(),
