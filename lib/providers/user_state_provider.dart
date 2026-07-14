@@ -91,36 +91,6 @@ class UserStateNotifier extends StateNotifier<UserState> {
     state = state.copyWith(currentDay: nextDay);
   }
 
-  void updateDaysSinceLastOpen() {
-    if (state.lastOpenedDate == null) {
-      // If no last opened date, just update it to now
-      state = state.copyWith(lastOpenedDate: DateTime.now());
-      return;
-    }
-
-    final now = DateTime.now();
-    final lastOpened = state.lastOpenedDate!;
-    final daysPassed = now.difference(lastOpened).inDays;
-
-    if (daysPassed > 0) {
-      // Calculate new current day accounting for cycle wrapping
-      int newDay = state.currentDay + daysPassed;
-
-      // Handle cycle wrapping (28-day cycle)
-      while (newDay > state.cycleLength) {
-        newDay -= state.cycleLength;
-      }
-
-      state = state.copyWith(
-        currentDay: newDay,
-        lastOpenedDate: now,
-      );
-    } else {
-      // Same day, just update the timestamp
-      state = state.copyWith(lastOpenedDate: now);
-    }
-  }
-
   void resetState() {
     print('[UserState] Resetting state - preserving ${state.journeyHistory.length} past journeys');
     // Always preserve journey history and profile across resets
