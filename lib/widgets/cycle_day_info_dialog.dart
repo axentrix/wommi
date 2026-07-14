@@ -13,6 +13,7 @@ class CycleDayInfoDialog extends StatelessWidget {
   final bool isCompleted;
   final bool isInProgress;
   final bool isCurrent;
+  final bool isFuture;
   final VoidCallback onOpenMissions;
 
   const CycleDayInfoDialog({
@@ -22,6 +23,7 @@ class CycleDayInfoDialog extends StatelessWidget {
     required this.isCompleted,
     required this.isInProgress,
     required this.isCurrent,
+    required this.isFuture,
     required this.onOpenMissions,
   });
 
@@ -102,7 +104,55 @@ class CycleDayInfoDialog extends StatelessWidget {
               color: WommiColors.line,
             ),
             const SizedBox(height: 20),
-            if (isCompleted) ...[
+            if (isFuture) ...[
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.schedule, color: WommiColors.inkDim, size: 16),
+                  const SizedBox(width: 8),
+                  Text(
+                    'This day hasn\'t arrived yet',
+                    style: GoogleFonts.inter(
+                      fontSize: 12,
+                      color: WommiColors.inkDim,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'Come back once you reach day $day to do its rituals and collect a conception charm.',
+                style: GoogleFonts.inter(
+                  fontSize: 11,
+                  color: WommiColors.inkDim,
+                  height: 1.4,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                child: TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  style: TextButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(100),
+                      side: BorderSide(color: WommiColors.line, width: 1.5),
+                    ),
+                  ),
+                  child: Text(
+                    'Close',
+                    style: GoogleFonts.unbounded(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: WommiColors.ink,
+                    ),
+                  ),
+                ),
+              ),
+            ] else if (isCompleted) ...[
               Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
