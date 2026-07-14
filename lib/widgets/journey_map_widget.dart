@@ -54,23 +54,24 @@ class JourneyMapWidget extends ConsumerWidget {
     // with a rose accent instead of the plain "untouched" styling.
     final isInProgress = !isCompleted && userState.inProgressDays.contains(day);
 
-    // Day is clickable if it's current or past (for replaying missions)
+    // A day's rituals can only be done once it's current or past - future
+    // days stay locked - but every day is tappable to see its info popup,
+    // future ones just can't offer to start missions from there.
     final isClickable = !isFuture;
 
     return Positioned(
       left: position.dx - 25,
       top: position.dy - 25,
       child: GestureDetector(
-        onTap: isClickable
-            ? () => _showDayInfo(
-                  context,
-                  ref,
-                  day,
-                  isCompleted: isCompleted,
-                  isInProgress: isInProgress,
-                  isCurrent: isCurrent,
-                )
-            : null,
+        onTap: () => _showDayInfo(
+          context,
+          ref,
+          day,
+          isCompleted: isCompleted,
+          isInProgress: isInProgress,
+          isCurrent: isCurrent,
+          isFuture: isFuture,
+        ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -198,8 +199,8 @@ class JourneyMapWidget extends ConsumerWidget {
   }
 
   /// Tapping a day shows a summary of what's typically happening in the
-  /// cycle on that day, and - if it isn't fully completed yet - offers to
-  /// open its rituals from there.
+  /// cycle on that day, and - if it isn't fully completed yet and isn't in
+  /// the future - offers to open its rituals from there.
   void _showDayInfo(
     BuildContext context,
     WidgetRef ref,
@@ -207,6 +208,7 @@ class JourneyMapWidget extends ConsumerWidget {
     required bool isCompleted,
     required bool isInProgress,
     required bool isCurrent,
+    required bool isFuture,
   }) {
     final conceptionStatus = ref.read(onboardingProvider).conceptionStatus;
     showDialog(
@@ -217,6 +219,7 @@ class JourneyMapWidget extends ConsumerWidget {
         isCompleted: isCompleted,
         isInProgress: isInProgress,
         isCurrent: isCurrent,
+        isFuture: isFuture,
         onOpenMissions: () {
           Navigator.pop(context);
           _openDayChallenges(context, day);
