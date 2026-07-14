@@ -197,7 +197,7 @@ class ProfileScreen extends ConsumerWidget {
             const SizedBox(height: 12),
             _SettingCard(
               title: 'Cycle Information',
-              subtitle: 'Currently on day ${onboardingData.cycleDay} of your cycle',
+              subtitle: 'Currently on day ${userState.currentDay} of your cycle',
               onTap: () => _showEditCycleDay(context),
             ),
             const SizedBox(height: 12),
