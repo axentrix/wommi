@@ -124,8 +124,18 @@ class LandingScreen extends ConsumerWidget {
                   ),
                   const SizedBox(height: 8),
                   TextButton(
-                    onPressed: () {
-                      ref.read(userStateProvider.notifier).updateDaysSinceLastOpen();
+                    onPressed: () async {
+                      // Use the same calendar-date-based calculation as
+                      // everywhere else, instead of updateDaysSinceLastOpen()
+                      // (which tracks its own separate, easily-stale
+                      // lastOpenedDate timestamp that can disagree with it).
+                      final freshDay = await ref
+                          .read(repositoryProvider)
+                          .calculateCurrentCycleDay();
+                      ref
+                          .read(userStateProvider.notifier)
+                          .updateCurrentDay(freshDay);
+                      if (!context.mounted) return;
                       Navigator.of(context).pushReplacementNamed('/home');
                     },
                     style: TextButton.styleFrom(
