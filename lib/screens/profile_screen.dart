@@ -6,7 +6,7 @@ import '../providers/user_state_provider.dart';
 import '../providers/onboarding_provider.dart';
 import '../providers/repository_provider.dart';
 import '../widgets/edit_cycle_day_dialog.dart';
-import '../widgets/edit_conception_dialog.dart';
+import '../widgets/edit_conception_method_dialog.dart';
 import '../widgets/journey_completion_dialog.dart';
 import '../widgets/pregnancy_win_dialog.dart';
 import '../widgets/continue_journey_question_dialog.dart';
@@ -202,9 +202,11 @@ class ProfileScreen extends ConsumerWidget {
             ),
             const SizedBox(height: 12),
             _SettingCard(
-              title: 'Conception Status',
-              subtitle: onboardingData.conceptionStatus?.label ?? 'Not set',
-              onTap: () => _showEditConception(context),
+              title: 'Method of Conception',
+              subtitle: onboardingData.tryingMethods.isNotEmpty
+                  ? onboardingData.tryingMethods.first.label
+                  : 'Not set',
+              onTap: () => _showEditConceptionMethod(context),
             ),
             const SizedBox(height: 48),
             // Delete account link
@@ -255,10 +257,10 @@ class ProfileScreen extends ConsumerWidget {
     );
   }
 
-  void _showEditConception(BuildContext context) {
+  void _showEditConceptionMethod(BuildContext context) {
     showDialog(
       context: context,
-      builder: (context) => const EditConceptionDialog(),
+      builder: (context) => const EditConceptionMethodDialog(),
     );
   }
 
