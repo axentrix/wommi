@@ -30,6 +30,12 @@ class OnboardingNotifier extends StateNotifier<OnboardingData> {
     state = state.copyWith(tryingMethods: methods);
   }
 
+  /// Sets a single method of conception, replacing any others - unlike
+  /// toggleTryingMethod, only one can ever be selected at a time.
+  void setTryingMethod(TryingMethod method) {
+    state = state.copyWith(tryingMethods: [method]);
+  }
+
   void setDaysIntoWait(int days) {
     state = state.copyWith(daysIntoWait: days);
   }
