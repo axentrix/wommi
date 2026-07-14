@@ -199,6 +199,10 @@ class _ProfileCollectionDialogState extends ConsumerState<ProfileCollectionDialo
             if (!mounted) return;
             notifier.hydrateCompletedDays(completedDays);
 
+            final inProgressDays = await repository.getDaysWithRitualProgress();
+            if (!mounted) return;
+            notifier.hydrateInProgressDays(inProgressDays);
+
             // Save to localStorage backup (survives IndexedDB clearing)
             await LocalBackupStorage.saveUserProfile(
               profileId: existingProfile.id,

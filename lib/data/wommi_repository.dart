@@ -52,6 +52,11 @@ class WommiRepository {
     return completions.length;
   }
 
+  Future<Set<int>> getDaysWithRitualProgress() async {
+    final cycleProfileId = await _currentCycleProfileId();
+    return _db.getDaysWithRitualProgress(cycleProfileId);
+  }
+
   // Charms
   Future<int> getCharmCount() async {
     final cycleProfileId = await _currentCycleProfileId();

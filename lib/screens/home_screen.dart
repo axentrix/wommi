@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../theme.dart';
 import '../providers/user_state_provider.dart';
+import '../providers/repository_provider.dart';
 import '../widgets/bottom_navigation_bar.dart';
 import '../widgets/profile_collection_dialog.dart';
 import '../widgets/journey_map_widget.dart';
@@ -18,12 +19,14 @@ class HomeScreen extends ConsumerStatefulWidget {
   ConsumerState<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends ConsumerState<HomeScreen> {
+class _HomeScreenState extends ConsumerState<HomeScreen>
+    with WidgetsBindingObserver {
   int _currentIndex = 0;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final userState = ref.read(userStateProvider);
 
@@ -48,6 +51,35 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         );
       }
     });
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // The cycle day is only ever calculated from the real calendar date at
+    // a cold start (splash screen). A user who keeps this tab open/
+    // backgrounded across midnight instead of reloading would otherwise
+    // see the same day forever - so re-check whenever the app/tab regains
+    // focus, same as returning to it the next day would.
+    if (state == AppLifecycleState.resumed) {
+      _refreshCurrentDay();
+    }
+  }
+
+  Future<void> _refreshCurrentDay() async {
+    final repository = ref.read(repositoryProvider);
+    final freshDay = await repository.calculateCurrentCycleDay();
+    if (!mounted) return;
+    final userState = ref.read(userStateProvider);
+    if (freshDay != userState.currentDay) {
+      print('[Home] Day changed on resume: ${userState.currentDay} -> $freshDay');
+      ref.read(userStateProvider.notifier).updateCurrentDay(freshDay);
+    }
   }
 
   @override

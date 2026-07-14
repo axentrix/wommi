@@ -153,6 +153,16 @@ class WommiDatabase extends _$WommiDatabase {
     return await select(ritualCompletions).get();
   }
 
+  /// Days in the given journey with at least one ritual completed, whether
+  /// or not all three (and thus the day's charm) are done yet - used to
+  /// show an "in progress" indicator on the journey map.
+  Future<Set<int>> getDaysWithRitualProgress(int? cycleProfileId) async {
+    final rows = await (select(ritualCompletions)
+          ..where((t) => t.cycleProfileId.equalsNullable(cycleProfileId)))
+        .get();
+    return rows.map((r) => r.cycleDay).toSet();
+  }
+
   Future<void> clearAllRitualCompletions() async {
     await delete(ritualCompletions).go();
   }

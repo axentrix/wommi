@@ -134,6 +134,10 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
     if (!mounted) return false;
     notifier.hydrateCompletedDays(completedDays);
 
+    final inProgressDays = await repository.getDaysWithRitualProgress();
+    if (!mounted) return false;
+    notifier.hydrateInProgressDays(inProgressDays);
+
     return true;
   }
 

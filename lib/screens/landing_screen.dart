@@ -70,7 +70,7 @@ class LandingScreen extends ConsumerWidget {
                             final profileId = userState.profileId;
 
                             // Save current journey to database if user has a profile
-                            if (profileId != null && userState.gemBalance > 0) {
+                            if (profileId != null) {
                               print('[Landing] Saving current journey before starting new one');
                               await ref.read(repositoryProvider).saveJourneyRecord(
                                     userProfileId: profileId,

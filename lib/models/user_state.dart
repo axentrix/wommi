@@ -6,6 +6,10 @@ class UserState {
   final int gemBalance;
   final int streakDays;
   final List<int> completedDays;
+  // Days with at least one challenge done but not all three yet - shown as
+  // an "in progress" indicator on the journey map, distinct from a fully
+  // completed day (in completedDays) or an untouched one.
+  final List<int> inProgressDays;
   final DateTime? lastOpenedDate;
   final int currentJourneyNumber;
   final List<Journey> journeyHistory;
@@ -19,6 +23,7 @@ class UserState {
     this.gemBalance = 0,
     this.streakDays = 0,
     this.completedDays = const [],
+    this.inProgressDays = const [],
     this.lastOpenedDate,
     this.currentJourneyNumber = 1,
     this.journeyHistory = const [],
@@ -35,6 +40,7 @@ class UserState {
     int? gemBalance,
     int? streakDays,
     List<int>? completedDays,
+    List<int>? inProgressDays,
     DateTime? lastOpenedDate,
     int? currentJourneyNumber,
     List<Journey>? journeyHistory,
@@ -48,6 +54,7 @@ class UserState {
       gemBalance: gemBalance ?? this.gemBalance,
       streakDays: streakDays ?? this.streakDays,
       completedDays: completedDays ?? this.completedDays,
+      inProgressDays: inProgressDays ?? this.inProgressDays,
       lastOpenedDate: lastOpenedDate ?? this.lastOpenedDate,
       currentJourneyNumber: currentJourneyNumber ?? this.currentJourneyNumber,
       journeyHistory: journeyHistory ?? this.journeyHistory,
