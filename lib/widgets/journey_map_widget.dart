@@ -3,7 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../theme.dart';
 import '../providers/user_state_provider.dart';
+import '../providers/onboarding_provider.dart';
 import '../screens/challenges_screen.dart';
+import 'cycle_day_info_dialog.dart';
 
 /// Journey map with 35 cycle day positions
 /// This is a placeholder that will be replaced with Rive animation
@@ -59,7 +61,16 @@ class JourneyMapWidget extends ConsumerWidget {
       left: position.dx - 25,
       top: position.dy - 25,
       child: GestureDetector(
-        onTap: isClickable ? () => _openDayChallenges(context, day) : null,
+        onTap: isClickable
+            ? () => _showDayInfo(
+                  context,
+                  ref,
+                  day,
+                  isCompleted: isCompleted,
+                  isInProgress: isInProgress,
+                  isCurrent: isCurrent,
+                )
+            : null,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -182,6 +193,34 @@ class JourneyMapWidget extends ConsumerWidget {
             ],
           ],
         ),
+      ),
+    );
+  }
+
+  /// Tapping a day shows a summary of what's typically happening in the
+  /// cycle on that day, and - if it isn't fully completed yet - offers to
+  /// open its rituals from there.
+  void _showDayInfo(
+    BuildContext context,
+    WidgetRef ref,
+    int day, {
+    required bool isCompleted,
+    required bool isInProgress,
+    required bool isCurrent,
+  }) {
+    final conceptionStatus = ref.read(onboardingProvider).conceptionStatus;
+    showDialog(
+      context: context,
+      builder: (context) => CycleDayInfoDialog(
+        day: day,
+        conceptionStatus: conceptionStatus,
+        isCompleted: isCompleted,
+        isInProgress: isInProgress,
+        isCurrent: isCurrent,
+        onOpenMissions: () {
+          Navigator.pop(context);
+          _openDayChallenges(context, day);
+        },
       ),
     );
   }
