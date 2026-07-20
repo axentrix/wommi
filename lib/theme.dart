@@ -37,11 +37,9 @@ class WommiTheme {
         primary: WommiColors.cyan,
         secondary: WommiColors.rose,
         surface: WommiColors.bg,
-        background: WommiColors.bgSoft,
         onPrimary: Colors.white,
         onSecondary: Colors.white,
         onSurface: WommiColors.ink,
-        onBackground: WommiColors.ink,
       ),
       textTheme: TextTheme(
         displayLarge: GoogleFonts.unbounded(
@@ -87,7 +85,7 @@ class WommiTheme {
           backgroundColor: WommiColors.cyan,
           foregroundColor: Colors.white,
           elevation: 0,
-          shadowColor: WommiColors.cyan.withOpacity(0.38),
+          shadowColor: WommiColors.cyan.withValues(alpha: 0.38),
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(100),

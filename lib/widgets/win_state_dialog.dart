@@ -37,7 +37,7 @@ class WinStateDialog extends StatelessWidget {
                   center: const Alignment(0, -0.3),
                   radius: 1.5,
                   colors: [
-                    WommiColors.lilac.withOpacity(0.4),
+                    WommiColors.lilac.withValues(alpha: 0.4),
                     WommiColors.bg,
                   ],
                 ),
@@ -82,7 +82,7 @@ class WinStateDialog extends StatelessWidget {
                             ),
                             boxShadow: [
                               BoxShadow(
-                                color: WommiColors.gold.withOpacity(0.4),
+                                color: WommiColors.gold.withValues(alpha: 0.4),
                                 blurRadius: 40,
                                 spreadRadius: 0,
                                 offset: const Offset(0, 20),
@@ -161,7 +161,7 @@ class WinStateDialog extends StatelessWidget {
                           borderRadius: BorderRadius.circular(100),
                         ),
                         elevation: 14,
-                        shadowColor: WommiColors.cyan.withOpacity(0.38),
+                        shadowColor: WommiColors.cyan.withValues(alpha: 0.38),
                       ),
                       child: Text(
                         'Continue',
@@ -194,7 +194,7 @@ class WinStateDialog extends StatelessWidget {
         borderRadius: BorderRadius.circular(100),
         boxShadow: [
           BoxShadow(
-            color: WommiColors.ink.withOpacity(0.08),
+            color: WommiColors.ink.withValues(alpha: 0.08),
             blurRadius: 24,
             offset: const Offset(0, 10),
           ),
@@ -246,7 +246,7 @@ class WinStateDialog extends StatelessWidget {
               boxShadow: isNew
                   ? [
                       BoxShadow(
-                        color: WommiColors.cyan.withOpacity(0.5),
+                        color: WommiColors.cyan.withValues(alpha: 0.5),
                         blurRadius: 14,
                         spreadRadius: 2.5,
                       ),

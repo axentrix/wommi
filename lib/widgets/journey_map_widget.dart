@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../theme.dart';
 import '../providers/user_state_provider.dart';
+import '../providers/repository_provider.dart';
 import '../screens/challenges_screen.dart';
 
 /// Journey map with 35 cycle day positions
@@ -40,135 +41,11 @@ class JourneyMapWidget extends ConsumerWidget {
   Widget _buildMapPosition(
       BuildContext context, WidgetRef ref, int day, int currentDay) {
     final position = _getPositionForDay(day);
-    final userState = ref.watch(userStateProvider);
-
-    final isCurrent = day == currentDay;
-    final isPast = day < currentDay;
-    final isFuture = day > currentDay;
-
-    // Check if this day's missions are completed
-    final isCompleted = userState.completedDays.contains(day);
-
-    // Day is clickable if it's current or past (for replaying missions)
-    final isClickable = !isFuture;
 
     return Positioned(
       left: position.dx - 25,
       top: position.dy - 25,
-      child: GestureDetector(
-        onTap: isClickable ? () => _openDayChallenges(context, day) : null,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Position marker
-            Container(
-              width: 50,
-              height: 50,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: isCurrent
-                    ? WommiColors.cyan
-                    : isCompleted
-                        ? WommiColors.gold.withOpacity(0.3)
-                        : isPast
-                            ? WommiColors.lilac.withOpacity(0.3)
-                            : WommiColors.bgSoft,
-                border: Border.all(
-                  color: isCurrent
-                      ? WommiColors.cyan
-                      : isCompleted
-                          ? WommiColors.gold
-                          : isClickable
-                              ? WommiColors.line
-                              : WommiColors.line.withOpacity(0.3),
-                  width: isCurrent ? 3 : 2,
-                ),
-                boxShadow: isCurrent
-                    ? [
-                        BoxShadow(
-                          color: WommiColors.cyan.withOpacity(0.4),
-                          blurRadius: 12,
-                          spreadRadius: 2,
-                        )
-                      ]
-                    : null,
-              ),
-              child: Center(
-                child: isClickable
-                    ? Stack(
-                        alignment: Alignment.center,
-                        children: [
-                          Text(
-                            '$day',
-                            style: GoogleFonts.unbounded(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w700,
-                              color: isCurrent
-                                  ? Colors.white
-                                  : isCompleted
-                                      ? WommiColors.ink
-                                      : WommiColors.inkDim,
-                            ),
-                          ),
-                          if (isCompleted)
-                            Positioned(
-                              top: 0,
-                              right: 0,
-                              child: Container(
-                                padding: const EdgeInsets.all(2),
-                                decoration: BoxDecoration(
-                                  color: WommiColors.gold,
-                                  shape: BoxShape.circle,
-                                ),
-                                child: Icon(
-                                  Icons.check,
-                                  size: 10,
-                                  color: Colors.white,
-                                ),
-                              ),
-                            ),
-                        ],
-                      )
-                    : Icon(
-                        Icons.lock,
-                        size: 20,
-                        color: WommiColors.inkDim.withOpacity(0.4),
-                      ),
-              ),
-            ),
-            // Day label
-            if (isCurrent) ...[
-              const SizedBox(height: 4),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                decoration: BoxDecoration(
-                  color: WommiColors.cyan,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  'YOU',
-                  style: GoogleFonts.spaceMono(
-                    fontSize: 8,
-                    fontWeight: FontWeight.w700,
-                    color: Colors.white,
-                    letterSpacing: 1,
-                  ),
-                ),
-              ),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _openDayChallenges(BuildContext context, int day) {
-    // Same 3 daily missions/rituals as the Challenges tab, just scoped to
-    // this specific day and pushed as its own screen with a back button.
-    // Awards exactly 1 gem, same as any other day, only once all 3 are
-    // complete.
-    Navigator.of(context).push(
-      MaterialPageRoute(builder: (context) => ChallengesScreen(day: day)),
+      child: _MapPositionMarker(day: day, currentDay: currentDay),
     );
   }
 
@@ -194,6 +71,226 @@ class JourneyMapWidget extends ConsumerWidget {
     final y = 40 + (row * verticalSpacing);
 
     return Offset(x, y);
+  }
+
+  void _openDayChallenges(BuildContext context, int day) {
+    // Same 3 daily missions/rituals as the Challenges tab, just scoped to
+    // this specific day and pushed as its own screen with a back button.
+    // Awards exactly 1 gem, same as any other day, only once all 3 are
+    // complete.
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (context) => ChallengesScreen(day: day)),
+    );
+  }
+}
+
+/// Individual map position marker with async completion checking
+class _MapPositionMarker extends ConsumerWidget {
+  final int day;
+  final int currentDay;
+
+  const _MapPositionMarker({
+    required this.day,
+    required this.currentDay,
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final userState = ref.watch(userStateProvider);
+    final repository = ref.watch(repositoryProvider);
+
+    final isCurrent = day == currentDay;
+    final isPast = day < currentDay;
+    final isFuture = day > currentDay;
+
+    // Check if this day's missions are fully completed
+    final isCompleted = userState.completedDays.contains(day);
+
+    // Day is clickable if it's current or past (for replaying missions)
+    final isClickable = !isFuture;
+
+    // Check for partial completion (async)
+    return FutureBuilder<bool>(
+      future: _checkPartialCompletion(repository, day, isCompleted),
+      builder: (context, snapshot) {
+        final isPartiallyCompleted = snapshot.data ?? false;
+
+        return GestureDetector(
+          onTap: isClickable
+              ? () => Navigator.of(context).push(
+                    MaterialPageRoute(
+                        builder: (context) => ChallengesScreen(day: day)),
+                  )
+              : null,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Position marker
+              Container(
+                width: 50,
+                height: 50,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: isCurrent
+                      ? WommiColors.cyan
+                      : isCompleted
+                          ? WommiColors.gold.withOpacity(0.3)
+                          : isPartiallyCompleted
+                              ? WommiColors.lilac.withOpacity(0.5)
+                              : isPast
+                                  ? WommiColors.lilac.withOpacity(0.3)
+                                  : WommiColors.bgSoft,
+                  border: Border.all(
+                    color: isCurrent
+                        ? WommiColors.cyan
+                        : isCompleted
+                            ? WommiColors.gold
+                            : isPartiallyCompleted
+                                ? WommiColors.rose
+                                : isClickable
+                                    ? WommiColors.line
+                                    : WommiColors.line.withOpacity(0.3),
+                    width: isCurrent
+                        ? 3
+                        : isPartiallyCompleted
+                            ? 2.5
+                            : 2,
+                  ),
+                  boxShadow: isCurrent
+                      ? [
+                          BoxShadow(
+                            color: WommiColors.cyan.withOpacity(0.4),
+                            blurRadius: 12,
+                            spreadRadius: 2,
+                          )
+                        ]
+                      : null,
+                ),
+                child: Center(
+                  child: isClickable
+                      ? Stack(
+                          alignment: Alignment.center,
+                          children: [
+                            Text(
+                              '$day',
+                              style: GoogleFonts.unbounded(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w700,
+                                color: isCurrent
+                                    ? Colors.white
+                                    : isCompleted
+                                        ? WommiColors.ink
+                                        : WommiColors.inkDim,
+                              ),
+                            ),
+                            // Completion indicators
+                            if (isCompleted)
+                              Positioned(
+                                top: 0,
+                                right: 0,
+                                child: Container(
+                                  padding: const EdgeInsets.all(2),
+                                  decoration: BoxDecoration(
+                                    color: WommiColors.gold,
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: Icon(
+                                    Icons.check,
+                                    size: 10,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              )
+                            else if (isPartiallyCompleted)
+                              Positioned(
+                                bottom: 2,
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Container(
+                                      width: 4,
+                                      height: 4,
+                                      decoration: BoxDecoration(
+                                        color: WommiColors.rose,
+                                        shape: BoxShape.circle,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 2),
+                                    Container(
+                                      width: 4,
+                                      height: 4,
+                                      decoration: BoxDecoration(
+                                        color: WommiColors.rose,
+                                        shape: BoxShape.circle,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 2),
+                                    Container(
+                                      width: 4,
+                                      height: 4,
+                                      decoration: BoxDecoration(
+                                        color: WommiColors.rose,
+                                        shape: BoxShape.circle,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                          ],
+                        )
+                      : Icon(
+                          Icons.lock,
+                          size: 20,
+                          color: WommiColors.inkDim.withOpacity(0.4),
+                        ),
+                ),
+              ),
+              // Day label
+              if (isCurrent) ...[
+                const SizedBox(height: 4),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: WommiColors.cyan,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    'YOU',
+                    style: GoogleFonts.spaceMono(
+                      fontSize: 8,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white,
+                      letterSpacing: 1,
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  /// Check if a day has partial completion (some but not all rituals done)
+  Future<bool> _checkPartialCompletion(
+    dynamic repository,
+    int day,
+    bool isFullyCompleted,
+  ) async {
+    if (isFullyCompleted) return false; // Already fully completed
+
+    try {
+      // Get completed ritual IDs for this day
+      final completedRituals =
+          await repository.getCompletedRitualIdsForDay(day);
+
+      // If there are 1 or 2 rituals completed (but not all 3), it's partial
+      return completedRituals.isNotEmpty && completedRituals.length < 3;
+    } catch (e) {
+      return false;
+    }
   }
 }
 

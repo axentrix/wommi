@@ -88,7 +88,7 @@ class _NumberScrollPickerState extends State<NumberScrollPicker> {
                       fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
                       color: isSelected
                           ? WommiColors.cyanDark
-                          : WommiColors.inkDim.withOpacity(0.4),
+                          : WommiColors.inkDim.withValues(alpha: 0.4),
                       height: 1.0,
                     ),
                   ),

@@ -21,7 +21,7 @@ class ChoiceButton extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 15),
         decoration: BoxDecoration(
           color: isSelected
-              ? WommiColors.cyan.withOpacity(0.1)
+              ? WommiColors.cyan.withValues(alpha: 0.1)
               : Colors.white,
           border: Border.all(
             color: isSelected ? WommiColors.cyan : WommiColors.line,
@@ -33,8 +33,8 @@ class ChoiceButton extends StatelessWidget {
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: [
-                    WommiColors.cyan.withOpacity(0.10),
-                    WommiColors.cyan.withOpacity(0.03),
+                    WommiColors.cyan.withValues(alpha: 0.10),
+                    WommiColors.cyan.withValues(alpha: 0.03),
                   ],
                 )
               : null,

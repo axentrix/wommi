@@ -36,7 +36,7 @@ class ChallengeCompletionDialog extends StatelessWidget {
                   center: const Alignment(0, -0.3),
                   radius: 1.5,
                   colors: [
-                    WommiColors.lilac.withOpacity(0.3),
+                    WommiColors.lilac.withValues(alpha: 0.3),
                     WommiColors.bg,
                   ],
                 ),
@@ -59,7 +59,7 @@ class ChallengeCompletionDialog extends StatelessWidget {
                           height: 80,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            color: WommiColors.sage.withOpacity(0.2),
+                            color: WommiColors.sage.withValues(alpha: 0.2),
                             border: Border.all(
                               color: WommiColors.sage,
                               width: 3,
@@ -123,7 +123,7 @@ class ChallengeCompletionDialog extends StatelessWidget {
                       borderRadius: BorderRadius.circular(100),
                     ),
                     elevation: 14,
-                    shadowColor: WommiColors.cyan.withOpacity(0.38),
+                    shadowColor: WommiColors.cyan.withValues(alpha: 0.38),
                   ),
                   child: Text(
                     completedCount < totalCount ? 'Next Ritual' : 'Continue',

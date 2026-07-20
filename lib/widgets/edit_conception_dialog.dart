@@ -107,7 +107,7 @@ class EditConceptionDialog extends ConsumerWidget {
                           borderRadius: BorderRadius.circular(100),
                         ),
                         elevation: onboardingData.conceptionStatus != null ? 8 : 0,
-                        shadowColor: WommiColors.cyan.withOpacity(0.38),
+                        shadowColor: WommiColors.cyan.withValues(alpha: 0.38),
                       ),
                       child: Text(
                         'Save',
