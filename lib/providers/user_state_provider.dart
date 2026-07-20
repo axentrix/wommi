@@ -22,9 +22,17 @@ class UserStateNotifier extends StateNotifier<UserState> {
   /// belong to the current profile.
   void hydrateJourneyHistory(List<Journey> journeyHistory) {
     if (journeyHistory.isEmpty) return;
+    // Next journey number must continue from the highest one seen, not
+    // from the count of records - if a journey was ever lost (e.g. an old
+    // bug that dropped 0-gem journeys), the count would be lower than the
+    // highest existing number, and the next journey would silently reuse
+    // and collide with an already-completed journey's number.
+    final highestJourneyNumber = journeyHistory
+        .map((j) => j.journeyNumber)
+        .reduce((a, b) => a > b ? a : b);
     state = state.copyWith(
       journeyHistory: journeyHistory,
-      currentJourneyNumber: journeyHistory.length + 1,
+      currentJourneyNumber: highestJourneyNumber + 1,
     );
   }
 
@@ -46,6 +54,22 @@ class UserStateNotifier extends StateNotifier<UserState> {
     state = state.copyWith(completedDays: days.toList());
   }
 
+  /// Restores which cycle days have partial (but not full) progress, so
+  /// the journey map's "in progress" indicator survives a reload too.
+  void hydrateInProgressDays(Set<int> days) {
+    if (days.isEmpty) return;
+    state = state.copyWith(inProgressDays: days.toList());
+  }
+
+  /// Marks that at least one challenge has been done for [day] without all
+  /// three being complete yet. Harmless to call again once the day is
+  /// fully completed - completedDays takes visual priority over this.
+  void markDayInProgress(int day) {
+    if (!state.inProgressDays.contains(day)) {
+      state = state.copyWith(inProgressDays: [...state.inProgressDays, day]);
+    }
+  }
+
   void addGems(int amount) {
     state = state.copyWith(gemBalance: state.gemBalance + amount);
   }
@@ -65,36 +89,6 @@ class UserStateNotifier extends StateNotifier<UserState> {
         ? state.currentDay + 1
         : 1;
     state = state.copyWith(currentDay: nextDay);
-  }
-
-  void updateDaysSinceLastOpen() {
-    if (state.lastOpenedDate == null) {
-      // If no last opened date, just update it to now
-      state = state.copyWith(lastOpenedDate: DateTime.now());
-      return;
-    }
-
-    final now = DateTime.now();
-    final lastOpened = state.lastOpenedDate!;
-    final daysPassed = now.difference(lastOpened).inDays;
-
-    if (daysPassed > 0) {
-      // Calculate new current day accounting for cycle wrapping
-      int newDay = state.currentDay + daysPassed;
-
-      // Handle cycle wrapping (28-day cycle)
-      while (newDay > state.cycleLength) {
-        newDay -= state.cycleLength;
-      }
-
-      state = state.copyWith(
-        currentDay: newDay,
-        lastOpenedDate: now,
-      );
-    } else {
-      // Same day, just update the timestamp
-      state = state.copyWith(lastOpenedDate: now);
-    }
   }
 
   void resetState() {
@@ -130,6 +124,7 @@ class UserStateNotifier extends StateNotifier<UserState> {
       currentDay: startDay,
       gemBalance: 0,
       completedDays: [],
+      inProgressDays: [],
       journeyHistory: updatedHistory,
       currentJourneyNumber: state.currentJourneyNumber + 1,
       lastOpenedDate: DateTime.now(),

@@ -6,12 +6,15 @@ import '../models/onboarding_state.dart';
 import '../providers/onboarding_provider.dart';
 import '../widgets/choice_button.dart';
 
-class EditConceptionDialog extends ConsumerWidget {
-  const EditConceptionDialog({super.key});
+class EditConceptionMethodDialog extends ConsumerWidget {
+  const EditConceptionMethodDialog({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final onboardingData = ref.watch(onboardingProvider);
+    final selectedMethod = onboardingData.tryingMethods.isNotEmpty
+        ? onboardingData.tryingMethods.first
+        : null;
 
     return Dialog(
       backgroundColor: Colors.transparent,
@@ -31,7 +34,7 @@ class EditConceptionDialog extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Update Conception Status',
+                    'Update Method of Conception',
                     style: GoogleFonts.unbounded(
                       fontSize: 18,
                       fontWeight: FontWeight.w800,
@@ -40,7 +43,7 @@ class EditConceptionDialog extends ConsumerWidget {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Are you currently trying to conceive?',
+                    'How are you trying to conceive?',
                     style: GoogleFonts.inter(
                       fontSize: 13,
                       color: WommiColors.inkDim,
@@ -49,16 +52,16 @@ class EditConceptionDialog extends ConsumerWidget {
                   ),
                   const SizedBox(height: 20),
                   Column(
-                    children: ConceptionStatus.values.map((status) {
+                    children: TryingMethod.values.map((method) {
                       return Padding(
                         padding: const EdgeInsets.only(bottom: 10),
                         child: ChoiceButton(
-                          text: status.label,
-                          isSelected: onboardingData.conceptionStatus == status,
+                          text: method.label,
+                          isSelected: selectedMethod == method,
                           onTap: () {
                             ref
                                 .read(onboardingProvider.notifier)
-                                .setConceptionStatus(status);
+                                .setTryingMethod(method);
                           },
                         ),
                       );
@@ -94,11 +97,11 @@ class EditConceptionDialog extends ConsumerWidget {
                   const SizedBox(width: 12),
                   Expanded(
                     child: ElevatedButton(
-                      onPressed: onboardingData.conceptionStatus != null
+                      onPressed: selectedMethod != null
                           ? () => Navigator.pop(context)
                           : null,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: onboardingData.conceptionStatus != null
+                        backgroundColor: selectedMethod != null
                             ? WommiColors.cyan
                             : WommiColors.line,
                         foregroundColor: Colors.white,
@@ -106,8 +109,8 @@ class EditConceptionDialog extends ConsumerWidget {
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(100),
                         ),
-                        elevation: onboardingData.conceptionStatus != null ? 8 : 0,
-                        shadowColor: WommiColors.cyan.withValues(alpha: 0.38),
+                        elevation: selectedMethod != null ? 8 : 0,
+                        shadowColor: WommiColors.cyan.withOpacity(0.38),
                       ),
                       child: Text(
                         'Save',

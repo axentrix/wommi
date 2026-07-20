@@ -45,6 +45,9 @@ class _ChallengesScreenState extends ConsumerState<ChallengesScreen> {
             day,
             completedIds: completedIds,
           );
+      if (completedIds.isNotEmpty) {
+        ref.read(userStateProvider.notifier).markDayInProgress(day);
+      }
 
       // All rituals may already be complete from a previous visit whose
       // award never fired (e.g. the user navigated away before it could).
@@ -108,6 +111,10 @@ class _ChallengesScreenState extends ConsumerState<ChallengesScreen> {
     // Save to database
     final repository = ref.read(repositoryProvider);
     await repository.markRitualComplete(day, challengeId);
+    // Show an "in progress" indicator on the journey map right away -
+    // harmless once the day is fully completed, since completedDays takes
+    // visual priority over this.
+    ref.read(userStateProvider.notifier).markDayInProgress(day);
 
     final completedCount = challengesNotifier.completedCount;
     final totalCount = challengesNotifier.totalCount;

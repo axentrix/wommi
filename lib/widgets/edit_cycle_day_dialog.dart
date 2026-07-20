@@ -7,13 +7,29 @@ import '../providers/user_state_provider.dart';
 import '../providers/repository_provider.dart';
 import '../widgets/number_scroll_picker.dart';
 
-class EditCycleDayDialog extends ConsumerWidget {
+class EditCycleDayDialog extends ConsumerStatefulWidget {
   const EditCycleDayDialog({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final onboardingData = ref.watch(onboardingProvider);
+  ConsumerState<EditCycleDayDialog> createState() =>
+      _EditCycleDayDialogState();
+}
 
+class _EditCycleDayDialogState extends ConsumerState<EditCycleDayDialog> {
+  late int _selectedDay;
+
+  @override
+  void initState() {
+    super.initState();
+    // Pre-fill from the actual current day, not the onboarding provider's
+    // cycleDay - that's only ever set at onboarding/last edit and goes
+    // stale as soon as a day advances, which would otherwise silently
+    // reset progress back to it if Save is hit without touching the picker.
+    _selectedDay = ref.read(userStateProvider).currentDay;
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Dialog(
       backgroundColor: Colors.transparent,
       child: Container(
@@ -52,9 +68,9 @@ class EditCycleDayDialog extends ConsumerWidget {
                   NumberScrollPicker(
                     minValue: 1,
                     maxValue: 35,
-                    initialValue: onboardingData.cycleDay,
+                    initialValue: _selectedDay,
                     onChanged: (value) {
-                      ref.read(onboardingProvider.notifier).setCycleDay(value);
+                      setState(() => _selectedDay = value);
                     },
                   ),
                   const SizedBox(height: 8),
@@ -98,16 +114,16 @@ class EditCycleDayDialog extends ConsumerWidget {
                   Expanded(
                     child: ElevatedButton(
                       onPressed: () {
-                        // Update user state current day
-                        ref.read(userStateProvider.notifier).updateCurrentDay(
-                              onboardingData.cycleDay,
-                            );
+                        ref
+                            .read(userStateProvider.notifier)
+                            .updateCurrentDay(_selectedDay);
                         // Persist so a later login restores this day too,
                         // instead of calculateCurrentCycleDay() recomputing
                         // from the stale startDate saved at onboarding.
+                        final onboardingData = ref.read(onboardingProvider);
                         ref.read(repositoryProvider).saveCycleProfile(
                               startDate: DateTime.now()
-                                  .subtract(Duration(days: onboardingData.cycleDay - 1)),
+                                  .subtract(Duration(days: _selectedDay - 1)),
                               cycleLength: 28,
                               ttcStatus: onboardingData.conceptionStatus,
                               ttcMethods: onboardingData.tryingMethods,

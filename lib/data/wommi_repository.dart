@@ -52,6 +52,11 @@ class WommiRepository {
     return completions.length;
   }
 
+  Future<Set<int>> getDaysWithRitualProgress() async {
+    final cycleProfileId = await _currentCycleProfileId();
+    return _db.getDaysWithRitualProgress(cycleProfileId);
+  }
+
   // Charms
   Future<int> getCharmCount() async {
     final cycleProfileId = await _currentCycleProfileId();
@@ -139,7 +144,18 @@ class WommiRepository {
     final profile = await getCurrentCycleProfile();
     if (profile == null) return 1;
 
-    final daysSinceStart = DateTime.now().difference(profile.startDate).inDays;
+    // Compare calendar dates, not raw elapsed duration - Duration.inDays
+    // truncates to full 24-hour periods, so a journey started yesterday
+    // evening would still show 0 days elapsed this morning even though a
+    // calendar day has already passed.
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final startDay = DateTime(
+      profile.startDate.year,
+      profile.startDate.month,
+      profile.startDate.day,
+    );
+    final daysSinceStart = today.difference(startDay).inDays;
     final cycleDay = (daysSinceStart % profile.cycleLength) + 1;
     return cycleDay;
   }
