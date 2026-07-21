@@ -108,8 +108,13 @@ class LandingScreen extends ConsumerWidget {
                         final userState = ref.read(userStateProvider);
                         final profileId = userState.profileId;
 
-                        // Save current journey to database if user has a profile
-                        if (profileId != null) {
+                        // Only save current journey if it has actual progress
+                        // (gems collected). This prevents creating empty journey
+                        // records when the user lands here after completing a
+                        // previous journey - in that case, the previous journey
+                        // was already saved, and this is a fresh journey number
+                        // with 0 progress that shouldn't be recorded.
+                        if (profileId != null && userState.gemBalance > 0) {
                           print('[Landing] Saving current journey before starting new one');
                           await ref.read(repositoryProvider).saveJourneyRecord(
                                 userProfileId: profileId,
@@ -118,6 +123,8 @@ class LandingScreen extends ConsumerWidget {
                                 startDate: userState.lastOpenedDate ?? DateTime.now(),
                                 endDate: DateTime.now(),
                               );
+                        } else {
+                          print('[Landing] Skipping journey save (no progress made)');
                         }
 
                         // Clear all ritual completions and charms for the new journey
