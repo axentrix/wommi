@@ -157,6 +157,7 @@ class OnboardingConceptionScreen extends ConsumerWidget {
                                   .subtract(Duration(days: onboardingData.effectiveCycleDay - 1)),
                               cycleLength: 28,
                               ttcStatus: onboardingData.conceptionStatus,
+                              startingCycleDay: onboardingData.effectiveCycleDay,
                             ).then((_) {
                               // Initialize user state and go to home
                               ref

@@ -116,7 +116,10 @@ class _EditCycleDayDialogState extends ConsumerState<EditCycleDayDialog> {
                       onPressed: () {
                         ref
                             .read(userStateProvider.notifier)
-                            .updateCurrentDay(_selectedDay);
+                            .updateCurrentDay(
+                              _selectedDay,
+                              startingCycleDay: _selectedDay,
+                            );
                         // Persist so a later login restores this day too,
                         // instead of calculateCurrentCycleDay() recomputing
                         // from the stale startDate saved at onboarding.
@@ -127,6 +130,7 @@ class _EditCycleDayDialogState extends ConsumerState<EditCycleDayDialog> {
                               cycleLength: 28,
                               ttcStatus: onboardingData.conceptionStatus,
                               ttcMethods: onboardingData.tryingMethods,
+                              startingCycleDay: _selectedDay,
                             );
                         Navigator.pop(context);
                       },

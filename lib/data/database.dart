@@ -11,6 +11,15 @@ class CycleProfiles extends Table {
   TextColumn get ttcStatus => text().nullable()();
   TextColumn get ttcMethod => text().nullable()();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+  // The cycle day this journey was anchored at (onboarding, an edit, or a
+  // fresh "start new journey" pick) - used to decide whether the ovulation
+  // toggle is still relevant (it isn't, once the journey is well past the
+  // fertile window).
+  IntColumn get startingCycleDay => integer().nullable()();
+  // The cycle day the user told us ovulation started on, via the toggle on
+  // a day's popup. Null until they mark it - the app has no other way to
+  // learn this.
+  IntColumn get ovulationDay => integer().nullable()();
 }
 
 class RitualCompletions extends Table {
@@ -70,7 +79,7 @@ class WommiDatabase extends _$WommiDatabase {
   WommiDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 4;
+  int get schemaVersion => 5;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -101,6 +110,10 @@ class WommiDatabase extends _$WommiDatabase {
               );
             }
           }
+          if (from < 5) {
+            await m.addColumn(cycleProfiles, cycleProfiles.startingCycleDay);
+            await m.addColumn(cycleProfiles, cycleProfiles.ovulationDay);
+          }
         },
       );
 
@@ -119,6 +132,16 @@ class WommiDatabase extends _$WommiDatabase {
 
   Future<int> createCycleProfile(CycleProfilesCompanion profile) async {
     return await into(cycleProfiles).insert(profile);
+  }
+
+  Future<void> setOvulationDay(int cycleProfileId, int day) async {
+    await (update(cycleProfiles)..where((t) => t.id.equals(cycleProfileId)))
+        .write(CycleProfilesCompanion(ovulationDay: Value(day)));
+  }
+
+  Future<void> clearOvulationDay(int cycleProfileId) async {
+    await (update(cycleProfiles)..where((t) => t.id.equals(cycleProfileId)))
+        .write(const CycleProfilesCompanion(ovulationDay: Value(null)));
   }
 
   // Ritual Completions queries - all scoped to a cycle profile (journey) so

@@ -418,8 +418,19 @@ class JourneyMapWidget extends ConsumerWidget {
     final individualDayCount = 35 - ovaryDayCount;
     final t = (day - ovaryDayCount - 1) / (individualDayCount - 1);
 
-    final yFrac = 0.16 + t * 0.70;
-    final xFrac = 0.5 + 0.175 * math.sin(t * 2.2 * math.pi);
+    final baseY = 0.16 + t * 0.70;
+    final baseX = 0.5 + 0.175 * math.sin(t * 2.2 * math.pi);
+
+    // Day 14 (t = 0) should sit right where the fallopian tube opens into
+    // the uterus, not wherever the winding uterus path's formula happens to
+    // start - so pull the first few days toward the tube's actual end
+    // point, decaying to 0 by the time the path settles into its regular
+    // wind through the uterus.
+    final tubeEnd = _tubePoints.last;
+    final baseAtStart = Offset(0.5, 0.16);
+    final pull = math.pow(1 - t, 3).toDouble().clamp(0.0, 1.0);
+    final xFrac = baseX + (tubeEnd.dx - baseAtStart.dx) * pull;
+    final yFrac = baseY + (tubeEnd.dy - baseAtStart.dy) * pull;
 
     return Offset(xFrac * size.width, yFrac * size.height);
   }

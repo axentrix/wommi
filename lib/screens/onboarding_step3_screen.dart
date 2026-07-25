@@ -207,6 +207,7 @@ class OnboardingStep3Screen extends ConsumerWidget {
                       cycleLength: 28,
                       ttcStatus: onboardingData.conceptionStatus,
                       ttcMethods: onboardingData.tryingMethods,
+                      startingCycleDay: onboardingData.effectiveCycleDay,
                     ).then((_) {
                       // Initialize user state with onboarding data
                       ref
