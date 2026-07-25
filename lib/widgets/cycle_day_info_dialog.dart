@@ -1,13 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../theme.dart';
 import '../models/onboarding_state.dart';
+import '../providers/user_state_provider.dart';
+import '../providers/repository_provider.dart';
 
 /// Shown when tapping a day on the journey map: a summary of what's
 /// typically happening in the cycle on that day, and - for a day that
 /// isn't fully completed yet - the option to do (or finish) its rituals
 /// and collect more conception charms.
-class CycleDayInfoDialog extends StatelessWidget {
+class CycleDayInfoDialog extends ConsumerWidget {
   final int day;
   final ConceptionStatus? conceptionStatus;
   final bool isCompleted;
@@ -27,9 +30,24 @@ class CycleDayInfoDialog extends StatelessWidget {
     required this.onOpenMissions,
   });
 
+  /// Only worth asking about ovulation for a journey that started early in
+  /// the cycle - by the time someone opens the app on, say, day 20, they're
+  /// well past it and the toggle would just be noise. Onboarding doesn't
+  /// collect an ovulation date at all yet, so that half of the condition is
+  /// unconditionally true for now.
+  bool _ovulationToggleEligible(WidgetRef ref) {
+    final startingCycleDay = ref.watch(userStateProvider).startingCycleDay;
+    return startingCycleDay != null && startingCycleDay < 10;
+  }
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final info = _getCycleDayInfo(day, conceptionStatus);
+    final userState = ref.watch(userStateProvider);
+    final showOvulationToggle = !isFuture &&
+        _ovulationToggleEligible(ref) &&
+        (userState.ovulationDay == null || userState.ovulationDay == day);
+    final ovulationMarkedHere = userState.ovulationDay == day;
 
     return Dialog(
       backgroundColor: Colors.transparent,
@@ -104,6 +122,59 @@ class CycleDayInfoDialog extends StatelessWidget {
               color: WommiColors.line,
             ),
             const SizedBox(height: 20),
+            if (showOvulationToggle) ...[
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                decoration: BoxDecoration(
+                  color: WommiColors.gold.withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: WommiColors.gold.withOpacity(0.4)),
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Ovulation started',
+                            style: GoogleFonts.unbounded(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                              color: WommiColors.ink,
+                            ),
+                          ),
+                          const SizedBox(height: 3),
+                          Text(
+                            ovulationMarkedHere
+                                ? 'Marked on day $day. Tap to undo.'
+                                : 'Got a positive test or other sign today? Let us know.',
+                            style: GoogleFonts.inter(
+                              fontSize: 10.5,
+                              color: WommiColors.inkDim,
+                              height: 1.35,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Switch(
+                      value: ovulationMarkedHere,
+                      activeThumbColor: WommiColors.gold,
+                      onChanged: (value) {
+                        final newDay = value ? day : null;
+                        ref
+                            .read(userStateProvider.notifier)
+                            .markOvulationDay(newDay);
+                        ref.read(repositoryProvider).setOvulationDay(newDay);
+                      },
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+            ],
             if (isFuture) ...[
               Row(
                 mainAxisSize: MainAxisSize.min,

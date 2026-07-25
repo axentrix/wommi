@@ -79,6 +79,28 @@ class $CycleProfilesTable extends CycleProfiles
     requiredDuringInsert: false,
     defaultValue: currentDateAndTime,
   );
+  static const VerificationMeta _startingCycleDayMeta = const VerificationMeta(
+    'startingCycleDay',
+  );
+  @override
+  late final GeneratedColumn<int> startingCycleDay = GeneratedColumn<int>(
+    'starting_cycle_day',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _ovulationDayMeta = const VerificationMeta(
+    'ovulationDay',
+  );
+  @override
+  late final GeneratedColumn<int> ovulationDay = GeneratedColumn<int>(
+    'ovulation_day',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -87,6 +109,8 @@ class $CycleProfilesTable extends CycleProfiles
     ttcStatus,
     ttcMethod,
     createdAt,
+    startingCycleDay,
+    ovulationDay,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -138,6 +162,24 @@ class $CycleProfilesTable extends CycleProfiles
         createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
       );
     }
+    if (data.containsKey('starting_cycle_day')) {
+      context.handle(
+        _startingCycleDayMeta,
+        startingCycleDay.isAcceptableOrUnknown(
+          data['starting_cycle_day']!,
+          _startingCycleDayMeta,
+        ),
+      );
+    }
+    if (data.containsKey('ovulation_day')) {
+      context.handle(
+        _ovulationDayMeta,
+        ovulationDay.isAcceptableOrUnknown(
+          data['ovulation_day']!,
+          _ovulationDayMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -171,6 +213,14 @@ class $CycleProfilesTable extends CycleProfiles
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
       )!,
+      startingCycleDay: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}starting_cycle_day'],
+      ),
+      ovulationDay: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}ovulation_day'],
+      ),
     );
   }
 
@@ -187,6 +237,8 @@ class CycleProfile extends DataClass implements Insertable<CycleProfile> {
   final String? ttcStatus;
   final String? ttcMethod;
   final DateTime createdAt;
+  final int? startingCycleDay;
+  final int? ovulationDay;
   const CycleProfile({
     required this.id,
     required this.cycleLength,
@@ -194,6 +246,8 @@ class CycleProfile extends DataClass implements Insertable<CycleProfile> {
     this.ttcStatus,
     this.ttcMethod,
     required this.createdAt,
+    this.startingCycleDay,
+    this.ovulationDay,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -208,6 +262,12 @@ class CycleProfile extends DataClass implements Insertable<CycleProfile> {
       map['ttc_method'] = Variable<String>(ttcMethod);
     }
     map['created_at'] = Variable<DateTime>(createdAt);
+    if (!nullToAbsent || startingCycleDay != null) {
+      map['starting_cycle_day'] = Variable<int>(startingCycleDay);
+    }
+    if (!nullToAbsent || ovulationDay != null) {
+      map['ovulation_day'] = Variable<int>(ovulationDay);
+    }
     return map;
   }
 
@@ -223,6 +283,12 @@ class CycleProfile extends DataClass implements Insertable<CycleProfile> {
           ? const Value.absent()
           : Value(ttcMethod),
       createdAt: Value(createdAt),
+      startingCycleDay: startingCycleDay == null && nullToAbsent
+          ? const Value.absent()
+          : Value(startingCycleDay),
+      ovulationDay: ovulationDay == null && nullToAbsent
+          ? const Value.absent()
+          : Value(ovulationDay),
     );
   }
 
@@ -238,6 +304,8 @@ class CycleProfile extends DataClass implements Insertable<CycleProfile> {
       ttcStatus: serializer.fromJson<String?>(json['ttcStatus']),
       ttcMethod: serializer.fromJson<String?>(json['ttcMethod']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      startingCycleDay: serializer.fromJson<int?>(json['startingCycleDay']),
+      ovulationDay: serializer.fromJson<int?>(json['ovulationDay']),
     );
   }
   @override
@@ -250,6 +318,8 @@ class CycleProfile extends DataClass implements Insertable<CycleProfile> {
       'ttcStatus': serializer.toJson<String?>(ttcStatus),
       'ttcMethod': serializer.toJson<String?>(ttcMethod),
       'createdAt': serializer.toJson<DateTime>(createdAt),
+      'startingCycleDay': serializer.toJson<int?>(startingCycleDay),
+      'ovulationDay': serializer.toJson<int?>(ovulationDay),
     };
   }
 
@@ -260,6 +330,8 @@ class CycleProfile extends DataClass implements Insertable<CycleProfile> {
     Value<String?> ttcStatus = const Value.absent(),
     Value<String?> ttcMethod = const Value.absent(),
     DateTime? createdAt,
+    Value<int?> startingCycleDay = const Value.absent(),
+    Value<int?> ovulationDay = const Value.absent(),
   }) => CycleProfile(
     id: id ?? this.id,
     cycleLength: cycleLength ?? this.cycleLength,
@@ -267,6 +339,10 @@ class CycleProfile extends DataClass implements Insertable<CycleProfile> {
     ttcStatus: ttcStatus.present ? ttcStatus.value : this.ttcStatus,
     ttcMethod: ttcMethod.present ? ttcMethod.value : this.ttcMethod,
     createdAt: createdAt ?? this.createdAt,
+    startingCycleDay: startingCycleDay.present
+        ? startingCycleDay.value
+        : this.startingCycleDay,
+    ovulationDay: ovulationDay.present ? ovulationDay.value : this.ovulationDay,
   );
   CycleProfile copyWithCompanion(CycleProfilesCompanion data) {
     return CycleProfile(
@@ -278,6 +354,12 @@ class CycleProfile extends DataClass implements Insertable<CycleProfile> {
       ttcStatus: data.ttcStatus.present ? data.ttcStatus.value : this.ttcStatus,
       ttcMethod: data.ttcMethod.present ? data.ttcMethod.value : this.ttcMethod,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      startingCycleDay: data.startingCycleDay.present
+          ? data.startingCycleDay.value
+          : this.startingCycleDay,
+      ovulationDay: data.ovulationDay.present
+          ? data.ovulationDay.value
+          : this.ovulationDay,
     );
   }
 
@@ -289,14 +371,24 @@ class CycleProfile extends DataClass implements Insertable<CycleProfile> {
           ..write('startDate: $startDate, ')
           ..write('ttcStatus: $ttcStatus, ')
           ..write('ttcMethod: $ttcMethod, ')
-          ..write('createdAt: $createdAt')
+          ..write('createdAt: $createdAt, ')
+          ..write('startingCycleDay: $startingCycleDay, ')
+          ..write('ovulationDay: $ovulationDay')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode =>
-      Object.hash(id, cycleLength, startDate, ttcStatus, ttcMethod, createdAt);
+  int get hashCode => Object.hash(
+    id,
+    cycleLength,
+    startDate,
+    ttcStatus,
+    ttcMethod,
+    createdAt,
+    startingCycleDay,
+    ovulationDay,
+  );
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -306,7 +398,9 @@ class CycleProfile extends DataClass implements Insertable<CycleProfile> {
           other.startDate == this.startDate &&
           other.ttcStatus == this.ttcStatus &&
           other.ttcMethod == this.ttcMethod &&
-          other.createdAt == this.createdAt);
+          other.createdAt == this.createdAt &&
+          other.startingCycleDay == this.startingCycleDay &&
+          other.ovulationDay == this.ovulationDay);
 }
 
 class CycleProfilesCompanion extends UpdateCompanion<CycleProfile> {
@@ -316,6 +410,8 @@ class CycleProfilesCompanion extends UpdateCompanion<CycleProfile> {
   final Value<String?> ttcStatus;
   final Value<String?> ttcMethod;
   final Value<DateTime> createdAt;
+  final Value<int?> startingCycleDay;
+  final Value<int?> ovulationDay;
   const CycleProfilesCompanion({
     this.id = const Value.absent(),
     this.cycleLength = const Value.absent(),
@@ -323,6 +419,8 @@ class CycleProfilesCompanion extends UpdateCompanion<CycleProfile> {
     this.ttcStatus = const Value.absent(),
     this.ttcMethod = const Value.absent(),
     this.createdAt = const Value.absent(),
+    this.startingCycleDay = const Value.absent(),
+    this.ovulationDay = const Value.absent(),
   });
   CycleProfilesCompanion.insert({
     this.id = const Value.absent(),
@@ -331,6 +429,8 @@ class CycleProfilesCompanion extends UpdateCompanion<CycleProfile> {
     this.ttcStatus = const Value.absent(),
     this.ttcMethod = const Value.absent(),
     this.createdAt = const Value.absent(),
+    this.startingCycleDay = const Value.absent(),
+    this.ovulationDay = const Value.absent(),
   }) : startDate = Value(startDate);
   static Insertable<CycleProfile> custom({
     Expression<int>? id,
@@ -339,6 +439,8 @@ class CycleProfilesCompanion extends UpdateCompanion<CycleProfile> {
     Expression<String>? ttcStatus,
     Expression<String>? ttcMethod,
     Expression<DateTime>? createdAt,
+    Expression<int>? startingCycleDay,
+    Expression<int>? ovulationDay,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -347,6 +449,8 @@ class CycleProfilesCompanion extends UpdateCompanion<CycleProfile> {
       if (ttcStatus != null) 'ttc_status': ttcStatus,
       if (ttcMethod != null) 'ttc_method': ttcMethod,
       if (createdAt != null) 'created_at': createdAt,
+      if (startingCycleDay != null) 'starting_cycle_day': startingCycleDay,
+      if (ovulationDay != null) 'ovulation_day': ovulationDay,
     });
   }
 
@@ -357,6 +461,8 @@ class CycleProfilesCompanion extends UpdateCompanion<CycleProfile> {
     Value<String?>? ttcStatus,
     Value<String?>? ttcMethod,
     Value<DateTime>? createdAt,
+    Value<int?>? startingCycleDay,
+    Value<int?>? ovulationDay,
   }) {
     return CycleProfilesCompanion(
       id: id ?? this.id,
@@ -365,6 +471,8 @@ class CycleProfilesCompanion extends UpdateCompanion<CycleProfile> {
       ttcStatus: ttcStatus ?? this.ttcStatus,
       ttcMethod: ttcMethod ?? this.ttcMethod,
       createdAt: createdAt ?? this.createdAt,
+      startingCycleDay: startingCycleDay ?? this.startingCycleDay,
+      ovulationDay: ovulationDay ?? this.ovulationDay,
     );
   }
 
@@ -389,6 +497,12 @@ class CycleProfilesCompanion extends UpdateCompanion<CycleProfile> {
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
+    if (startingCycleDay.present) {
+      map['starting_cycle_day'] = Variable<int>(startingCycleDay.value);
+    }
+    if (ovulationDay.present) {
+      map['ovulation_day'] = Variable<int>(ovulationDay.value);
+    }
     return map;
   }
 
@@ -400,7 +514,9 @@ class CycleProfilesCompanion extends UpdateCompanion<CycleProfile> {
           ..write('startDate: $startDate, ')
           ..write('ttcStatus: $ttcStatus, ')
           ..write('ttcMethod: $ttcMethod, ')
-          ..write('createdAt: $createdAt')
+          ..write('createdAt: $createdAt, ')
+          ..write('startingCycleDay: $startingCycleDay, ')
+          ..write('ovulationDay: $ovulationDay')
           ..write(')'))
         .toString();
   }
@@ -1926,6 +2042,8 @@ typedef $$CycleProfilesTableCreateCompanionBuilder =
       Value<String?> ttcStatus,
       Value<String?> ttcMethod,
       Value<DateTime> createdAt,
+      Value<int?> startingCycleDay,
+      Value<int?> ovulationDay,
     });
 typedef $$CycleProfilesTableUpdateCompanionBuilder =
     CycleProfilesCompanion Function({
@@ -1935,6 +2053,8 @@ typedef $$CycleProfilesTableUpdateCompanionBuilder =
       Value<String?> ttcStatus,
       Value<String?> ttcMethod,
       Value<DateTime> createdAt,
+      Value<int?> startingCycleDay,
+      Value<int?> ovulationDay,
     });
 
 class $$CycleProfilesTableFilterComposer
@@ -1973,6 +2093,16 @@ class $$CycleProfilesTableFilterComposer
 
   ColumnFilters<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get startingCycleDay => $composableBuilder(
+    column: $table.startingCycleDay,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get ovulationDay => $composableBuilder(
+    column: $table.ovulationDay,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -2015,6 +2145,16 @@ class $$CycleProfilesTableOrderingComposer
     column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<int> get startingCycleDay => $composableBuilder(
+    column: $table.startingCycleDay,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get ovulationDay => $composableBuilder(
+    column: $table.ovulationDay,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$CycleProfilesTableAnnotationComposer
@@ -2045,6 +2185,16 @@ class $$CycleProfilesTableAnnotationComposer
 
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<int> get startingCycleDay => $composableBuilder(
+    column: $table.startingCycleDay,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get ovulationDay => $composableBuilder(
+    column: $table.ovulationDay,
+    builder: (column) => column,
+  );
 }
 
 class $$CycleProfilesTableTableManager
@@ -2086,6 +2236,8 @@ class $$CycleProfilesTableTableManager
                 Value<String?> ttcStatus = const Value.absent(),
                 Value<String?> ttcMethod = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
+                Value<int?> startingCycleDay = const Value.absent(),
+                Value<int?> ovulationDay = const Value.absent(),
               }) => CycleProfilesCompanion(
                 id: id,
                 cycleLength: cycleLength,
@@ -2093,6 +2245,8 @@ class $$CycleProfilesTableTableManager
                 ttcStatus: ttcStatus,
                 ttcMethod: ttcMethod,
                 createdAt: createdAt,
+                startingCycleDay: startingCycleDay,
+                ovulationDay: ovulationDay,
               ),
           createCompanionCallback:
               ({
@@ -2102,6 +2256,8 @@ class $$CycleProfilesTableTableManager
                 Value<String?> ttcStatus = const Value.absent(),
                 Value<String?> ttcMethod = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
+                Value<int?> startingCycleDay = const Value.absent(),
+                Value<int?> ovulationDay = const Value.absent(),
               }) => CycleProfilesCompanion.insert(
                 id: id,
                 cycleLength: cycleLength,
@@ -2109,6 +2265,8 @@ class $$CycleProfilesTableTableManager
                 ttcStatus: ttcStatus,
                 ttcMethod: ttcMethod,
                 createdAt: createdAt,
+                startingCycleDay: startingCycleDay,
+                ovulationDay: ovulationDay,
               ),
           withReferenceMapper: (p0) => p0
               .map((e) => (e.readTable(table), BaseReferences(db, table, e)))

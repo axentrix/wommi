@@ -17,14 +17,28 @@ class WommiRepository {
     int cycleLength = 28,
     ConceptionStatus? ttcStatus,
     List<TryingMethod>? ttcMethods,
+    int? startingCycleDay,
   }) async {
     final companion = CycleProfilesCompanion.insert(
       cycleLength: Value(cycleLength),
       startDate: startDate,
       ttcStatus: Value(ttcStatus?.name),
       ttcMethod: Value(ttcMethods?.map((m) => m.name).join(',')),
+      startingCycleDay: Value(startingCycleDay),
     );
     await _db.createCycleProfile(companion);
+  }
+
+  /// Records the cycle day the user says ovulation started on. Pass null to
+  /// undo a mistaken mark.
+  Future<void> setOvulationDay(int? day) async {
+    final cycleProfileId = await _currentCycleProfileId();
+    if (cycleProfileId == null) return;
+    if (day == null) {
+      await _db.clearOvulationDay(cycleProfileId);
+    } else {
+      await _db.setOvulationDay(cycleProfileId, day);
+    }
   }
 
   /// The active journey's cycle profile id, used to scope rituals/charms so

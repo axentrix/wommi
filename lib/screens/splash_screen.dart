@@ -126,9 +126,15 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
 
     final gemBalance = await repository.getCharmCount();
     final currentDay = await repository.calculateCurrentCycleDay();
+    final profile = await repository.getCurrentCycleProfile();
     if (!mounted) return false;
     print('[Splash] Restoring active journey: day $currentDay, $gemBalance gems');
-    notifier.hydrateActiveJourney(currentDay: currentDay, gemBalance: gemBalance);
+    notifier.hydrateActiveJourney(
+      currentDay: currentDay,
+      gemBalance: gemBalance,
+      startingCycleDay: profile?.startingCycleDay,
+      ovulationDay: profile?.ovulationDay,
+    );
 
     final completedDays = await repository.getDaysWithCharms();
     if (!mounted) return false;

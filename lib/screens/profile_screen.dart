@@ -373,6 +373,7 @@ class ProfileScreen extends ConsumerWidget {
                 cycleLength: 28,
                 ttcStatus: ref.read(onboardingProvider).conceptionStatus,
                 ttcMethods: ref.read(onboardingProvider).tryingMethods,
+                startingCycleDay: startDay,
               );
 
           if (!context.mounted) return;

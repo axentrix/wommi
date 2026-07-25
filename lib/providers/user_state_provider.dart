@@ -8,6 +8,7 @@ class UserStateNotifier extends StateNotifier<UserState> {
   void initializeFromOnboarding(int cycleDay) {
     state = state.copyWith(
       currentDay: cycleDay,
+      startingCycleDay: cycleDay,
       lastOpenedDate: DateTime.now(),
     );
   }
@@ -42,8 +43,19 @@ class UserStateNotifier extends StateNotifier<UserState> {
   /// completed journey has no record of its own - without this, a
   /// returning user's day/gem progress would appear to reset to 0 even
   /// though they're recognized and their past journeys load correctly.
-  void hydrateActiveJourney({required int currentDay, required int gemBalance}) {
-    state = state.copyWith(currentDay: currentDay, gemBalance: gemBalance);
+  void hydrateActiveJourney({
+    required int currentDay,
+    required int gemBalance,
+    int? startingCycleDay,
+    int? ovulationDay,
+  }) {
+    state = state
+        .copyWith(
+          currentDay: currentDay,
+          gemBalance: gemBalance,
+          startingCycleDay: startingCycleDay,
+        )
+        .withOvulationDay(ovulationDay);
   }
 
   /// Restores which cycle days already have their missions completed, so
@@ -68,6 +80,13 @@ class UserStateNotifier extends StateNotifier<UserState> {
     if (!state.inProgressDays.contains(day)) {
       state = state.copyWith(inProgressDays: [...state.inProgressDays, day]);
     }
+  }
+
+  /// Records (or, passing null, undoes) the cycle day the user says
+  /// ovulation started on. Only the in-memory side - callers also persist
+  /// via the repository so it survives a reload.
+  void markOvulationDay(int? day) {
+    state = state.withOvulationDay(day);
   }
 
   void addGems(int amount) {
@@ -120,23 +139,26 @@ class UserStateNotifier extends StateNotifier<UserState> {
     final updatedHistory = [...state.journeyHistory, completedJourney];
 
     // Start new journey
-    state = state.copyWith(
-      currentDay: startDay,
-      gemBalance: 0,
-      completedDays: [],
-      inProgressDays: [],
-      journeyHistory: updatedHistory,
-      currentJourneyNumber: state.currentJourneyNumber + 1,
-      lastOpenedDate: DateTime.now(),
-    );
+    state = state
+        .copyWith(
+          currentDay: startDay,
+          gemBalance: 0,
+          completedDays: [],
+          inProgressDays: [],
+          journeyHistory: updatedHistory,
+          currentJourneyNumber: state.currentJourneyNumber + 1,
+          lastOpenedDate: DateTime.now(),
+          startingCycleDay: startDay,
+        )
+        .withOvulationDay(null);
   }
 
   void setProfile(int profileId, String name, String email) {
     state = state.copyWith(profileId: profileId, name: name, email: email);
   }
 
-  void updateCurrentDay(int day) {
-    state = state.copyWith(currentDay: day);
+  void updateCurrentDay(int day, {int? startingCycleDay}) {
+    state = state.copyWith(currentDay: day, startingCycleDay: startingCycleDay);
   }
 
   /// Full reset for testing - wipes everything in memory, including

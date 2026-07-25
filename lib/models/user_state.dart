@@ -16,6 +16,12 @@ class UserState {
   final String? name;
   final String? email;
   final int? profileId;
+  // The cycle day this journey was anchored at (onboarding, an edit, or a
+  // fresh journey start) - used to decide whether the ovulation toggle is
+  // still relevant to offer.
+  final int? startingCycleDay;
+  // The cycle day the user told us ovulation started on. Null until marked.
+  final int? ovulationDay;
 
   UserState({
     required this.currentDay,
@@ -30,6 +36,8 @@ class UserState {
     this.name,
     this.email,
     this.profileId,
+    this.startingCycleDay,
+    this.ovulationDay,
   });
 
   bool get hasProfile => name != null && email != null;
@@ -47,6 +55,8 @@ class UserState {
     String? name,
     String? email,
     int? profileId,
+    int? startingCycleDay,
+    int? ovulationDay,
   }) {
     return UserState(
       currentDay: currentDay ?? this.currentDay,
@@ -61,6 +71,30 @@ class UserState {
       name: name ?? this.name,
       email: email ?? this.email,
       profileId: profileId ?? this.profileId,
+      startingCycleDay: startingCycleDay ?? this.startingCycleDay,
+      ovulationDay: ovulationDay ?? this.ovulationDay,
+    );
+  }
+
+  /// Sets or clears (pass null) the marked ovulation day directly -
+  /// copyWith can't null it out since it treats null as "keep the current
+  /// value".
+  UserState withOvulationDay(int? day) {
+    return UserState(
+      currentDay: currentDay,
+      cycleLength: cycleLength,
+      gemBalance: gemBalance,
+      streakDays: streakDays,
+      completedDays: completedDays,
+      inProgressDays: inProgressDays,
+      lastOpenedDate: lastOpenedDate,
+      currentJourneyNumber: currentJourneyNumber,
+      journeyHistory: journeyHistory,
+      name: name,
+      email: email,
+      profileId: profileId,
+      startingCycleDay: startingCycleDay,
+      ovulationDay: day,
     );
   }
 }
