@@ -26,8 +26,16 @@ class JourneyMapWidget extends ConsumerWidget {
 
   // Days 1..ovaryDayCount are bundled into a single node near the ovary,
   // rather than plotted individually - ovulation timing varies, so we
-  // don't know in advance exactly how many days that phase will last.
-  static const int ovaryDayCount = 13;
+  // don't know in advance exactly how many days that phase will last. Once
+  // the user tells us ovulation started (UserState.ovulationDay), that day
+  // becomes the real boundary instead of this default guess.
+  static const int defaultOvaryDayCount = 13;
+
+  // Clamped so there are always at least 2 individually-plotted days after
+  // it - _getPositionForDay's t = 0/(individualDayCount - 1) would divide
+  // by zero otherwise, if ovulation were ever marked on day 34 or later.
+  int _ovaryDayCount(UserState userState) =>
+      (userState.ovulationDay ?? defaultOvaryDayCount).clamp(1, 33);
 
   // Fallopian tube path (fractions of the background image's size),
   // starting at the ovary and ending where it opens into the uterus.
@@ -45,6 +53,7 @@ class JourneyMapWidget extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final userState = ref.watch(userStateProvider);
     final currentDay = userState.currentDay;
+    final ovaryDayCount = _ovaryDayCount(userState);
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
@@ -69,9 +78,11 @@ class JourneyMapWidget extends ConsumerWidget {
                         painter: _TubePathPainter(points: _tubePoints),
                       ),
                     ),
-                    _buildOvaryNode(context, ref, userState, currentDay, size),
+                    _buildOvaryNode(
+                        context, ref, userState, currentDay, ovaryDayCount, size),
                     for (int day = ovaryDayCount + 1; day <= 35; day++)
-                      _buildMapPosition(context, ref, day, currentDay, size),
+                      _buildMapPosition(
+                          context, ref, day, currentDay, ovaryDayCount, size),
                   ],
                 );
               },
@@ -88,6 +99,7 @@ class JourneyMapWidget extends ConsumerWidget {
     WidgetRef ref,
     UserState userState,
     int currentDay,
+    int ovaryDayCount,
     Size size,
   ) {
     final completedCount = List.generate(ovaryDayCount, (i) => i + 1)
@@ -106,7 +118,7 @@ class JourneyMapWidget extends ConsumerWidget {
       left: position.dx * size.width - nodeSize / 2,
       top: position.dy * size.height - nodeSize / 2,
       child: GestureDetector(
-        onTap: () => _showOvaryPhase(context, ref, currentDay),
+        onTap: () => _showOvaryPhase(context, ref, currentDay, ovaryDayCount),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -178,7 +190,12 @@ class JourneyMapWidget extends ConsumerWidget {
     );
   }
 
-  void _showOvaryPhase(BuildContext context, WidgetRef ref, int currentDay) {
+  void _showOvaryPhase(
+    BuildContext context,
+    WidgetRef ref,
+    int currentDay,
+    int ovaryDayCount,
+  ) {
     showDialog(
       context: context,
       builder: (context) => OvaryPhaseDialog(
@@ -206,9 +223,10 @@ class JourneyMapWidget extends ConsumerWidget {
     WidgetRef ref,
     int day,
     int currentDay,
+    int ovaryDayCount,
     Size size,
   ) {
-    final position = _getPositionForDay(day, size);
+    final position = _getPositionForDay(day, ovaryDayCount, size);
     final userState = ref.watch(userStateProvider);
 
     final isCurrent = day == currentDay;
@@ -414,7 +432,7 @@ class JourneyMapWidget extends ConsumerWidget {
   /// Traces a winding S-curve down the river/stepping-stone path visible
   /// in the background illustration, starting where the fallopian tube
   /// opens into the uterus and ending near the bottom heart marker.
-  Offset _getPositionForDay(int day, Size size) {
+  Offset _getPositionForDay(int day, int ovaryDayCount, Size size) {
     final individualDayCount = 35 - ovaryDayCount;
     final t = (day - ovaryDayCount - 1) / (individualDayCount - 1);
 

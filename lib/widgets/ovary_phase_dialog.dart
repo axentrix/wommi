@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../theme.dart';
 import '../providers/user_state_provider.dart';
+import '../providers/repository_provider.dart';
 
 /// The "enlarged highlight" shown when tapping the combined ovary node on
 /// the journey map: since ovulation timing varies and this phase's real
@@ -22,6 +23,19 @@ class OvaryPhaseDialog extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final userState = ref.watch(userStateProvider);
     final currentDay = userState.currentDay;
+    // Reacts live to the toggle below instead of the count this dialog was
+    // opened with, so marking ovulation immediately shrinks the grid to
+    // match, no reopen needed.
+    final effectiveDayCount = (userState.ovulationDay ?? dayCount).clamp(1, 33);
+
+    // Only worth asking for a journey that started early in the cycle -
+    // onboarding doesn't collect an ovulation date at all yet, so that half
+    // of the eligibility is unconditionally true for now.
+    final eligible = userState.startingCycleDay != null &&
+        userState.startingCycleDay! < 10;
+    final ovulationMarkedToday = userState.ovulationDay == currentDay;
+    final showOvulationToggle = eligible &&
+        (userState.ovulationDay == null || ovulationMarkedToday);
 
     return Dialog(
       backgroundColor: Colors.transparent,
@@ -45,7 +59,7 @@ class OvaryPhaseDialog extends ConsumerWidget {
                       const SizedBox(width: 10),
                       Expanded(
                         child: Text(
-                          'Days 1-$dayCount',
+                          'Days 1-$effectiveDayCount',
                           style: GoogleFonts.unbounded(
                             fontSize: 18,
                             fontWeight: FontWeight.w800,
@@ -72,13 +86,71 @@ class OvaryPhaseDialog extends ConsumerWidget {
                 ],
               ),
             ),
+            if (showOvulationToggle)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: WommiColors.gold.withOpacity(0.12),
+                    borderRadius: BorderRadius.circular(14),
+                    border:
+                        Border.all(color: WommiColors.gold.withOpacity(0.4)),
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Ovulation started',
+                              style: GoogleFonts.unbounded(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w700,
+                                color: WommiColors.ink,
+                              ),
+                            ),
+                            const SizedBox(height: 3),
+                            Text(
+                              ovulationMarkedToday
+                                  ? 'Marked on day $currentDay. From here the journey continues into the fallopian tube. Tap to undo.'
+                                  : 'Got a positive test or other sign today? From here the journey continues into the fallopian tube.',
+                              style: GoogleFonts.inter(
+                                fontSize: 10.5,
+                                color: WommiColors.inkDim,
+                                height: 1.35,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Switch(
+                        value: ovulationMarkedToday,
+                        activeThumbColor: WommiColors.gold,
+                        onChanged: (value) {
+                          final newDay = value ? currentDay : null;
+                          ref
+                              .read(userStateProvider.notifier)
+                              .markOvulationDay(newDay);
+                          ref
+                              .read(repositoryProvider)
+                              .setOvulationDay(newDay);
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             Flexible(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
                 child: Wrap(
                   spacing: 12,
                   runSpacing: 12,
-                  children: List.generate(dayCount, (i) {
+                  children: List.generate(effectiveDayCount, (i) {
                     final day = i + 1;
                     final isCompleted = userState.completedDays.contains(day);
                     final isInProgress = !isCompleted &&
