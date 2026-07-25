@@ -31,14 +31,30 @@ class JourneyMapWidget extends ConsumerWidget {
   // becomes the real boundary instead of this default guess.
   static const int defaultOvaryDayCount = 13;
 
+  // Once ovulation is marked, the days right after it travel through the
+  // fallopian tube on their way to the uterus - shown as up to this many
+  // individual markers along the tube itself, rather than lumped into the
+  // ovary node or jumping straight to the uterus path.
+  static const int tubeStepSlots = 7;
+
   // Clamped so there are always at least 2 individually-plotted days after
   // it - _getPositionForDay's t = 0/(individualDayCount - 1) would divide
   // by zero otherwise, if ovulation were ever marked on day 34 or later.
   int _ovaryDayCount(UserState userState) =>
       (userState.ovulationDay ?? defaultOvaryDayCount).clamp(1, 33);
 
+  /// How many of the tube's marker slots have a real day behind them. Zero
+  /// until ovulation is marked - until then we don't know which days (if
+  /// any) belong in the tube, so it's shown with empty placeholder dots.
+  static int _tubeDayCount(UserState userState, int ovaryDayCount) {
+    if (userState.ovulationDay == null) return 0;
+    return math.min(tubeStepSlots, 35 - ovaryDayCount).clamp(0, tubeStepSlots);
+  }
+
   // Fallopian tube path (fractions of the background image's size),
-  // starting at the ovary and ending where it opens into the uterus.
+  // starting at the ovary and ending where it opens into the uterus. Used
+  // both to draw the connecting line and, further down, to place markers
+  // evenly along it.
   static const List<Offset> _tubePoints = [
     Offset(0.1772, 0.3357),
     Offset(0.0984, 0.2650),
@@ -49,11 +65,41 @@ class JourneyMapWidget extends ConsumerWidget {
     Offset(0.3675, 0.1354),
   ];
 
+  /// tubeStepSlots points spread evenly along the tube's curve (by arc
+  /// length, not by the raw control points above, which aren't evenly
+  /// spaced and whose first/last points already coincide with the ovary
+  /// node and the uterus entry). Computed in the background image's own
+  /// pixel space so spacing is stable regardless of the widget's actual
+  /// rendered size, then expressed back as fractions of it.
+  static List<Offset> _tubeStepFractions() {
+    const refSize = Size(_bgWidth, _bgHeight);
+    final scaled = _tubePoints
+        .map((p) => Offset(p.dx * refSize.width, p.dy * refSize.height))
+        .toList();
+    final metric = _buildSmoothTubePath(scaled).computeMetrics().first;
+
+    return List.generate(tubeStepSlots, (i) {
+      final t = (i + 1) / (tubeStepSlots + 1);
+      final tangent = metric.getTangentForOffset(metric.length * t);
+      final position = tangent?.position ?? scaled.last;
+      return Offset(position.dx / refSize.width, position.dy / refSize.height);
+    });
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final userState = ref.watch(userStateProvider);
     final currentDay = userState.currentDay;
     final ovaryDayCount = _ovaryDayCount(userState);
+    final tubeDayCount = _tubeDayCount(userState, ovaryDayCount);
+    final tubeFractions = _tubeStepFractions();
+    final uterusStartDay = ovaryDayCount + tubeDayCount + 1;
+    // The uterus path should continue smoothly from wherever the tube
+    // markers actually ended - the last real tube marker if there is one,
+    // otherwise the tube's raw geometric end point (its original anchor,
+    // from before ovulation tracking existed).
+    final uterusAnchor =
+        tubeDayCount > 0 ? tubeFractions[tubeDayCount - 1] : _tubePoints.last;
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
@@ -80,9 +126,29 @@ class JourneyMapWidget extends ConsumerWidget {
                     ),
                     _buildOvaryNode(
                         context, ref, userState, currentDay, ovaryDayCount, size),
-                    for (int day = ovaryDayCount + 1; day <= 35; day++)
+                    for (int i = 0; i < tubeStepSlots; i++)
+                      i < tubeDayCount
+                          ? _buildMapPosition(
+                              context,
+                              ref,
+                              ovaryDayCount + 1 + i,
+                              currentDay,
+                              Offset(tubeFractions[i].dx * size.width,
+                                  tubeFractions[i].dy * size.height),
+                            )
+                          : _buildTubeStepPlaceholder(
+                              Offset(tubeFractions[i].dx * size.width,
+                                  tubeFractions[i].dy * size.height),
+                            ),
+                    for (int day = uterusStartDay; day <= 35; day++)
                       _buildMapPosition(
-                          context, ref, day, currentDay, ovaryDayCount, size),
+                        context,
+                        ref,
+                        day,
+                        currentDay,
+                        _getPositionForDay(
+                            day, uterusStartDay, uterusAnchor, size),
+                      ),
                   ],
                 );
               },
@@ -218,15 +284,33 @@ class JourneyMapWidget extends ConsumerWidget {
     );
   }
 
+  /// A plain, non-interactive dot marking one of the tube's step slots that
+  /// doesn't have a real day behind it yet - ovulation hasn't been marked,
+  /// so we don't know which days (if any) will travel through the tube.
+  Widget _buildTubeStepPlaceholder(Offset position) {
+    const dotSize = 12.0;
+    return Positioned(
+      left: position.dx - dotSize / 2,
+      top: position.dy - dotSize / 2,
+      child: Container(
+        width: dotSize,
+        height: dotSize,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: Colors.white.withOpacity(0.35),
+          border: Border.all(color: WommiColors.line.withOpacity(0.5), width: 1.5),
+        ),
+      ),
+    );
+  }
+
   Widget _buildMapPosition(
     BuildContext context,
     WidgetRef ref,
     int day,
     int currentDay,
-    int ovaryDayCount,
-    Size size,
+    Offset position,
   ) {
-    final position = _getPositionForDay(day, ovaryDayCount, size);
     final userState = ref.watch(userStateProvider);
 
     final isCurrent = day == currentDay;
@@ -430,28 +514,56 @@ class JourneyMapWidget extends ConsumerWidget {
   }
 
   /// Traces a winding S-curve down the river/stepping-stone path visible
-  /// in the background illustration, starting where the fallopian tube
-  /// opens into the uterus and ending near the bottom heart marker.
-  Offset _getPositionForDay(int day, int ovaryDayCount, Size size) {
-    final individualDayCount = 35 - ovaryDayCount;
-    final t = (day - ovaryDayCount - 1) / (individualDayCount - 1);
+  /// in the background illustration, starting where [uterusStartDay]'s
+  /// marker should sit (right after the ovary/tube phases end) and ending
+  /// near the bottom heart marker.
+  Offset _getPositionForDay(
+    int day,
+    int uterusStartDay,
+    Offset anchor,
+    Size size,
+  ) {
+    final individualDayCount = 35 - uterusStartDay + 1;
+    // With ovulation marked late enough, the ovary + tube phases can eat
+    // into all but one remaining day - guard the division instead of
+    // producing NaN; a single day just sits right at the anchor (t = 0).
+    final t = individualDayCount <= 1
+        ? 0.0
+        : (day - uterusStartDay) / (individualDayCount - 1);
 
     final baseY = 0.16 + t * 0.70;
     final baseX = 0.5 + 0.175 * math.sin(t * 2.2 * math.pi);
 
-    // Day 14 (t = 0) should sit right where the fallopian tube opens into
-    // the uterus, not wherever the winding uterus path's formula happens to
-    // start - so pull the first few days toward the tube's actual end
-    // point, decaying to 0 by the time the path settles into its regular
-    // wind through the uterus.
-    final tubeEnd = _tubePoints.last;
+    // The first day on this path should sit right where the previous phase
+    // (tube or, if ovulation isn't marked, the tube's raw end point) left
+    // off, not wherever the winding path's formula happens to start - so
+    // pull the first few days toward that anchor, decaying to 0 by the
+    // time the path settles into its regular wind through the uterus.
     final baseAtStart = Offset(0.5, 0.16);
     final pull = math.pow(1 - t, 3).toDouble().clamp(0.0, 1.0);
-    final xFrac = baseX + (tubeEnd.dx - baseAtStart.dx) * pull;
-    final yFrac = baseY + (tubeEnd.dy - baseAtStart.dy) * pull;
+    final xFrac = baseX + (anchor.dx - baseAtStart.dx) * pull;
+    final yFrac = baseY + (anchor.dy - baseAtStart.dy) * pull;
 
     return Offset(xFrac * size.width, yFrac * size.height);
   }
+}
+
+/// Builds the same smoothed curve through a list of (already screen-scaled)
+/// points, used both to draw the tube's connecting line and to place
+/// markers evenly along it.
+Path _buildSmoothTubePath(List<Offset> scaledPoints) {
+  final path = Path()..moveTo(scaledPoints.first.dx, scaledPoints.first.dy);
+  for (int i = 0; i < scaledPoints.length - 1; i++) {
+    final current = scaledPoints[i];
+    final next = scaledPoints[i + 1];
+    final mid = Offset(
+      (current.dx + next.dx) / 2,
+      (current.dy + next.dy) / 2,
+    );
+    path.quadraticBezierTo(current.dx, current.dy, mid.dx, mid.dy);
+  }
+  path.lineTo(scaledPoints.last.dx, scaledPoints.last.dy);
+  return path;
 }
 
 /// Draws a soft line tracing the fallopian tube from the ovary node into
@@ -469,17 +581,7 @@ class _TubePathPainter extends CustomPainter {
         .map((p) => Offset(p.dx * size.width, p.dy * size.height))
         .toList();
 
-    final path = Path()..moveTo(scaled.first.dx, scaled.first.dy);
-    for (int i = 0; i < scaled.length - 1; i++) {
-      final current = scaled[i];
-      final next = scaled[i + 1];
-      final mid = Offset(
-        (current.dx + next.dx) / 2,
-        (current.dy + next.dy) / 2,
-      );
-      path.quadraticBezierTo(current.dx, current.dy, mid.dx, mid.dy);
-    }
-    path.lineTo(scaled.last.dx, scaled.last.dy);
+    final path = _buildSmoothTubePath(scaled);
 
     final paint = Paint()
       ..color = WommiColors.rose.withOpacity(0.35)
