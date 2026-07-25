@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -7,10 +8,17 @@ import '../providers/onboarding_provider.dart';
 import '../screens/challenges_screen.dart';
 import 'cycle_day_info_dialog.dart';
 
-/// Journey map with 35 cycle day positions
-/// This is a placeholder that will be replaced with Rive animation
+/// Journey map with 35 cycle day positions, laid out along a curvy path
+/// over the isometric womb illustration.
+/// This is a placeholder background - it will be replaced with a Rive
+/// animation.
 class JourneyMapWidget extends ConsumerWidget {
   const JourneyMapWidget({super.key});
+
+  // Matches the cropped background image's own pixel dimensions, so the
+  // day path lines up with it at any screen size.
+  static const double _bgWidth = 762;
+  static const double _bgHeight = 849;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -21,17 +29,25 @@ class JourneyMapWidget extends ConsumerWidget {
       padding: const EdgeInsets.all(20),
       child: Center(
         child: Container(
-          constraints: const BoxConstraints(maxWidth: 400),
-          child: CustomPaint(
-            painter: _PathPainter(currentDay),
-            child: SizedBox(
-              height: 1400, // Height for 35 positions
-              child: Stack(
-                children: [
-                  for (int day = 1; day <= 35; day++)
-                    _buildMapPosition(context, ref, day, currentDay),
-                ],
-              ),
+          constraints: const BoxConstraints(maxWidth: 420),
+          child: AspectRatio(
+            aspectRatio: _bgWidth / _bgHeight,
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final size = Size(constraints.maxWidth, constraints.maxHeight);
+                return Stack(
+                  children: [
+                    Positioned.fill(
+                      child: Image.asset(
+                        'assets/images/womb_journey_bg.png',
+                        fit: BoxFit.contain,
+                      ),
+                    ),
+                    for (int day = 1; day <= 35; day++)
+                      _buildMapPosition(context, ref, day, currentDay, size),
+                  ],
+                );
+              },
             ),
           ),
         ),
@@ -40,8 +56,13 @@ class JourneyMapWidget extends ConsumerWidget {
   }
 
   Widget _buildMapPosition(
-      BuildContext context, WidgetRef ref, int day, int currentDay) {
-    final position = _getPositionForDay(day);
+    BuildContext context,
+    WidgetRef ref,
+    int day,
+    int currentDay,
+    Size size,
+  ) {
+    final position = _getPositionForDay(day, size);
     final userState = ref.watch(userStateProvider);
 
     final isCurrent = day == currentDay;
@@ -59,9 +80,11 @@ class JourneyMapWidget extends ConsumerWidget {
     // future ones just can't offer to start missions from there.
     final isClickable = !isFuture;
 
+    const markerSize = 19.0;
+
     return Positioned(
-      left: position.dx - 25,
-      top: position.dy - 25,
+      left: position.dx - markerSize / 2,
+      top: position.dy - markerSize / 2,
       child: GestureDetector(
         onTap: () => _showDayInfo(
           context,
@@ -77,19 +100,19 @@ class JourneyMapWidget extends ConsumerWidget {
           children: [
             // Position marker
             Container(
-              width: 50,
-              height: 50,
+              width: markerSize,
+              height: markerSize,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 color: isCurrent
                     ? WommiColors.cyan
                     : isCompleted
-                        ? WommiColors.gold.withOpacity(0.3)
+                        ? WommiColors.gold.withOpacity(0.85)
                         : isInProgress
                             ? WommiColors.roseSoft
                             : isPast
-                                ? WommiColors.lilac.withOpacity(0.3)
-                                : WommiColors.bgSoft,
+                                ? Colors.white.withOpacity(0.85)
+                                : Colors.white.withOpacity(0.55),
                 border: Border.all(
                   color: isCurrent
                       ? WommiColors.cyan
@@ -99,18 +122,18 @@ class JourneyMapWidget extends ConsumerWidget {
                               ? WommiColors.rose
                               : isClickable
                                   ? WommiColors.line
-                                  : WommiColors.line.withOpacity(0.3),
-                  width: isCurrent || isInProgress ? 3 : 2,
+                                  : WommiColors.line.withOpacity(0.5),
+                  width: isCurrent || isInProgress ? 2.5 : 1.5,
                 ),
-                boxShadow: isCurrent
-                    ? [
-                        BoxShadow(
-                          color: WommiColors.cyan.withOpacity(0.4),
-                          blurRadius: 12,
-                          spreadRadius: 2,
-                        )
-                      ]
-                    : null,
+                boxShadow: [
+                  BoxShadow(
+                    color: (isCurrent ? WommiColors.cyan : Colors.black)
+                        .withOpacity(isCurrent ? 0.4 : 0.15),
+                    blurRadius: isCurrent ? 12 : 4,
+                    spreadRadius: isCurrent ? 2 : 0,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
               ),
               child: Center(
                 child: isClickable
@@ -120,7 +143,7 @@ class JourneyMapWidget extends ConsumerWidget {
                           Text(
                             '$day',
                             style: GoogleFonts.unbounded(
-                              fontSize: 14,
+                              fontSize: 8,
                               fontWeight: FontWeight.w700,
                               color: isCurrent
                                   ? Colors.white
@@ -131,34 +154,38 @@ class JourneyMapWidget extends ConsumerWidget {
                           ),
                           if (isCompleted)
                             Positioned(
-                              top: 0,
-                              right: 0,
+                              top: -2,
+                              right: -2,
                               child: Container(
-                                padding: const EdgeInsets.all(2),
+                                padding: const EdgeInsets.all(1.5),
                                 decoration: BoxDecoration(
                                   color: WommiColors.gold,
                                   shape: BoxShape.circle,
+                                  border: Border.all(
+                                    color: Colors.white,
+                                    width: 1,
+                                  ),
                                 ),
                                 child: Icon(
                                   Icons.check,
-                                  size: 10,
+                                  size: 8,
                                   color: Colors.white,
                                 ),
                               ),
                             )
                           else if (isInProgress)
                             Positioned(
-                              top: 0,
-                              right: 0,
+                              top: -2,
+                              right: -2,
                               child: Container(
-                                width: 12,
-                                height: 12,
+                                width: 9,
+                                height: 9,
                                 decoration: BoxDecoration(
                                   color: WommiColors.rose,
                                   shape: BoxShape.circle,
                                   border: Border.all(
                                     color: Colors.white,
-                                    width: 1.5,
+                                    width: 1,
                                   ),
                                 ),
                               ),
@@ -167,16 +194,16 @@ class JourneyMapWidget extends ConsumerWidget {
                       )
                     : Icon(
                         Icons.lock,
-                        size: 20,
-                        color: WommiColors.inkDim.withOpacity(0.4),
+                        size: 10,
+                        color: WommiColors.inkDim.withOpacity(0.5),
                       ),
               ),
             ),
             // Day label
             if (isCurrent) ...[
-              const SizedBox(height: 4),
+              const SizedBox(height: 2),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
                 decoration: BoxDecoration(
                   color: WommiColors.cyan,
                   borderRadius: BorderRadius.circular(8),
@@ -184,7 +211,7 @@ class JourneyMapWidget extends ConsumerWidget {
                 child: Text(
                   'YOU',
                   style: GoogleFonts.spaceMono(
-                    fontSize: 8,
+                    fontSize: 7,
                     fontWeight: FontWeight.w700,
                     color: Colors.white,
                     letterSpacing: 1,
@@ -238,82 +265,15 @@ class JourneyMapWidget extends ConsumerWidget {
     );
   }
 
-  /// Calculate position for each day in a winding path
-  Offset _getPositionForDay(int day) {
-    const double width = 350;
-    const double startX = 175; // Center
-    const double verticalSpacing = 40;
+  /// Traces a winding S-curve down the river/stepping-stone path visible
+  /// in the background illustration, from the flag near the top to the
+  /// heart marker near the bottom.
+  Offset _getPositionForDay(int day, Size size) {
+    final t = (day - 1) / 34.0;
 
-    // Create a winding S-curve path
-    final row = (day - 1) ~/ 5; // 5 positions per row
-    final col = (day - 1) % 5;
+    final yFrac = 0.06 + t * 0.80;
+    final xFrac = 0.5 + 0.175 * math.sin(t * 2.5 * math.pi);
 
-    double x;
-    if (row % 2 == 0) {
-      // Left to right
-      x = startX - 120 + (col * 60);
-    } else {
-      // Right to left
-      x = startX + 120 - (col * 60);
-    }
-
-    final y = 40 + (row * verticalSpacing);
-
-    return Offset(x, y);
-  }
-}
-
-/// Custom painter to draw the path between positions
-class _PathPainter extends CustomPainter {
-  final int currentDay;
-
-  _PathPainter(this.currentDay);
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = WommiColors.line.withOpacity(0.3)
-      ..strokeWidth = 2
-      ..style = PaintingStyle.stroke;
-
-    final paintActive = Paint()
-      ..color = WommiColors.lilac.withOpacity(0.5)
-      ..strokeWidth = 3
-      ..style = PaintingStyle.stroke;
-
-    // Draw connecting lines between positions
-    for (int day = 1; day < 35; day++) {
-      final start = _getPositionForDay(day);
-      final end = _getPositionForDay(day + 1);
-
-      // Use active paint for completed path segments
-      final activePaint = day < currentDay ? paintActive : paint;
-
-      canvas.drawLine(start, end, activePaint);
-    }
-  }
-
-  @override
-  bool shouldRepaint(_PathPainter oldDelegate) =>
-      oldDelegate.currentDay != currentDay;
-
-  Offset _getPositionForDay(int day) {
-    const double width = 350;
-    const double startX = 175;
-    const double verticalSpacing = 40;
-
-    final row = (day - 1) ~/ 5;
-    final col = (day - 1) % 5;
-
-    double x;
-    if (row % 2 == 0) {
-      x = startX - 120 + (col * 60);
-    } else {
-      x = startX + 120 - (col * 60);
-    }
-
-    final y = 40 + (row * verticalSpacing);
-
-    return Offset(x, y);
+    return Offset(xFrac * size.width, yFrac * size.height);
   }
 }
