@@ -30,8 +30,11 @@ class OvaryPhaseDialog extends ConsumerWidget {
 
     // Only worth asking for a journey that started early in the cycle -
     // onboarding doesn't collect an ovulation date at all yet, so that half
-    // of the eligibility is unconditionally true for now.
-    final eligible = userState.startingCycleDay != null &&
+    // of the eligibility is unconditionally true for now. startingCycleDay
+    // is null for any journey started before that field existed - treat
+    // unknown as eligible rather than silently hiding the toggle for every
+    // existing user.
+    final eligible = userState.startingCycleDay == null ||
         userState.startingCycleDay! < 10;
     final ovulationMarkedToday = userState.ovulationDay == currentDay;
     final showOvulationToggle = eligible &&

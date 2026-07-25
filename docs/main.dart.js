@@ -97479,7 +97479,7 @@ return A.jT(r,B.D,A.aG(A.b4(A.b([new A.b9(B.f1,o,r),A.aG(A.b4(A.b([n,B.aC,A.dP(A
 A.vg.prototype={
 hw(a0,a1){var s,r,q,p,o,n,m,l,k,j,i=this,h=null,g=i.e,f=i.adm(g,i.f),e=$.cI(),d=t.E,c=a1.f8(e,d),b=i.y,a=!1
 if(!b){s=a1.f8(e,d).as
-if(s!=null&&s<10){e=c.at
+if(s==null||s<10){e=c.at
 e=e==null||e===g
 a=e}}r=c.at===g
 e=A.aK(24)
@@ -97830,7 +97830,7 @@ r=s?B.V:B.az
 return A.di(A.U(""+o,q,q,q,A.aU().$4$color$fontSize$fontWeight$height(s?B.d9:B.x.hS(0.4),p,r,1),q,q),q,q)},
 $S:651}
 A.wh.prototype={
-hw(a,b){var s,r,q,p,o,n,m=null,l=b.f8($.cI(),t.E),k=l.a,j=l.at,i=j==null,h=B.e.dR(i?this.e:j,1,33),g=l.as,f=g!=null&&g<10,e=j===k
+hw(a,b){var s,r,q,p,o,n,m=null,l=b.f8($.cI(),t.E),k=l.a,j=l.at,i=j==null,h=B.e.dR(i?this.e:j,1,33),g=l.as,f=g==null||g<10,e=j===k
 if(f)s=i||e
 else s=!1
 j=A.aK(24)

@@ -34,10 +34,12 @@ class CycleDayInfoDialog extends ConsumerWidget {
   /// the cycle - by the time someone opens the app on, say, day 20, they're
   /// well past it and the toggle would just be noise. Onboarding doesn't
   /// collect an ovulation date at all yet, so that half of the condition is
-  /// unconditionally true for now.
+  /// unconditionally true for now. startingCycleDay is null for any journey
+  /// started before that field existed - treat unknown as eligible rather
+  /// than silently hiding the toggle for every existing user.
   bool _ovulationToggleEligible(WidgetRef ref) {
     final startingCycleDay = ref.watch(userStateProvider).startingCycleDay;
-    return startingCycleDay != null && startingCycleDay < 10;
+    return startingCycleDay == null || startingCycleDay < 10;
   }
 
   @override
