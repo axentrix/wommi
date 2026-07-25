@@ -27,11 +27,13 @@ class JourneyMapWidget extends ConsumerWidget {
   // Days 1..ovaryDayCount are bundled into a single node near the ovary,
   // rather than plotted individually - ovulation timing varies, so we
   // don't know in advance exactly how many days that phase will last. Once
-  // the user tells us ovulation started (UserState.ovulationDay), that day
-  // becomes the real boundary instead of this default guess.
+  // the user tells us ovulation started (UserState.ovulationDay), the day
+  // *before* that becomes the real boundary instead of this default guess -
+  // the marked day itself is when the egg enters the tube, so it should
+  // read as day 1 of the tube phase, not the last day of the ovary phase.
   static const int defaultOvaryDayCount = 13;
 
-  // Once ovulation is marked, the days right after it travel through the
+  // Once ovulation is marked, the days from that point travel through the
   // fallopian tube on their way to the uterus - shown as up to this many
   // individual markers along the tube itself, rather than lumped into the
   // ovary node or jumping straight to the uterus path.
@@ -40,8 +42,11 @@ class JourneyMapWidget extends ConsumerWidget {
   // Clamped so there are always at least 2 individually-plotted days after
   // it - _getPositionForDay's t = 0/(individualDayCount - 1) would divide
   // by zero otherwise, if ovulation were ever marked on day 34 or later.
-  int _ovaryDayCount(UserState userState) =>
-      (userState.ovulationDay ?? defaultOvaryDayCount).clamp(1, 33);
+  int _ovaryDayCount(UserState userState) {
+    final ovulationDay = userState.ovulationDay;
+    final base = ovulationDay != null ? ovulationDay - 1 : defaultOvaryDayCount;
+    return base.clamp(1, 33);
+  }
 
   /// How many of the tube's marker slots have a real day behind them. Zero
   /// until ovulation is marked - until then we don't know which days (if

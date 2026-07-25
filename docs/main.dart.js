@@ -97774,7 +97774,7 @@ A.ada.prototype={
 $0(){return A.bO(this.a,!1).dt()},
 $S:0}
 A.PI.prototype={
-hx(a,b){var s=null,r=b.f8($.cI(),t.E),q=r.at,p=B.f.dH(q==null?13:q,1,33),o=A.aY3(r,p),n=A.aY4(),m=o>0?n[o-1]:B.b.ga7(B.i_)
+hx(a,b){var s=null,r=b.f8($.cI(),t.E),q=r.at,p=B.f.dH(q!=null?q-1:13,1,33),o=A.aY3(r,p),n=A.aY4(),m=o>0?n[o-1]:B.b.ga7(B.i_)
 return A.x7(A.di(A.aG(new A.LZ(0.8975265017667845,A.aLO(new A.adm(this,b,r,r.a,p,o,n,p+o+1,m)),s),B.k,s,B.CD,s,s,s,s,s),s,s),B.kt)},
 aan(a,b,c,d,e,f){var s,r,q,p,o,n,m,l,k,j,i=null,h=t.S,g=J.PH(e,h)
 for(s=0;s<e;s=r){r=s+1
@@ -97966,8 +97966,8 @@ r=s?B.V:B.az
 return A.di(A.U(""+o,q,q,q,A.aU().$4$color$fontSize$fontWeight$height(s?B.d9:B.x.hS(0.4),p,r,1),q,q),q,q)},
 $S:652}
 A.wj.prototype={
-hx(a,b){var s,r,q,p,o,n,m=null,l=b.f8($.cI(),t.E),k=l.a,j=l.at,i=j==null,h=B.f.dH(i?this.e:j,1,33),g=l.as,f=g==null||g<10,e=j===k
-if(f)s=i||e
+hx(a,b){var s,r,q,p,o,n,m=null,l=b.f8($.cI(),t.E),k=l.a,j=l.at,i=j!=null,h=B.f.dH(i?j-1:this.e,1,33),g=l.as,f=g==null||g<10,e=j===k
+if(f)s=!i||e
 else s=!1
 j=A.aK(24)
 i=t.p

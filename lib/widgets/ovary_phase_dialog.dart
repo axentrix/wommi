@@ -25,8 +25,13 @@ class OvaryPhaseDialog extends ConsumerWidget {
     final currentDay = userState.currentDay;
     // Reacts live to the toggle below instead of the count this dialog was
     // opened with, so marking ovulation immediately shrinks the grid to
-    // match, no reopen needed.
-    final effectiveDayCount = (userState.ovulationDay ?? dayCount).clamp(1, 33);
+    // match, no reopen needed. The marked day itself becomes day 1 of the
+    // tube phase (shown on the map, not here), so the ovary only covers up
+    // to the day before it - matches JourneyMapWidget._ovaryDayCount.
+    final effectiveDayCount = (userState.ovulationDay != null
+            ? userState.ovulationDay! - 1
+            : dayCount)
+        .clamp(1, 33);
 
     // Only worth asking for a journey that started early in the cycle -
     // onboarding doesn't collect an ovulation date at all yet, so that half
