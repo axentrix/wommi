@@ -96762,7 +96762,7 @@ for(;;)switch(s){case 0:m=p.a
 l=$.cV()
 k=m.aW(0,l,t.E)
 j=k.Q
-s=j!=null&&k.c>0?3:5
+s=j!=null?3:5
 break
 case 3:A.bX("[Landing] Saving current journey before starting new one")
 o=m.aW(0,$.eR(),t.G)
