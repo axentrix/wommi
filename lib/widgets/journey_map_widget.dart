@@ -15,10 +15,17 @@ import 'ovary_phase_dialog.dart';
 /// varies and isn't known in advance) connected by the fallopian tube into
 /// the uterus, then individual day markers for the rest of the cycle.
 /// This is a placeholder background - it will be replaced with a Rive
-/// animation.
-class JourneyMapWidget extends ConsumerWidget {
+/// animation. Tapping any marker previews the "zoom into this region"
+/// camera move that the eventual Rive scene will own for real.
+class JourneyMapWidget extends ConsumerStatefulWidget {
   const JourneyMapWidget({super.key});
 
+  @override
+  ConsumerState<JourneyMapWidget> createState() => _JourneyMapWidgetState();
+}
+
+class _JourneyMapWidgetState extends ConsumerState<JourneyMapWidget>
+    with SingleTickerProviderStateMixin {
   // Matches the cropped background image's own pixel dimensions, so the
   // day path lines up with it at any screen size.
   static const double _bgWidth = 762;
@@ -38,6 +45,48 @@ class JourneyMapWidget extends ConsumerWidget {
   // individual markers along the tube itself, rather than lumped into the
   // ovary node or jumping straight to the uterus path.
   static const int tubeStepSlots = 7;
+
+  // How far a tapped marker's region "zooms in" to preview the eventual
+  // Rive camera move - purely a placeholder interaction.
+  static const double _zoomScale = 2.6;
+
+  late final AnimationController _zoomController;
+  late final Animation<double> _zoomCurve;
+  Alignment _zoomFocal = Alignment.center;
+
+  @override
+  void initState() {
+    super.initState();
+    _zoomController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 450),
+    );
+    _zoomCurve = CurvedAnimation(
+      parent: _zoomController,
+      curve: Curves.easeInOutCubic,
+      reverseCurve: Curves.easeInOutCubic,
+    );
+  }
+
+  @override
+  void dispose() {
+    _zoomController.dispose();
+    super.dispose();
+  }
+
+  /// Zooms the map in on [focal] (fractional 0..1 position of whatever was
+  /// tapped), awaits [showContent] (a showDialog(...) call, typically), then
+  /// zooms back out once it's dismissed.
+  Future<void> _zoomInto(
+    Offset focal,
+    Future<void> Function() showContent,
+  ) async {
+    setState(() => _zoomFocal = FractionalOffset(focal.dx, focal.dy));
+    await _zoomController.forward();
+    await showContent();
+    if (!mounted) return;
+    await _zoomController.reverse();
+  }
 
   // Clamped so there are always at least 2 individually-plotted days after
   // it - _getPositionForDay's t = 0/(individualDayCount - 1) would divide
@@ -92,7 +141,7 @@ class JourneyMapWidget extends ConsumerWidget {
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final userState = ref.watch(userStateProvider);
     final currentDay = userState.currentDay;
     final ovaryDayCount = _ovaryDayCount(userState);
@@ -113,50 +162,66 @@ class JourneyMapWidget extends ConsumerWidget {
           constraints: const BoxConstraints(maxWidth: 420),
           child: AspectRatio(
             aspectRatio: _bgWidth / _bgHeight,
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                final size = Size(constraints.maxWidth, constraints.maxHeight);
-                return Stack(
-                  children: [
-                    Positioned.fill(
-                      child: Image.asset(
-                        'assets/images/womb_journey_bg.png',
-                        fit: BoxFit.contain,
+            child: ClipRect(
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final size = Size(constraints.maxWidth, constraints.maxHeight);
+                  final mapStack = Stack(
+                    children: [
+                      Positioned.fill(
+                        child: Image.asset(
+                          'assets/images/womb_journey_bg.png',
+                          fit: BoxFit.contain,
+                        ),
                       ),
-                    ),
-                    Positioned.fill(
-                      child: CustomPaint(
-                        painter: _TubePathPainter(points: _tubePoints),
+                      Positioned.fill(
+                        child: CustomPaint(
+                          painter: _TubePathPainter(points: _tubePoints),
+                        ),
                       ),
-                    ),
-                    _buildOvaryNode(
-                        context, ref, userState, currentDay, ovaryDayCount, size),
-                    for (int i = 0; i < tubeStepSlots; i++)
-                      i < tubeDayCount
-                          ? _buildMapPosition(
-                              context,
-                              ref,
-                              ovaryDayCount + 1 + i,
-                              currentDay,
-                              Offset(tubeFractions[i].dx * size.width,
-                                  tubeFractions[i].dy * size.height),
-                            )
-                          : _buildTubeStepPlaceholder(
-                              Offset(tubeFractions[i].dx * size.width,
-                                  tubeFractions[i].dy * size.height),
-                            ),
-                    for (int day = uterusStartDay; day <= 35; day++)
-                      _buildMapPosition(
-                        context,
-                        ref,
-                        day,
-                        currentDay,
-                        _getPositionForDay(
-                            day, uterusStartDay, uterusAnchor, size),
-                      ),
-                  ],
-                );
-              },
+                      _buildOvaryNode(
+                          context, userState, currentDay, ovaryDayCount, size),
+                      for (int i = 0; i < tubeStepSlots; i++)
+                        i < tubeDayCount
+                            ? _buildMapPosition(
+                                context,
+                                ovaryDayCount + 1 + i,
+                                currentDay,
+                                tubeFractions[i],
+                                Offset(tubeFractions[i].dx * size.width,
+                                    tubeFractions[i].dy * size.height),
+                              )
+                            : _buildTubeStepPlaceholder(
+                                Offset(tubeFractions[i].dx * size.width,
+                                    tubeFractions[i].dy * size.height),
+                              ),
+                      for (int day = uterusStartDay; day <= 35; day++)
+                        _buildMapPosition(
+                          context,
+                          day,
+                          currentDay,
+                          _getFractionForDay(day, uterusStartDay, uterusAnchor),
+                          _getPositionForDay(
+                              day, uterusStartDay, uterusAnchor, size),
+                        ),
+                    ],
+                  );
+
+                  return AnimatedBuilder(
+                    animation: _zoomCurve,
+                    builder: (context, child) {
+                      final scale =
+                          1.0 + (_zoomScale - 1.0) * _zoomCurve.value;
+                      return Transform.scale(
+                        scale: scale,
+                        alignment: _zoomFocal,
+                        child: child,
+                      );
+                    },
+                    child: mapStack,
+                  );
+                },
+              ),
             ),
           ),
         ),
@@ -167,7 +232,6 @@ class JourneyMapWidget extends ConsumerWidget {
   /// The combined node standing in for days 1..ovaryDayCount.
   Widget _buildOvaryNode(
     BuildContext context,
-    WidgetRef ref,
     UserState userState,
     int currentDay,
     int ovaryDayCount,
@@ -189,7 +253,10 @@ class JourneyMapWidget extends ConsumerWidget {
       left: position.dx * size.width - nodeSize / 2,
       top: position.dy * size.height - nodeSize / 2,
       child: GestureDetector(
-        onTap: () => _showOvaryPhase(context, ref, currentDay, ovaryDayCount),
+        onTap: () => _zoomInto(
+          position,
+          () => _showOvaryPhase(context, currentDay, ovaryDayCount),
+        ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -261,13 +328,12 @@ class JourneyMapWidget extends ConsumerWidget {
     );
   }
 
-  void _showOvaryPhase(
+  Future<void> _showOvaryPhase(
     BuildContext context,
-    WidgetRef ref,
     int currentDay,
     int ovaryDayCount,
   ) {
-    showDialog(
+    return showDialog(
       context: context,
       builder: (context) => OvaryPhaseDialog(
         dayCount: ovaryDayCount,
@@ -276,7 +342,6 @@ class JourneyMapWidget extends ConsumerWidget {
           final userState = ref.read(userStateProvider);
           _showDayInfo(
             context,
-            ref,
             day,
             isCompleted: userState.completedDays.contains(day),
             isInProgress: !userState.completedDays.contains(day) &&
@@ -311,9 +376,9 @@ class JourneyMapWidget extends ConsumerWidget {
 
   Widget _buildMapPosition(
     BuildContext context,
-    WidgetRef ref,
     int day,
     int currentDay,
+    Offset fraction,
     Offset position,
   ) {
     final userState = ref.watch(userStateProvider);
@@ -339,14 +404,16 @@ class JourneyMapWidget extends ConsumerWidget {
       left: position.dx - markerSize / 2,
       top: position.dy - markerSize / 2,
       child: GestureDetector(
-        onTap: () => _showDayInfo(
-          context,
-          ref,
-          day,
-          isCompleted: isCompleted,
-          isInProgress: isInProgress,
-          isCurrent: isCurrent,
-          isFuture: isFuture,
+        onTap: () => _zoomInto(
+          fraction,
+          () => _showDayInfo(
+            context,
+            day,
+            isCompleted: isCompleted,
+            isInProgress: isInProgress,
+            isCurrent: isCurrent,
+            isFuture: isFuture,
+          ),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -481,9 +548,8 @@ class JourneyMapWidget extends ConsumerWidget {
   /// Tapping a day shows a summary of what's typically happening in the
   /// cycle on that day, and - if it isn't fully completed yet and isn't in
   /// the future - offers to open its rituals from there.
-  void _showDayInfo(
+  Future<void> _showDayInfo(
     BuildContext context,
-    WidgetRef ref,
     int day, {
     required bool isCompleted,
     required bool isInProgress,
@@ -491,7 +557,7 @@ class JourneyMapWidget extends ConsumerWidget {
     required bool isFuture,
   }) {
     final conceptionStatus = ref.read(onboardingProvider).conceptionStatus;
-    showDialog(
+    return showDialog(
       context: context,
       builder: (context) => CycleDayInfoDialog(
         day: day,
@@ -518,6 +584,26 @@ class JourneyMapWidget extends ConsumerWidget {
     );
   }
 
+  /// Same t/curve math as [_getPositionForDay], stopping short of the
+  /// final size multiplication - used as the zoom's focal point, which
+  /// needs a 0..1 fraction rather than a pixel offset.
+  Offset _getFractionForDay(int day, int uterusStartDay, Offset anchor) {
+    final individualDayCount = 35 - uterusStartDay + 1;
+    final t = individualDayCount <= 1
+        ? 0.0
+        : (day - uterusStartDay) / (individualDayCount - 1);
+
+    final baseY = 0.16 + t * 0.70;
+    final baseX = 0.5 + 0.175 * math.sin(t * 2.2 * math.pi);
+
+    final baseAtStart = Offset(0.5, 0.16);
+    final pull = math.pow(1 - t, 3).toDouble().clamp(0.0, 1.0);
+    final xFrac = baseX + (anchor.dx - baseAtStart.dx) * pull;
+    final yFrac = baseY + (anchor.dy - baseAtStart.dy) * pull;
+
+    return Offset(xFrac, yFrac);
+  }
+
   /// Traces a winding S-curve down the river/stepping-stone path visible
   /// in the background illustration, starting where [uterusStartDay]'s
   /// marker should sit (right after the ovary/tube phases end) and ending
@@ -528,28 +614,8 @@ class JourneyMapWidget extends ConsumerWidget {
     Offset anchor,
     Size size,
   ) {
-    final individualDayCount = 35 - uterusStartDay + 1;
-    // With ovulation marked late enough, the ovary + tube phases can eat
-    // into all but one remaining day - guard the division instead of
-    // producing NaN; a single day just sits right at the anchor (t = 0).
-    final t = individualDayCount <= 1
-        ? 0.0
-        : (day - uterusStartDay) / (individualDayCount - 1);
-
-    final baseY = 0.16 + t * 0.70;
-    final baseX = 0.5 + 0.175 * math.sin(t * 2.2 * math.pi);
-
-    // The first day on this path should sit right where the previous phase
-    // (tube or, if ovulation isn't marked, the tube's raw end point) left
-    // off, not wherever the winding path's formula happens to start - so
-    // pull the first few days toward that anchor, decaying to 0 by the
-    // time the path settles into its regular wind through the uterus.
-    final baseAtStart = Offset(0.5, 0.16);
-    final pull = math.pow(1 - t, 3).toDouble().clamp(0.0, 1.0);
-    final xFrac = baseX + (anchor.dx - baseAtStart.dx) * pull;
-    final yFrac = baseY + (anchor.dy - baseAtStart.dy) * pull;
-
-    return Offset(xFrac * size.width, yFrac * size.height);
+    final fraction = _getFractionForDay(day, uterusStartDay, anchor);
+    return Offset(fraction.dx * size.width, fraction.dy * size.height);
   }
 }
 
