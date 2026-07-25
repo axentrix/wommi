@@ -108,13 +108,12 @@ class LandingScreen extends ConsumerWidget {
                         final userState = ref.read(userStateProvider);
                         final profileId = userState.profileId;
 
-                        // Only save current journey if it has actual progress
-                        // (gems collected). This prevents creating empty journey
-                        // records when the user lands here after completing a
-                        // previous journey - in that case, the previous journey
-                        // was already saved, and this is a fresh journey number
-                        // with 0 progress that shouldn't be recorded.
-                        if (profileId != null && userState.gemBalance > 0) {
+                        // Save the current journey regardless of gem count.
+                        // This button only appears when hasExistingJourney is
+                        // true, so a real journey number was already assigned
+                        // - skipping the save on 0 gems leaves a permanent gap
+                        // in journey numbering (e.g. 1, 3, 4 with 2 missing).
+                        if (profileId != null) {
                           print('[Landing] Saving current journey before starting new one');
                           await ref.read(repositoryProvider).saveJourneyRecord(
                                 userProfileId: profileId,
