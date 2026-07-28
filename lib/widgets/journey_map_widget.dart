@@ -38,13 +38,22 @@ class _JourneyMapWidgetState extends ConsumerState<JourneyMapWidget>
   // *before* that becomes the real boundary instead of this default guess -
   // the marked day itself is when the egg enters the tube, so it should
   // read as day 1 of the tube phase, not the last day of the ovary phase.
-  static const int defaultOvaryDayCount = 13;
+  // Until it's marked, this default keeps growing to keep up with
+  // currentDay - we don't know ovulation happened yet, so every day so far
+  // still belongs in the ovary, not off on an assumed tube/uterus path.
+  static const int defaultOvaryDayCount = 14;
 
   // Once ovulation is marked, the days from that point travel through the
   // fallopian tube on their way to the uterus - shown as up to this many
   // individual markers along the tube itself, rather than lumped into the
   // ovary node or jumping straight to the uterus path.
-  static const int tubeStepSlots = 7;
+  static const int tubeStepSlots = 5;
+
+  // The uterus phase defaults to this many days after the tube, but - same
+  // idea as the ovary - keeps growing to keep up with currentDay if the
+  // journey runs long, up to this cap.
+  static const int defaultUterusDayCount = 10;
+  static const int maxUterusDayCount = 15;
 
   // How far a tapped marker's region "zooms in" to preview the eventual
   // Rive camera move - purely a placeholder interaction.
@@ -146,8 +155,30 @@ class _JourneyMapWidgetState extends ConsumerState<JourneyMapWidget>
   // by zero otherwise, if ovulation were ever marked on day 34 or later.
   int _ovaryDayCount(UserState userState) {
     final ovulationDay = userState.ovulationDay;
-    final base = ovulationDay != null ? ovulationDay - 1 : defaultOvaryDayCount;
+    final base = ovulationDay != null
+        ? ovulationDay - 1
+        : _growableCount(
+            defaultCount: defaultOvaryDayCount,
+            maxCount: 33,
+            phaseStartDay: 1,
+            currentDay: userState.currentDay,
+          );
     return base.clamp(1, 33);
+  }
+
+  /// A phase's day count, starting at [defaultCount] but growing to keep up
+  /// with [currentDay] (capped at [maxCount]) as long as it hasn't been
+  /// closed off by some other signal yet (ovulation marked, period/
+  /// pregnancy marked, ...) - used for both the ovary and the uterus.
+  static int _growableCount({
+    required int defaultCount,
+    required int maxCount,
+    required int phaseStartDay,
+    required int currentDay,
+  }) {
+    final daysSoFar = currentDay - phaseStartDay + 1;
+    if (daysSoFar <= defaultCount) return defaultCount;
+    return math.min(daysSoFar, maxCount);
   }
 
   /// How many of the tube's marker slots have a real day behind them. Zero
@@ -156,6 +187,18 @@ class _JourneyMapWidgetState extends ConsumerState<JourneyMapWidget>
   static int _tubeDayCount(UserState userState, int ovaryDayCount) {
     if (userState.ovulationDay == null) return 0;
     return math.min(tubeStepSlots, 35 - ovaryDayCount).clamp(0, tubeStepSlots);
+  }
+
+  /// The uterus phase's day count - defaults to [defaultUterusDayCount] but
+  /// grows to keep up with currentDay (capped at [maxUterusDayCount]) if
+  /// the journey runs long without the period/pregnancy toggle being used.
+  static int _uterusDayCount(UserState userState, int uterusStartDay) {
+    return _growableCount(
+      defaultCount: defaultUterusDayCount,
+      maxCount: maxUterusDayCount,
+      phaseStartDay: uterusStartDay,
+      currentDay: userState.currentDay,
+    );
   }
 
   // Fallopian tube path (fractions of the background image's size),
@@ -201,6 +244,8 @@ class _JourneyMapWidgetState extends ConsumerState<JourneyMapWidget>
     final tubeDayCount = _tubeDayCount(userState, ovaryDayCount);
     final tubeFractions = _tubeStepFractions();
     final uterusStartDay = ovaryDayCount + tubeDayCount + 1;
+    final uterusDayCount = _uterusDayCount(userState, uterusStartDay);
+    final uterusEndDay = uterusStartDay + uterusDayCount - 1;
     // The uterus path should continue smoothly from wherever the tube
     // markers actually ended - the last real tube marker if there is one,
     // otherwise the tube's raw geometric end point (its original anchor,
@@ -225,6 +270,7 @@ class _JourneyMapWidgetState extends ConsumerState<JourneyMapWidget>
                     tubeDayCount,
                     tubeFractions,
                     uterusStartDay,
+                    uterusEndDay,
                     uterusAnchor,
                   )),
                   if (_zoomed) ...[
@@ -247,6 +293,7 @@ class _JourneyMapWidgetState extends ConsumerState<JourneyMapWidget>
     int tubeDayCount,
     List<Offset> tubeFractions,
     int uterusStartDay,
+    int uterusEndDay,
     Offset uterusAnchor,
   ) {
     return LayoutBuilder(
@@ -281,14 +328,15 @@ class _JourneyMapWidgetState extends ConsumerState<JourneyMapWidget>
                                 Offset(tubeFractions[i].dx * size.width,
                                     tubeFractions[i].dy * size.height),
                               ),
-                      for (int day = uterusStartDay; day <= 35; day++)
+                      for (int day = uterusStartDay; day <= uterusEndDay; day++)
                         _buildMapPosition(
                           context,
                           day,
                           currentDay,
-                          _getFractionForDay(day, uterusStartDay, uterusAnchor),
+                          _getFractionForDay(
+                              day, uterusStartDay, uterusEndDay, uterusAnchor),
                           _getPositionForDay(
-                              day, uterusStartDay, uterusAnchor, size),
+                              day, uterusStartDay, uterusEndDay, uterusAnchor, size),
                         ),
                     ],
                   );
@@ -727,8 +775,13 @@ class _JourneyMapWidgetState extends ConsumerState<JourneyMapWidget>
   /// Same t/curve math as [_getPositionForDay], stopping short of the
   /// final size multiplication - used as the zoom's focal point, which
   /// needs a 0..1 fraction rather than a pixel offset.
-  Offset _getFractionForDay(int day, int uterusStartDay, Offset anchor) {
-    final individualDayCount = 35 - uterusStartDay + 1;
+  Offset _getFractionForDay(
+    int day,
+    int uterusStartDay,
+    int uterusEndDay,
+    Offset anchor,
+  ) {
+    final individualDayCount = uterusEndDay - uterusStartDay + 1;
     final t = individualDayCount <= 1
         ? 0.0
         : (day - uterusStartDay) / (individualDayCount - 1);
@@ -751,10 +804,12 @@ class _JourneyMapWidgetState extends ConsumerState<JourneyMapWidget>
   Offset _getPositionForDay(
     int day,
     int uterusStartDay,
+    int uterusEndDay,
     Offset anchor,
     Size size,
   ) {
-    final fraction = _getFractionForDay(day, uterusStartDay, anchor);
+    final fraction =
+        _getFractionForDay(day, uterusStartDay, uterusEndDay, anchor);
     return Offset(fraction.dx * size.width, fraction.dy * size.height);
   }
 }

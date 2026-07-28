@@ -7,12 +7,9 @@ import '../providers/onboarding_provider.dart';
 import '../providers/repository_provider.dart';
 import '../widgets/edit_cycle_day_dialog.dart';
 import '../widgets/edit_conception_method_dialog.dart';
-import '../widgets/journey_completion_dialog.dart';
-import '../widgets/pregnancy_win_dialog.dart';
-import '../widgets/continue_journey_question_dialog.dart';
-import '../widgets/start_new_journey_day_dialog.dart';
 import '../services/device_storage.dart';
 import '../services/local_backup_storage.dart';
+import '../utils/journey_completion_flows.dart';
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
@@ -107,7 +104,7 @@ class ProfileScreen extends ConsumerWidget {
                     activeColor: WommiColors.cyan,
                     onChanged: (value) {
                       if (value) {
-                        _showJourneyCompletionDialog(context, ref);
+                        showPeriodStartedFlow(context, ref);
                       }
                     },
                   ),
@@ -143,7 +140,7 @@ class ProfileScreen extends ConsumerWidget {
                     activeColor: WommiColors.rose,
                     onChanged: (value) {
                       if (value) {
-                        _showPregnancyWinDialog(context, ref);
+                        showPregnancyDetectedFlow(context, ref);
                       }
                     },
                   ),
@@ -264,132 +261,6 @@ class ProfileScreen extends ConsumerWidget {
     );
   }
 
-  void _showJourneyCompletionDialog(BuildContext context, WidgetRef ref) {
-    final userState = ref.read(userStateProvider);
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => JourneyCompletionDialog(
-        gemsCollected: userState.gemBalance,
-        onStartNewJourney: () async {
-          final profileId = userState.profileId;
-          if (profileId != null) {
-            // Attribute the completed journey to this user so it's kept
-            // permanently, even across app restarts or a new journey.
-            await ref.read(repositoryProvider).saveJourneyRecord(
-                  userProfileId: profileId,
-                  journeyNumber: userState.currentJourneyNumber,
-                  gemsCollected: userState.gemBalance,
-                  startDate: userState.lastOpenedDate ?? DateTime.now(),
-                  endDate: DateTime.now(),
-                );
-
-            // Backup to localStorage
-            await _backupJourneyData(ref, profileId);
-          }
-          // Clear all ritual completions and charms for the new journey
-          await ref.read(repositoryProvider).clearJourneyProgress();
-          ref.read(userStateProvider.notifier).completeCurrentJourney();
-          if (!context.mounted) return;
-          Navigator.pop(context);
-          // Navigate to landing screen
-          Navigator.of(context).pushNamedAndRemoveUntil(
-            '/landing',
-            (route) => false,
-          );
-        },
-      ),
-    );
-  }
-
-  void _showPregnancyWinDialog(BuildContext context, WidgetRef ref) {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => PregnancyWinDialog(
-        onShare: () {
-          // Share functionality - disabled for now
-          Navigator.pop(context);
-          _showContinueJourneyDialog(context, ref);
-        },
-        onNoThanks: () {
-          Navigator.pop(context);
-          _showContinueJourneyDialog(context, ref);
-        },
-      ),
-    );
-  }
-
-  void _showContinueJourneyDialog(BuildContext context, WidgetRef ref) {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => ContinueJourneyQuestionDialog(
-        onContinue: () {
-          // Continue journey - go back to home
-          Navigator.pop(context);
-        },
-        onComplete: () {
-          Navigator.pop(context);
-          _showStartNewJourneyDayDialog(context, ref);
-        },
-      ),
-    );
-  }
-
-  void _showStartNewJourneyDayDialog(BuildContext context, WidgetRef ref) {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => StartNewJourneyDayDialog(
-        onConfirm: (startDay) async {
-          // Complete journey - save and go to achievements
-          final userState = ref.read(userStateProvider);
-          final profileId = userState.profileId;
-
-          if (profileId != null) {
-            await ref.read(repositoryProvider).saveJourneyRecord(
-                  userProfileId: profileId,
-                  journeyNumber: userState.currentJourneyNumber,
-                  gemsCollected: userState.gemBalance,
-                  startDate: userState.lastOpenedDate ?? DateTime.now(),
-                  endDate: DateTime.now(),
-                );
-
-            // Backup to localStorage
-            await _backupJourneyData(ref, profileId);
-          }
-
-          // Clear progress for next journey
-          await ref.read(repositoryProvider).clearJourneyProgress();
-          ref
-              .read(userStateProvider.notifier)
-              .completeCurrentJourney(startDay: startDay);
-          // Persist the chosen start day so calculateCurrentCycleDay()
-          // restores it correctly on a later login, same as onboarding.
-          await ref.read(repositoryProvider).saveCycleProfile(
-                startDate:
-                    DateTime.now().subtract(Duration(days: startDay - 1)),
-                cycleLength: 28,
-                ttcStatus: ref.read(onboardingProvider).conceptionStatus,
-                ttcMethods: ref.read(onboardingProvider).tryingMethods,
-                startingCycleDay: startDay,
-              );
-
-          if (!context.mounted) return;
-          Navigator.pop(context);
-          // Navigate to achievements screen
-          Navigator.of(context).pushNamedAndRemoveUntil(
-            '/home',
-            (route) => false,
-          );
-          // Switch to achievements tab (tab index 3)
-          // Note: This will require updating the home screen to accept initial tab
-        },
-      ),
-    );
-  }
-
   void _showDeleteAccountDialog(BuildContext context, WidgetRef ref) {
     showDialog(
       context: context,
@@ -461,34 +332,6 @@ class ProfileScreen extends ConsumerWidget {
           ),
         ],
       ),
-    );
-  }
-
-  /// Backup user profile and journey data to localStorage
-  Future<void> _backupJourneyData(WidgetRef ref, int profileId) async {
-    final userState = ref.read(userStateProvider);
-    final repository = ref.read(repositoryProvider);
-
-    // Backup profile
-    if (userState.name != null && userState.email != null) {
-      await LocalBackupStorage.saveUserProfile(
-        profileId: profileId,
-        name: userState.name!,
-        email: userState.email!,
-      );
-    }
-
-    // Backup all journeys
-    final records = await repository.getJourneyRecordsForUser(profileId);
-    await LocalBackupStorage.saveJourneyHistory(
-      records
-          .map((r) => {
-                'journeyNumber': r.journeyNumber,
-                'gemsCollected': r.gemsCollected,
-                'startDate': r.startDate.toIso8601String(),
-                'endDate': r.endDate.toIso8601String(),
-              })
-          .toList(),
     );
   }
 }
