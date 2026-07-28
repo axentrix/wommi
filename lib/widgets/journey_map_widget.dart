@@ -54,6 +54,15 @@ class _JourneyMapWidgetState extends ConsumerState<JourneyMapWidget>
   late final Animation<double> _zoomCurve;
   Alignment _zoomFocal = Alignment.center;
 
+  // Which marker the map is currently zoomed into, so the reopen chip below
+  // can bring its dialog back without re-triggering the zoom - and so the
+  // back button knows there's something to zoom back out of. Closing the
+  // dialog itself (X, tap-outside, "Not now"...) no longer un-zooms; only
+  // the back button does.
+  bool _zoomed = false;
+  int? _activeDay;
+  bool _activeIsOvary = false;
+
   @override
   void initState() {
     super.initState();
@@ -75,17 +84,61 @@ class _JourneyMapWidgetState extends ConsumerState<JourneyMapWidget>
   }
 
   /// Zooms the map in on [focal] (fractional 0..1 position of whatever was
-  /// tapped), awaits [showContent] (a showDialog(...) call, typically), then
-  /// zooms back out once it's dismissed.
-  Future<void> _zoomInto(
-    Offset focal,
-    Future<void> Function() showContent,
-  ) async {
-    setState(() => _zoomFocal = FractionalOffset(focal.dx, focal.dy));
-    await _zoomController.forward();
-    await showContent();
-    if (!mounted) return;
+  /// tapped) if it isn't already zoomed in, remembers it as the active
+  /// marker, then shows its dialog. Does *not* zoom back out when the
+  /// dialog closes - only [_exitZoom] does that.
+  Future<void> _openZoomedMarker(
+    Offset focal, {
+    int? day,
+    bool isOvary = false,
+  }) async {
+    setState(() {
+      _activeDay = day;
+      _activeIsOvary = isOvary;
+    });
+    if (!_zoomed) {
+      setState(() {
+        _zoomed = true;
+        _zoomFocal = FractionalOffset(focal.dx, focal.dy);
+      });
+      await _zoomController.forward();
+    }
+    await _showActiveDialog();
+  }
+
+  /// Re-shows whichever dialog belongs to the currently zoomed-in marker,
+  /// recomputing its state fresh - used by the reopen chip.
+  Future<void> _showActiveDialog() async {
+    final userState = ref.read(userStateProvider);
+    if (_activeIsOvary) {
+      await _showOvaryPhase(
+        context,
+        userState.currentDay,
+        _ovaryDayCount(userState),
+      );
+    } else if (_activeDay != null) {
+      final day = _activeDay!;
+      final isCompleted = userState.completedDays.contains(day);
+      await _showDayInfo(
+        context,
+        day,
+        isCompleted: isCompleted,
+        isInProgress: !isCompleted && userState.inProgressDays.contains(day),
+        isCurrent: day == userState.currentDay,
+        isFuture: day > userState.currentDay,
+      );
+    }
+  }
+
+  /// The only way back to the normal map view once zoomed in.
+  Future<void> _exitZoom() async {
     await _zoomController.reverse();
+    if (!mounted) return;
+    setState(() {
+      _zoomed = false;
+      _activeDay = null;
+      _activeIsOvary = false;
+    });
   }
 
   // Clamped so there are always at least 2 individually-plotted days after
@@ -163,7 +216,40 @@ class _JourneyMapWidgetState extends ConsumerState<JourneyMapWidget>
           child: AspectRatio(
             aspectRatio: _bgWidth / _bgHeight,
             child: ClipRect(
-              child: LayoutBuilder(
+              child: Stack(
+                children: [
+                  Positioned.fill(child: _buildZoomableMap(
+                    userState,
+                    currentDay,
+                    ovaryDayCount,
+                    tubeDayCount,
+                    tubeFractions,
+                    uterusStartDay,
+                    uterusAnchor,
+                  )),
+                  if (_zoomed) ...[
+                    _buildBackButton(),
+                    _buildReopenChip(),
+                  ],
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildZoomableMap(
+    UserState userState,
+    int currentDay,
+    int ovaryDayCount,
+    int tubeDayCount,
+    List<Offset> tubeFractions,
+    int uterusStartDay,
+    Offset uterusAnchor,
+  ) {
+    return LayoutBuilder(
                 builder: (context, constraints) {
                   final size = Size(constraints.maxWidth, constraints.maxHeight);
                   final mapStack = Stack(
@@ -221,7 +307,70 @@ class _JourneyMapWidgetState extends ConsumerState<JourneyMapWidget>
                     child: mapStack,
                   );
                 },
+    );
+  }
+
+  Widget _buildBackButton() {
+    return Positioned(
+      top: 10,
+      left: 10,
+      child: GestureDetector(
+        onTap: _exitZoom,
+        child: Container(
+          width: 34,
+          height: 34,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: Colors.white.withOpacity(0.92),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.18),
+                blurRadius: 6,
+                offset: const Offset(0, 2),
               ),
+            ],
+          ),
+          child: Icon(Icons.arrow_back, size: 18, color: WommiColors.ink),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildReopenChip() {
+    return Positioned(
+      bottom: 10,
+      left: 0,
+      right: 0,
+      child: Center(
+        child: GestureDetector(
+          onTap: _showActiveDialog,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+            decoration: BoxDecoration(
+              color: WommiColors.cyan,
+              borderRadius: BorderRadius.circular(100),
+              boxShadow: [
+                BoxShadow(
+                  color: WommiColors.cyan.withOpacity(0.4),
+                  blurRadius: 10,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.info_outline, size: 15, color: Colors.white),
+                const SizedBox(width: 6),
+                Text(
+                  'View details',
+                  style: GoogleFonts.unbounded(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
+                  ),
+                ),
+              ],
             ),
           ),
         ),
@@ -253,10 +402,7 @@ class _JourneyMapWidgetState extends ConsumerState<JourneyMapWidget>
       left: position.dx * size.width - nodeSize / 2,
       top: position.dy * size.height - nodeSize / 2,
       child: GestureDetector(
-        onTap: () => _zoomInto(
-          position,
-          () => _showOvaryPhase(context, currentDay, ovaryDayCount),
-        ),
+        onTap: () => _openZoomedMarker(position, isOvary: true),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -339,6 +485,10 @@ class _JourneyMapWidgetState extends ConsumerState<JourneyMapWidget>
         dayCount: ovaryDayCount,
         onDayTap: (day) {
           Navigator.pop(context);
+          setState(() {
+            _activeIsOvary = false;
+            _activeDay = day;
+          });
           final userState = ref.read(userStateProvider);
           _showDayInfo(
             context,
@@ -404,17 +554,7 @@ class _JourneyMapWidgetState extends ConsumerState<JourneyMapWidget>
       left: position.dx - markerSize / 2,
       top: position.dy - markerSize / 2,
       child: GestureDetector(
-        onTap: () => _zoomInto(
-          fraction,
-          () => _showDayInfo(
-            context,
-            day,
-            isCompleted: isCompleted,
-            isInProgress: isInProgress,
-            isCurrent: isCurrent,
-            isFuture: isFuture,
-          ),
-        ),
+        onTap: () => _openZoomedMarker(fraction, day: day),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
