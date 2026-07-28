@@ -3,8 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../theme.dart';
 import '../models/onboarding_state.dart';
+import '../models/user_state.dart';
 import '../providers/user_state_provider.dart';
 import '../providers/repository_provider.dart';
+import '../utils/journey_completion_flows.dart';
 
 /// Shown when tapping a day on the journey map: a summary of what's
 /// typically happening in the cycle on that day, and - for a day that
@@ -42,6 +44,14 @@ class CycleDayInfoDialog extends ConsumerWidget {
     return startingCycleDay == null || startingCycleDay < 10;
   }
 
+  /// The "period started / pregnancy detected" pair only makes sense once
+  /// ovulation is known and enough of the two-week wait has passed -
+  /// offering them any earlier would just be noise.
+  bool _journeyEndToggleEligible(UserState userState) {
+    final ovulationDay = userState.ovulationDay;
+    return ovulationDay != null && day >= ovulationDay + 12;
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final info = _getCycleDayInfo(day, conceptionStatus);
@@ -50,6 +60,8 @@ class CycleDayInfoDialog extends ConsumerWidget {
         _ovulationToggleEligible(ref) &&
         (userState.ovulationDay == null || userState.ovulationDay == day);
     final ovulationMarkedHere = userState.ovulationDay == day;
+    final showJourneyEndToggles =
+        !isFuture && _journeyEndToggleEligible(userState);
 
     return Dialog(
       backgroundColor: Colors.transparent,
@@ -174,6 +186,24 @@ class CycleDayInfoDialog extends ConsumerWidget {
                     ),
                   ],
                 ),
+              ),
+              const SizedBox(height: 16),
+            ],
+            if (showJourneyEndToggles) ...[
+              _buildJourneyEndToggle(
+                context,
+                ref,
+                label: 'Period started',
+                activeColor: WommiColors.cyan,
+                onToggledOn: () => showPeriodStartedFlow(context, ref),
+              ),
+              const SizedBox(height: 10),
+              _buildJourneyEndToggle(
+                context,
+                ref,
+                label: 'Pregnancy detected',
+                activeColor: WommiColors.rose,
+                onToggledOn: () => showPregnancyDetectedFlow(context, ref),
               ),
               const SizedBox(height: 16),
             ],
@@ -376,6 +406,48 @@ class CycleDayInfoDialog extends ConsumerWidget {
             ],
           ],
         ),
+      ),
+    );
+  }
+
+  /// One of the "period started" / "pregnancy detected" pills - same
+  /// styling as the Profile screen's version of these, and wired to the
+  /// same flows, just reachable from a day's popup instead. Always shows
+  /// off: switching it on immediately leaves this journey via [onToggledOn],
+  /// so there's nothing to reflect back as already-on.
+  Widget _buildJourneyEndToggle(
+    BuildContext context,
+    WidgetRef ref, {
+    required String label,
+    required Color activeColor,
+    required VoidCallback onToggledOn,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border.all(color: WommiColors.line, width: 1.5),
+        borderRadius: BorderRadius.circular(100),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            label,
+            style: GoogleFonts.unbounded(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: WommiColors.ink,
+            ),
+          ),
+          Switch(
+            value: false,
+            activeThumbColor: activeColor,
+            onChanged: (value) {
+              if (value) onToggledOn();
+            },
+          ),
+        ],
       ),
     );
   }
