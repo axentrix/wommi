@@ -75,10 +75,10 @@ class _ChallengesScreenState extends ConsumerState<ChallengesScreen> {
 
     await repository.awardCharm(day, 'daily_charm');
     ref.read(userStateProvider.notifier).addGems(1);
-    if (_isSpecificDay) {
-      // Marks this day's node as completed on the journey map.
-      ref.read(userStateProvider.notifier).completeDay(day);
-    }
+    // Marks this day's node as completed on the journey map and counts it
+    // toward the streak - regardless of whether this is today's default
+    // Challenges tab or a specific past/current day opened from the map.
+    ref.read(userStateProvider.notifier).completeDay(day);
     return true;
   }
 

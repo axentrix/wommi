@@ -53,6 +53,11 @@ class UserStateNotifier extends StateNotifier<UserState> {
         .copyWith(
           currentDay: currentDay,
           gemBalance: gemBalance,
+          // A charm is awarded to the same day that completeDay() marks, so
+          // the streak (days completed this journey) always matches the
+          // charm count - restore it the same way gemBalance is restored,
+          // since it isn't tracked in its own database column.
+          streakDays: gemBalance,
           startingCycleDay: startingCycleDay,
         )
         .withOvulationDay(ovulationDay);
@@ -143,6 +148,7 @@ class UserStateNotifier extends StateNotifier<UserState> {
         .copyWith(
           currentDay: startDay,
           gemBalance: 0,
+          streakDays: 0,
           completedDays: [],
           inProgressDays: [],
           journeyHistory: updatedHistory,
