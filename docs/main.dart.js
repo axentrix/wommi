@@ -44648,7 +44648,7 @@ $6(a,b,c,d,e,f){return this.G(this,A.H("call","$6",0,[a,b,c,d,e,f],[],0))},
 $1$tryingMethods(a){return this.G(this,A.H("call","$1$tryingMethods",0,[a],["tryingMethods"],0))},
 $2$currentDay$startingCycleDay(a,b){return this.G(this,A.H("call","$2$currentDay$startingCycleDay",0,[a,b],["currentDay","startingCycleDay"],0))},
 $2$isInserting(a,b){return this.G(this,A.H("call","$2$isInserting",0,[a,b],["isInserting"],0))},
-$8$completedDays$currentDay$currentJourneyNumber$gemBalance$inProgressDays$journeyHistory$lastOpenedDate$startingCycleDay(a,b,c,d,e,f,g,h){return this.G(this,A.H("call","$8$completedDays$currentDay$currentJourneyNumber$gemBalance$inProgressDays$journeyHistory$lastOpenedDate$startingCycleDay",0,[a,b,c,d,e,f,g,h],["completedDays","currentDay","currentJourneyNumber","gemBalance","inProgressDays","journeyHistory","lastOpenedDate","startingCycleDay"],0))},
+$9$completedDays$currentDay$currentJourneyNumber$gemBalance$inProgressDays$journeyHistory$lastOpenedDate$startingCycleDay$streakDays(a,b,c,d,e,f,g,h,i){return this.G(this,A.H("call","$9$completedDays$currentDay$currentJourneyNumber$gemBalance$inProgressDays$journeyHistory$lastOpenedDate$startingCycleDay$streakDays",0,[a,b,c,d,e,f,g,h,i],["completedDays","currentDay","currentJourneyNumber","gemBalance","inProgressDays","journeyHistory","lastOpenedDate","startingCycleDay","streakDays"],0))},
 $4$color$fontSize$fontStyle$height(a,b,c,d){return this.G(this,A.H("call","$4$color$fontSize$fontStyle$height",0,[a,b,c,d],["color","fontSize","fontStyle","height"],0))},
 $2$hitTest$paintTransform(a,b){return this.G(this,A.H("call","$2$hitTest$paintTransform",0,[a,b],["hitTest","paintTransform"],0))},
 $3$crossAxisPosition$mainAxisPosition(a,b,c){return this.G(this,A.H("call","$3$crossAxisPosition$mainAxisPosition",0,[a,b,c],["crossAxisPosition","mainAxisPosition"],0))},
@@ -44669,7 +44669,7 @@ $3$decoration$decorationColor$fontSize(a,b,c){return this.G(this,A.H("call","$3$
 $3$bodyColor$decorationColor$displayColor(a,b,c){return this.G(this,A.H("call","$3$bodyColor$decorationColor$displayColor",0,[a,b,c],["bodyColor","decorationColor","displayColor"],0))},
 $3$email$name$profileId(a,b,c){return this.G(this,A.H("call","$3$email$name$profileId",0,[a,b,c],["email","name","profileId"],0))},
 $1$completedDays(a){return this.G(this,A.H("call","$1$completedDays",0,[a],["completedDays"],0))},
-$3$currentDay$gemBalance$startingCycleDay(a,b,c){return this.G(this,A.H("call","$3$currentDay$gemBalance$startingCycleDay",0,[a,b,c],["currentDay","gemBalance","startingCycleDay"],0))},
+$4$currentDay$gemBalance$startingCycleDay$streakDays(a,b,c,d){return this.G(this,A.H("call","$4$currentDay$gemBalance$startingCycleDay$streakDays",0,[a,b,c,d],["currentDay","gemBalance","startingCycleDay","streakDays"],0))},
 $2$tablePrefix(a,b){return this.G(this,A.H("call","$2$tablePrefix",0,[a,b],["tablePrefix"],0))},
 $2$currentJourneyNumber$journeyHistory(a,b){return this.G(this,A.H("call","$2$currentJourneyNumber$journeyHistory",0,[a,b],["currentJourneyNumber","journeyHistory"],0))},
 $5$endDate$gemsCollected$journeyNumber$startDate$userProfileId(a,b,c,d,e){return this.G(this,A.H("call","$5$endDate$gemsCollected$journeyNumber$startDate$userProfileId",0,[a,b,c,d,e],["endDate","gemsCollected","journeyNumber","startDate","userProfileId"],0))},
@@ -56683,11 +56683,11 @@ $S:0}
 A.C3.prototype={
 BB(a9,b0,b1,b2,b3,b4,b5,b6,b7,b8,b9,c0,c1,c2,c3,c4,c5,c6,c7,c8,c9,d0,d1,d2,d3,d4,d5,d6,d7,d8,d9,e0,e1,e2,e3,e4,e5,e6,e7,e8){var s=this,r=d7==null?s.b:d7,q=e0==null?s.e:e0,p=c7==null?s.f:c7,o=d2==null?s.x:d2,n=d5==null?s.as:d5,m=d4==null?s.ax:d4,l=c2==null?s.db:c2,k=c1==null?s.dx:c1,j=c6==null?s.fr:c6,i=c5==null?s.fx:c5,h=d8==null?s.id:d8,g=d9==null?s.fy:d9,f=b2==null?s.go:b2,e=e3==null?s.ok:e3,d=e1==null?s.p1:e1,c=e7==null?s.R8:e7,b=e5==null?s.RG:e5,a=b3==null?s.to:b3,a0=b5==null?s.ry:b5,a1=b4==null?s.x1:b4,a2=c4==null?s.x2:c4,a3=c3==null?s.xr:c3,a4=c9==null?s.aA:c9,a5=b8==null?s.P:b8,a6=b0==null?s.Y:b0,a7=e4==null?s.af:e4,a8=a9==null?s.a0:a9
 return A.ad3(a8,a6,s.am,f,a,a1,a0,s.N,b7!==!1,a5,s.cy,s.aH,s.dy,k,l,a3,a2,i,j,p,s.y1,a4,s.t,s.r,s.y,o,s.w,s.Q,s.ay,m,n,s.z,s.at,s.y2,s.a,r,h,g,s.c,q,s.d,!0,!0,!1,s.k3,s.k1,d,s.k2,e,s.k4,a7,s.p3,s.p2,b,s.rx,c,s.p4,s.aL)},
-as6(a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p,q,r,a0,a1,a2,a3,a4,a5,a6,a7,a8,a9,b0,b1,b2,b3,b4,b5,b6){var s=null
+as5(a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p,q,r,a0,a1,a2,a3,a4,a5,a6,a7,a8,a9,b0,b1,b2,b3,b4,b5,b6){var s=null
 return this.BB(a,b,c,d,s,e,s,f,s,g,h,i,j,s,k,l,m,n,o,p,q,r,a0,a1,a2,a3,a4,a5,a6,a7,a8,a9,b0,b1,b2,s,b3,b4,b5,b6)},
 arV(a,b){var s=null
 return this.BB(s,s,s,s,s,s,s,s,a,s,s,s,s,s,s,s,s,s,s,s,s,s,s,s,s,b,s,s,s,s,s,s,s,s,s,s,s,s,s,s)},
-as7(a,b,c,d){var s=null
+as6(a,b,c,d){var s=null
 return this.BB(s,s,s,s,s,a,b,s,s,s,s,s,s,c,s,s,s,s,s,s,s,s,s,s,s,s,s,s,s,s,s,s,s,s,s,d,s,s,s,s)},
 arS(a,b){var s=null
 return this.BB(s,s,s,s,s,s,a,s,s,s,s,s,s,s,s,s,s,s,s,s,s,s,s,s,s,s,s,s,s,s,s,s,s,s,s,b,s,s,s,s)},
@@ -56729,7 +56729,7 @@ c=a.P
 if(c==null)c=a1.ok
 b=a.Y
 if(b==null)b=a1.p1
-return a.as6(a.a0===!0,b,a1.p3,l,f,a1.k4,c,a1.k1,a1.x,o,e,a.x2===!0,m,n,s,a1.go,d,a1.k3,a1.d,r,a1.f,p,q,a1.id,k,a.id===!0,a.fy===!0,a0,i,a1.CW,j,g,a1.db,h,a1.p4)},
+return a.as5(a.a0===!0,b,a1.p3,l,f,a1.k4,c,a1.k1,a1.x,o,e,a.x2===!0,m,n,s,a1.go,d,a1.k3,a1.d,r,a1.f,p,q,a1.id,k,a.id===!0,a.fy===!0,a0,i,a1.CW,j,g,a1.db,h,a1.p4)},
 j(a,b){var s,r=this
 if(b==null)return!1
 if(r===b)return!0
@@ -59977,7 +59977,7 @@ if(s==null){s=l.c
 s.toString
 q=A.a5(s).ok.Q
 q.toString
-s=q.cN(A.a5(s).ax.fy)}return p.as7(s,n,k,m)}return p.arS(n,m)},
+s=q.cN(A.a5(s).ax.fy)}return p.as6(s,n,k,m)}return p.arS(n,m)},
 aC(){var s,r=this
 r.aV()
 r.w=new A.a1D(r,r)
@@ -64008,7 +64008,7 @@ arX(a,b){return this.rM(a,null,b,null)},
 arZ(a,b){return this.rM(null,null,a,b)},
 K4(a){return this.rM(a,null,null,null)},
 YH(a){return this.rM(null,a,null,null)},
-as4(a,b,c){return this.rM(a,null,b,c)},
+as3(a,b,c){return this.rM(a,null,b,c)},
 ns(a){var s=this,r=a.gf6(),q=a.gck(a)+a.gco(a),p=Math.max(0,s.a-r),o=Math.max(0,s.c-q)
 return new A.aq(p,Math.max(p,s.b-r),o,Math.max(o,s.d-q))},
 pz(a){var s=this,r=a.a,q=a.b,p=a.c,o=a.d
@@ -66567,7 +66567,7 @@ r=r<m}else r=!0}else r=!1
 if(r)while(r=b.R$,r!=null)b.zb(r)
 r=t.k.a(A.v.prototype.gS.call(b))
 p=b.aL
-k=r.as4(p,p,0)
+k=r.as3(p,p,0)
 if(b.bE$===0){b.QY(m)
 r=b.R$
 r.toString
@@ -82090,7 +82090,7 @@ as1(a,b){return this.rN(null,null,null,a,b)},
 arK(a){var s=null
 return this.rN(s,s,a,s,s)},
 as8(a,b,c,d){return this.rN(a,b,null,c,d)},
-as5(a,b,c){return this.rN(null,a,null,b,c)},
+as4(a,b,c){return this.rN(null,a,null,b,c)},
 arE(a){var s=null
 return this.rN(s,a,s,s,s)},
 a1F(a,b,c,d){var s,r,q,p,o,n,m=this,l=null
@@ -83977,7 +83977,7 @@ r=s.b.c
 r.toString
 q=t.w
 p=A.bV(r,m,q).w
-o=A.bV(a,m,q).w.as5(p.r,p.f,p.w)
+o=A.bV(a,m,q).w.as4(p.r,p.f,p.w)
 q=n.a
 return new A.yC(new A.WX(n,A.CN(new A.dX(q.d,m),o),m),A.co(m,q.e,!1,m,m,!1,m,m,m,m,m,m,m,m,m,m,m,m,m,m,m,m,m,m,m,m,m,m,m,m,m,m,m,m,m,m,m,m,m,n,m),s,m)}}
 A.axX.prototype={
@@ -96633,22 +96633,21 @@ l4(a,b,c,d,e,f,a0,a1,a2,a3,a4,a5){var s=this,r=b==null?s.a:b,q=e==null?s.c:e,p=a
 return new A.id(r,s.b,q,p,o,n,m,l,k,j,i,h,g,s.at)},
 K5(a,b){var s=null
 return this.l4(s,a,s,s,s,s,s,s,s,s,b,s)},
-asc(a,b,c,d,e,f,g,h){var s=null
-return this.l4(a,b,c,s,d,e,f,g,s,s,h,s)},
+asc(a,b,c,d,e,f,g,h,i){return this.l4(a,b,c,null,d,e,f,g,null,null,h,i)},
 arf(a){var s=null
 return this.l4(s,s,s,s,a,s,s,s,s,s,s,s)},
 arP(a,b){var s=null
 return this.l4(a,s,s,s,s,s,s,s,s,s,s,b)},
 YF(a){var s=null
 return this.l4(s,s,s,s,s,a,s,s,s,s,s,s)},
-as3(a,b,c){var s=null
+as2(a,b,c){var s=null
 return this.l4(s,a,s,s,s,s,s,b,s,s,c,s)},
 K7(a,b,c){var s=null
 return this.l4(s,s,s,a,s,s,s,s,b,c,s,s)},
 ar8(a){var s=null
 return this.l4(a,s,s,s,s,s,s,s,s,s,s,s)},
-as2(a,b,c){var s=null
-return this.l4(s,a,s,s,b,s,s,s,s,s,c,s)},
+as7(a,b,c,d){var s=null
+return this.l4(s,a,s,s,b,s,s,s,s,s,c,d)},
 arT(a,b){var s=null
 return this.l4(s,s,a,s,s,s,b,s,s,s,s,s)},
 Et(a){var s=this
@@ -96705,12 +96704,12 @@ A.aEY.prototype={
 $1(a){return new A.pD(a.f9($.aUE(),t.f1))},
 $S:621}
 A.nr.prototype={
-CU(a){this.scU(0,this.f.as3(a,new A.c3(Date.now(),0,!1),a))},
+CU(a){this.scU(0,this.f.as2(a,new A.c3(Date.now(),0,!1),a))},
 a_K(a){var s
 if(a.length===0)return
 s=new A.Z(a,new A.aqY(),A.X(a).h("Z<1,m>")).xB(0,new A.aqZ())
 this.scU(0,this.f.arT(s+1,a))},
-a_H(a,b,c,d){this.scU(0,this.f.as2(a,b,d).Et(c))},
+a_H(a,b,c,d){this.scU(0,this.f.as7(a,b,d,b).Et(c))},
 avl(a,b){return this.a_H(a,b,null,null)},
 a_I(a){if(a.gaa(a))return
 this.scU(0,this.f.ar8(a.eH(0)))},
@@ -96730,7 +96729,7 @@ p=q.f
 o=t.t
 s=A.b([],o)
 o=A.b([],o)
-q.scU(0,p.asc(s,a,q.f.w+1,0,o,r,new A.c3(Date.now(),0,!1),a).Et(null))},
+q.scU(0,p.asc(s,a,q.f.w+1,0,o,r,new A.c3(Date.now(),0,!1),a,0).Et(null))},
 aqO(){return this.Yv(1)}}
 A.aqY.prototype={
 $1(a){return a.a},
@@ -96796,11 +96795,11 @@ l=t.R
 k=i.aS(0,m,l)
 j=k.f
 k.scU(0,j.arf(j.c+1))
-if(p.a.d!=null){i=i.aS(0,m,l)
-if(!B.b.q(i.f.e,o)){m=A.a0(i.f.e,t.S)
-m.push(o)
-l=i.f
-i.scU(0,l.arP(m,l.d+1))}}q=!0
+l=i.aS(0,m,l)
+if(!B.b.q(l.f.e,o)){i=A.a0(l.f.e,t.S)
+i.push(o)
+m=l.f
+l.scU(0,m.arP(i,m.d+1))}q=!0
 s=1
 break
 case 1:return A.A(q,r)}})
