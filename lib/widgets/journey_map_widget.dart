@@ -49,10 +49,11 @@ class _JourneyMapWidgetState extends ConsumerState<JourneyMapWidget>
   // ovary node or jumping straight to the uterus path.
   static const int tubeStepSlots = 5;
 
-  // The uterus phase defaults to this many days after the tube, but - same
-  // idea as the ovary - keeps growing to keep up with currentDay if the
-  // journey runs long, up to this cap.
-  static const int defaultUterusDayCount = 10;
+  // The uterus phase defaults to this many days after the tube - together
+  // with tubeStepSlots that's an 18-day post-ovulation journey by default
+  // (5 tube + 13 uterus) - but, same idea as the ovary, keeps growing to
+  // keep up with currentDay if the journey runs long, up to this cap.
+  static const int defaultUterusDayCount = 13;
   static const int maxUterusDayCount = 15;
 
   // How far a tapped marker's region "zooms in" to preview the eventual
