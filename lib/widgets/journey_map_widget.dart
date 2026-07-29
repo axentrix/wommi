@@ -154,16 +154,13 @@ class _JourneyMapWidgetState extends ConsumerState<JourneyMapWidget>
   // Clamped so there are always at least 2 individually-plotted days after
   // it - _getPositionForDay's t = 0/(individualDayCount - 1) would divide
   // by zero otherwise, if ovulation were ever marked on day 34 or later.
+  // Fixed at defaultOvaryDayCount until ovulation is marked - it doesn't
+  // grow with currentDay the way the uterus does, since the ovulation
+  // toggle is always available (see CycleDayInfoDialog) as the way to
+  // close it off, on any day, regardless of when the journey started.
   int _ovaryDayCount(UserState userState) {
     final ovulationDay = userState.ovulationDay;
-    final base = ovulationDay != null
-        ? ovulationDay - 1
-        : _growableCount(
-            defaultCount: defaultOvaryDayCount,
-            maxCount: 33,
-            phaseStartDay: 1,
-            currentDay: userState.currentDay,
-          );
+    final base = ovulationDay != null ? ovulationDay - 1 : defaultOvaryDayCount;
     return base.clamp(1, 33);
   }
 
