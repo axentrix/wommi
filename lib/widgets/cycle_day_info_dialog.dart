@@ -32,18 +32,6 @@ class CycleDayInfoDialog extends ConsumerWidget {
     required this.onOpenMissions,
   });
 
-  /// Only worth asking about ovulation for a journey that started early in
-  /// the cycle - by the time someone opens the app on, say, day 20, they're
-  /// well past it and the toggle would just be noise. Onboarding doesn't
-  /// collect an ovulation date at all yet, so that half of the condition is
-  /// unconditionally true for now. startingCycleDay is null for any journey
-  /// started before that field existed - treat unknown as eligible rather
-  /// than silently hiding the toggle for every existing user.
-  bool _ovulationToggleEligible(WidgetRef ref) {
-    final startingCycleDay = ref.watch(userStateProvider).startingCycleDay;
-    return startingCycleDay == null || startingCycleDay < 10;
-  }
-
   /// The "period started / pregnancy detected" pair only makes sense once
   /// ovulation is known and enough of the two-week wait has passed -
   /// offering them any earlier would just be noise.
@@ -56,8 +44,11 @@ class CycleDayInfoDialog extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final info = _getCycleDayInfo(day, conceptionStatus);
     final userState = ref.watch(userStateProvider);
+    // Always offered on any non-future day until marked - a journey can be
+    // started on any cycle day, so there's no "too late to ask" cutoff;
+    // this toggle is the only way to close off the ovary phase (see
+    // JourneyMapWidget._ovaryDayCount), so it must never become unreachable.
     final showOvulationToggle = !isFuture &&
-        _ovulationToggleEligible(ref) &&
         (userState.ovulationDay == null || userState.ovulationDay == day);
     final ovulationMarkedHere = userState.ovulationDay == day;
     final showJourneyEndToggles =

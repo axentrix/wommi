@@ -33,17 +33,12 @@ class OvaryPhaseDialog extends ConsumerWidget {
             : dayCount)
         .clamp(1, 33);
 
-    // Only worth asking for a journey that started early in the cycle -
-    // onboarding doesn't collect an ovulation date at all yet, so that half
-    // of the eligibility is unconditionally true for now. startingCycleDay
-    // is null for any journey started before that field existed - treat
-    // unknown as eligible rather than silently hiding the toggle for every
-    // existing user.
-    final eligible = userState.startingCycleDay == null ||
-        userState.startingCycleDay! < 10;
+    // Always offered until marked, regardless of when the journey started -
+    // this toggle is the only way to close off the ovary phase, so it must
+    // never become unreachable (see JourneyMapWidget._ovaryDayCount).
     final ovulationMarkedToday = userState.ovulationDay == currentDay;
-    final showOvulationToggle = eligible &&
-        (userState.ovulationDay == null || ovulationMarkedToday);
+    final showOvulationToggle =
+        userState.ovulationDay == null || ovulationMarkedToday;
 
     return Dialog(
       backgroundColor: Colors.transparent,
