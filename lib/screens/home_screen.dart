@@ -6,6 +6,7 @@ import '../providers/user_state_provider.dart';
 import '../providers/repository_provider.dart';
 import '../widgets/bottom_navigation_bar.dart';
 import '../widgets/profile_collection_dialog.dart';
+import '../widgets/welcome_dialog.dart';
 import '../widgets/journey_map_widget.dart';
 import '../widgets/gem_balance_popup.dart';
 import 'challenges_screen.dart';
@@ -27,7 +28,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
       final userState = ref.read(userStateProvider);
 
       // A cycle day of 0 means onboarding was never actually completed -
@@ -44,11 +45,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       print('[Home] Checking profile - hasProfile: ${userState.hasProfile}, name: ${userState.name}, email: ${userState.email}');
       if (!userState.hasProfile) {
         print('[Home] Showing profile collection dialog');
-        showDialog(
+        await showDialog(
           context: context,
           barrierDismissible: false,
           builder: (context) => const ProfileCollectionDialog(),
         );
+        if (!mounted) return;
+        // Welcome them only once, right after name/email are in - not
+        // before, since that's the last onboarding step before they
+        // actually land here.
+        await showWelcomeDialog(context);
       }
     });
   }

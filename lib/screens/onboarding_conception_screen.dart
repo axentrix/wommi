@@ -6,7 +6,6 @@ import '../providers/onboarding_provider.dart';
 import '../providers/user_state_provider.dart';
 import '../providers/repository_provider.dart';
 import '../widgets/choice_button.dart';
-import '../widgets/welcome_dialog.dart';
 
 class OnboardingConceptionScreen extends ConsumerWidget {
   const OnboardingConceptionScreen({super.key});
@@ -159,29 +158,23 @@ class OnboardingConceptionScreen extends ConsumerWidget {
                               cycleLength: 28,
                               ttcStatus: onboardingData.conceptionStatus,
                               startingCycleDay: onboardingData.effectiveCycleDay,
-                            ).then((_) async {
+                            ).then((_) {
                               // Initialize user state and go to home
                               ref
                                   .read(userStateProvider.notifier)
                                   .initializeFromOnboarding(onboardingData.effectiveCycleDay);
-                              if (!context.mounted) return;
 
-                              await showWelcomeDialog(context);
-                              if (!context.mounted) return;
                               Navigator.of(context).pushNamedAndRemoveUntil(
                                 '/home',
                                 (route) => false,
                               );
-                            }).catchError((error) async {
+                            }).catchError((error) {
                               print('Error saving cycle profile: $error');
                               // Still navigate even if save fails
                               ref
                                   .read(userStateProvider.notifier)
                                   .initializeFromOnboarding(onboardingData.effectiveCycleDay);
-                              if (!context.mounted) return;
 
-                              await showWelcomeDialog(context);
-                              if (!context.mounted) return;
                               Navigator.of(context).pushNamedAndRemoveUntil(
                                 '/home',
                                 (route) => false,
