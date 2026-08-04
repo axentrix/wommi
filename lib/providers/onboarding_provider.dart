@@ -36,8 +36,16 @@ class OnboardingNotifier extends StateNotifier<OnboardingData> {
     state = state.copyWith(tryingMethods: [method]);
   }
 
-  void setDaysIntoWait(int days) {
-    state = state.copyWith(daysIntoWait: days);
+  void setTrackingOvulation(bool value) {
+    state = state.withTrackingOvulation(value);
+  }
+
+  void setDaysPastOvulation(int days) {
+    state = state.withDaysPastOvulation(days);
+  }
+
+  void setOvulationNotYetHappened() {
+    state = state.withOvulationNotYetHappened();
   }
 
   void reset() {

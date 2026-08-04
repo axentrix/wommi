@@ -16,8 +16,6 @@ class OnboardingStep3Screen extends ConsumerWidget {
     final onboardingData = ref.watch(onboardingProvider);
     final isActivelyTrying =
         onboardingData.conceptionStatus == ConceptionStatus.activelyTrying;
-    final isTwoWeekWait =
-        onboardingData.conceptionStatus == ConceptionStatus.twoWeekWait;
 
     return Scaffold(
       backgroundColor: WommiColors.bg,
@@ -133,56 +131,91 @@ class OnboardingStep3Screen extends ConsumerWidget {
                           );
                         }).toList(),
                       ),
-                    ] else if (isTwoWeekWait) ...[
+                      const SizedBox(height: 30),
+                      // Are you tracking ovulation?
                       Text(
-                        'How many days into\nthe wait are you?',
+                        'Are you tracking ovulation?',
                         style: TextStyle(
                           fontFamily: 'Unbounded',
                           fontWeight: FontWeight.w800,
-                          fontSize: 24,
+                          fontSize: 18,
                           height: 1.25,
                           color: WommiColors.ink,
                         ),
                       ),
-                      const SizedBox(height: 10),
-                      Text(
-                        'This helps us time your rituals and support during the two-week wait.',
-                        style: TextStyle(
-                          fontFamily: 'Inter',
-                          fontSize: 13.5,
-                          height: 1.55,
-                          color: WommiColors.inkDim,
-                        ),
+                      const SizedBox(height: 14),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: [
+                          ChipButton(
+                            text: 'Yes',
+                            isSelected: onboardingData.isTrackingOvulation == true,
+                            onTap: () => ref
+                                .read(onboardingProvider.notifier)
+                                .setTrackingOvulation(true),
+                          ),
+                          ChipButton(
+                            text: 'No',
+                            isSelected: onboardingData.isTrackingOvulation == false,
+                            onTap: () => ref
+                                .read(onboardingProvider.notifier)
+                                .setTrackingOvulation(false),
+                          ),
+                        ],
                       ),
-                      const SizedBox(height: 26),
-                      // Number wheel for days into wait
-                      Center(
-                        child: Column(
-                          children: [
-                            NumberScrollPicker(
-                              minValue: 1,
-                              maxValue: 14,
-                              initialValue: onboardingData.daysIntoWait ?? 7,
-                              onChanged: (value) {
-                                ref
-                                    .read(onboardingProvider.notifier)
-                                    .setDaysIntoWait(value);
-                              },
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              'DAYS INTO WAIT',
-                              style: TextStyle(
-                                fontFamily: 'Space Mono',
-                                fontSize: 11,
-                                letterSpacing: 1.1,
-                                color: WommiColors.inkDim,
-                                fontWeight: FontWeight.w400,
-                              ),
-                            ),
-                          ],
+                      if (onboardingData.needsDaysPastOvulationQuestion) ...[
+                        const SizedBox(height: 30),
+                        Text(
+                          'How many days past\novulation are you?',
+                          style: TextStyle(
+                            fontFamily: 'Unbounded',
+                            fontWeight: FontWeight.w800,
+                            fontSize: 18,
+                            height: 1.25,
+                            color: WommiColors.ink,
+                          ),
                         ),
-                      ),
+                        const SizedBox(height: 14),
+                        ChipButton(
+                          text: 'Ovulation hasn\'t happened yet',
+                          isSelected: onboardingData.ovulationNotYetHappened,
+                          onTap: () => ref
+                              .read(onboardingProvider.notifier)
+                              .setOvulationNotYetHappened(),
+                        ),
+                        if (!onboardingData.ovulationNotYetHappened) ...[
+                          const SizedBox(height: 20),
+                          Center(
+                            child: Column(
+                              children: [
+                                NumberScrollPicker(
+                                  minValue: 0,
+                                  maxValue: 16,
+                                  initialValue:
+                                      onboardingData.daysPastOvulation ?? 0,
+                                  onChanged: (value) {
+                                    ref
+                                        .read(onboardingProvider.notifier)
+                                        .setDaysPastOvulation(value);
+                                  },
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  'DAYS PAST OVULATION',
+                                  style: TextStyle(
+                                    fontFamily: 'Space Mono',
+                                    fontSize: 11,
+                                    letterSpacing: 1.1,
+                                    color: WommiColors.inkDim,
+                                    fontWeight: FontWeight.w400,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ],
                     ],
                   ],
                 ),
@@ -208,23 +241,25 @@ class OnboardingStep3Screen extends ConsumerWidget {
                       ttcStatus: onboardingData.conceptionStatus,
                       ttcMethods: onboardingData.tryingMethods,
                       startingCycleDay: onboardingData.effectiveCycleDay,
-                    ).then((_) {
+                    ).then((_) async {
                       // Initialize user state with onboarding data
                       ref
                           .read(userStateProvider.notifier)
                           .initializeFromOnboarding(onboardingData.effectiveCycleDay);
+                      await _applyOvulationAnswer(ref, onboardingData);
 
                       // Navigate to home screen
                       Navigator.of(context).pushNamedAndRemoveUntil(
                         '/home',
                         (route) => false,
                       );
-                    }).catchError((error) {
+                    }).catchError((error) async {
                       print('Error saving cycle profile: $error');
                       // Still navigate even if save fails
                       ref
                           .read(userStateProvider.notifier)
                           .initializeFromOnboarding(onboardingData.effectiveCycleDay);
+                      await _applyOvulationAnswer(ref, onboardingData);
 
                       Navigator.of(context).pushNamedAndRemoveUntil(
                         '/home',
@@ -257,5 +292,26 @@ class OnboardingStep3Screen extends ConsumerWidget {
         ),
       ),
     );
+  }
+
+  /// If they gave a specific days-past-ovulation answer, seed
+  /// UserState.ovulationDay from it directly - so the journey map already
+  /// reflects it instead of asking them to set the toggle again themselves.
+  /// A no-op if they're not tracking, said ovulation hasn't happened yet,
+  /// or didn't answer.
+  Future<void> _applyOvulationAnswer(
+    WidgetRef ref,
+    OnboardingData onboardingData,
+  ) async {
+    final daysPast = onboardingData.daysPastOvulation;
+    if (onboardingData.isTrackingOvulation != true ||
+        onboardingData.ovulationNotYetHappened ||
+        daysPast == null) {
+      return;
+    }
+    final ovulationDay =
+        (onboardingData.effectiveCycleDay - daysPast).clamp(1, 33);
+    ref.read(userStateProvider.notifier).markOvulationDay(ovulationDay);
+    await ref.read(repositoryProvider).setOvulationDay(ovulationDay);
   }
 }
