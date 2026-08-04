@@ -6,6 +6,7 @@ import '../providers/onboarding_provider.dart';
 import '../providers/user_state_provider.dart';
 import '../widgets/chip_button.dart';
 import '../widgets/number_scroll_picker.dart';
+import '../widgets/welcome_dialog.dart';
 import '../providers/repository_provider.dart';
 
 class OnboardingStep3Screen extends ConsumerWidget {
@@ -247,8 +248,10 @@ class OnboardingStep3Screen extends ConsumerWidget {
                           .read(userStateProvider.notifier)
                           .initializeFromOnboarding(onboardingData.effectiveCycleDay);
                       await _applyOvulationAnswer(ref, onboardingData);
+                      if (!context.mounted) return;
 
-                      // Navigate to home screen
+                      await showWelcomeDialog(context);
+                      if (!context.mounted) return;
                       Navigator.of(context).pushNamedAndRemoveUntil(
                         '/home',
                         (route) => false,
@@ -260,7 +263,10 @@ class OnboardingStep3Screen extends ConsumerWidget {
                           .read(userStateProvider.notifier)
                           .initializeFromOnboarding(onboardingData.effectiveCycleDay);
                       await _applyOvulationAnswer(ref, onboardingData);
+                      if (!context.mounted) return;
 
+                      await showWelcomeDialog(context);
+                      if (!context.mounted) return;
                       Navigator.of(context).pushNamedAndRemoveUntil(
                         '/home',
                         (route) => false,
