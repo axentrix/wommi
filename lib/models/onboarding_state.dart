@@ -1,7 +1,6 @@
 enum ConceptionStatus {
   thinkingAboutIt('Just starting to think about it'),
   activelyTrying('Actively trying'),
-  twoWeekWait('In the two-week wait'),
   takingPause('Taking a pause right now');
 
   const ConceptionStatus(this.label);
@@ -35,14 +34,22 @@ class OnboardingData {
   final CycleDayDisclosure? cycleDayDisclosure;
   final ConceptionStatus? conceptionStatus;
   final List<TryingMethod> tryingMethods;
-  final int? daysIntoWait;
+  // Only asked when actively trying: whether they're tracking ovulation,
+  // and - if so, and enough of the cycle has passed for it to be relevant -
+  // how many days past it they are. ovulationNotYetHappened covers the case
+  // where they're tracking but ovulation hasn't happened this cycle yet.
+  final bool? isTrackingOvulation;
+  final int? daysPastOvulation;
+  final bool ovulationNotYetHappened;
 
   OnboardingData({
     this.cycleDay = 13,
     this.cycleDayDisclosure,
     this.conceptionStatus,
     this.tryingMethods = const [],
-    this.daysIntoWait,
+    this.isTrackingOvulation,
+    this.daysPastOvulation,
+    this.ovulationNotYetHappened = false,
   });
 
   /// The day actually used to seed the cycle: the picked day normally, or
@@ -53,7 +60,9 @@ class OnboardingData {
     int? cycleDay,
     ConceptionStatus? conceptionStatus,
     List<TryingMethod>? tryingMethods,
-    int? daysIntoWait,
+    bool? isTrackingOvulation,
+    int? daysPastOvulation,
+    bool? ovulationNotYetHappened,
   }) {
     return OnboardingData(
       cycleDay: cycleDay ?? this.cycleDay,
@@ -61,7 +70,10 @@ class OnboardingData {
       cycleDayDisclosure: cycleDay != null ? null : cycleDayDisclosure,
       conceptionStatus: conceptionStatus ?? this.conceptionStatus,
       tryingMethods: tryingMethods ?? this.tryingMethods,
-      daysIntoWait: daysIntoWait ?? this.daysIntoWait,
+      isTrackingOvulation: isTrackingOvulation ?? this.isTrackingOvulation,
+      daysPastOvulation: daysPastOvulation ?? this.daysPastOvulation,
+      ovulationNotYetHappened:
+          ovulationNotYetHappened ?? this.ovulationNotYetHappened,
     );
   }
 
@@ -74,12 +86,59 @@ class OnboardingData {
       cycleDayDisclosure: disclosure,
       conceptionStatus: conceptionStatus,
       tryingMethods: tryingMethods,
-      daysIntoWait: daysIntoWait,
+      isTrackingOvulation: isTrackingOvulation,
+      daysPastOvulation: daysPastOvulation,
+      ovulationNotYetHappened: ovulationNotYetHappened,
     );
   }
 
-  bool get needsStep3 {
-    return conceptionStatus == ConceptionStatus.activelyTrying ||
-        conceptionStatus == ConceptionStatus.twoWeekWait;
+  /// Sets the tracking-ovulation answer, resetting the follow-up question
+  /// (copyWith can't null daysPastOvulation back out) since switching the
+  /// answer makes any previous follow-up answer stale.
+  OnboardingData withTrackingOvulation(bool value) {
+    return OnboardingData(
+      cycleDay: cycleDay,
+      cycleDayDisclosure: cycleDayDisclosure,
+      conceptionStatus: conceptionStatus,
+      tryingMethods: tryingMethods,
+      isTrackingOvulation: value,
+      daysPastOvulation: null,
+      ovulationNotYetHappened: false,
+    );
   }
+
+  /// Picks a specific days-past-ovulation count, clearing "hasn't happened
+  /// yet" if that was previously picked instead.
+  OnboardingData withDaysPastOvulation(int days) {
+    return OnboardingData(
+      cycleDay: cycleDay,
+      cycleDayDisclosure: cycleDayDisclosure,
+      conceptionStatus: conceptionStatus,
+      tryingMethods: tryingMethods,
+      isTrackingOvulation: isTrackingOvulation,
+      daysPastOvulation: days,
+      ovulationNotYetHappened: false,
+    );
+  }
+
+  /// Picks "ovulation hasn't happened yet", clearing any day count picked
+  /// instead.
+  OnboardingData withOvulationNotYetHappened() {
+    return OnboardingData(
+      cycleDay: cycleDay,
+      cycleDayDisclosure: cycleDayDisclosure,
+      conceptionStatus: conceptionStatus,
+      tryingMethods: tryingMethods,
+      isTrackingOvulation: isTrackingOvulation,
+      daysPastOvulation: null,
+      ovulationNotYetHappened: true,
+    );
+  }
+
+  bool get needsStep3 => conceptionStatus == ConceptionStatus.activelyTrying;
+
+  /// Whether the "how many days past ovulation" follow-up is relevant -
+  /// only once enough of the cycle has passed for it to matter.
+  bool get needsDaysPastOvulationQuestion =>
+      isTrackingOvulation == true && effectiveCycleDay > 9;
 }

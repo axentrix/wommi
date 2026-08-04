@@ -444,8 +444,7 @@ class CycleDayInfoDialog extends ConsumerWidget {
   }
 
   _CycleDayInfo _getCycleDayInfo(int day, ConceptionStatus? status) {
-    final isTrying = status == ConceptionStatus.activelyTrying ||
-        status == ConceptionStatus.twoWeekWait;
+    final isTrying = status == ConceptionStatus.activelyTrying;
 
     if (day >= 1 && day <= 5) {
       return _CycleDayInfo(
