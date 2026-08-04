@@ -42,8 +42,8 @@ class CycleDayInfoDialog extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final info = _getCycleDayInfo(day, conceptionStatus);
     final userState = ref.watch(userStateProvider);
+    final info = _getCycleDayInfo(day, conceptionStatus, userState.ovulationDay);
     // Always offered on any non-future day until marked - a journey can be
     // started on any cycle day, so there's no "too late to ask" cutoff;
     // this toggle is the only way to close off the ovary phase (see
@@ -443,7 +443,7 @@ class CycleDayInfoDialog extends ConsumerWidget {
     );
   }
 
-  _CycleDayInfo _getCycleDayInfo(int day, ConceptionStatus? status) {
+  _CycleDayInfo _getCycleDayInfo(int day, ConceptionStatus? status, int? ovulationDay) {
     final isTrying = status == ConceptionStatus.activelyTrying;
 
     if (day >= 1 && day <= 5) {
@@ -454,16 +454,41 @@ class CycleDayInfoDialog extends ConsumerWidget {
         description:
             'The first days of your cycle. Menstruation is happening as the uterine lining sheds. Energy may be lower, and self-care is key.',
       );
-    } else if (day >= 6 && day <= 12) {
-      return _CycleDayInfo(
+    }
+
+    // Once ovulation is actually tracked, describe this day relative to
+    // when it really happened, instead of the generic day-13-15 guess
+    // below - otherwise a day already past real ovulation could still be
+    // described as "preparing for ovulation".
+    if (ovulationDay != null) {
+      if (day < ovulationDay) {
+        return _follicularPhase;
+      }
+      if (day == ovulationDay) {
+        return _ovulationWindow(isTrying);
+      }
+      final daysSinceOvulation = day - ovulationDay;
+      if (daysSinceOvulation <= 6) return _earlyLutealPhase(isTrying);
+      if (daysSinceOvulation <= 13) return _lateLutealPhase(isTrying);
+      return _extendedCycle;
+    }
+
+    if (day >= 6 && day <= 12) return _follicularPhase;
+    if (day >= 13 && day <= 15) return _ovulationWindow(isTrying);
+    if (day >= 16 && day <= 21) return _earlyLutealPhase(isTrying);
+    if (day >= 22 && day <= 28) return _lateLutealPhase(isTrying);
+    return _extendedCycle;
+  }
+
+  _CycleDayInfo get _follicularPhase => _CycleDayInfo(
         phase: 'Follicular Phase',
         icon: '🌱',
         color: WommiColors.lilac,
         description:
             'Your body is preparing for ovulation. Follicles in the ovaries are maturing, and estrogen levels are rising. Energy typically increases.',
       );
-    } else if (day >= 13 && day <= 15) {
-      return _CycleDayInfo(
+
+  _CycleDayInfo _ovulationWindow(bool isTrying) => _CycleDayInfo(
         phase: 'Ovulation Window',
         icon: '✨',
         color: WommiColors.gold,
@@ -471,8 +496,8 @@ class CycleDayInfoDialog extends ConsumerWidget {
             ? 'Peak fertility! This is the optimal time for conception. The egg is released and can be fertilized for 12-24 hours.'
             : 'Ovulation is occurring. Your body releases an egg, and you may feel more energetic and social during this time.',
       );
-    } else if (day >= 16 && day <= 21) {
-      return _CycleDayInfo(
+
+  _CycleDayInfo _earlyLutealPhase(bool isTrying) => _CycleDayInfo(
         phase: 'Early Luteal Phase',
         icon: '🌼',
         color: WommiColors.cyan,
@@ -480,8 +505,8 @@ class CycleDayInfoDialog extends ConsumerWidget {
             ? 'Post-ovulation phase. If conception occurred, the fertilized egg is traveling to the uterus and may implant around day 6-12 after ovulation.'
             : 'After ovulation, progesterone rises to prepare the uterine lining. Your body temperature may be slightly higher.',
       );
-    } else if (day >= 22 && day <= 28) {
-      return _CycleDayInfo(
+
+  _CycleDayInfo _lateLutealPhase(bool isTrying) => _CycleDayInfo(
         phase: 'Late Luteal Phase',
         icon: '🌙',
         color: WommiColors.lilac,
@@ -489,16 +514,14 @@ class CycleDayInfoDialog extends ConsumerWidget {
             ? 'Implantation may have occurred by now if conception was successful. Some experience early pregnancy symptoms, though it\'s too early to test.'
             : 'The final week before your next cycle begins. Progesterone drops if no pregnancy occurs, which may lead to PMS symptoms.',
       );
-    } else {
-      return _CycleDayInfo(
+
+  _CycleDayInfo get _extendedCycle => _CycleDayInfo(
         phase: 'Extended Cycle',
         icon: '🔄',
         color: WommiColors.inkDim,
         description:
             'Cycles can vary in length. If your cycle extends beyond 28 days, it\'s still perfectly normal. You may be approaching menstruation.',
       );
-    }
-  }
 }
 
 class _CycleDayInfo {
