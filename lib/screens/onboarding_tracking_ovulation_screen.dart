@@ -1,16 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../theme.dart';
-import '../models/onboarding_state.dart';
 import '../providers/onboarding_provider.dart';
 import '../widgets/chip_button.dart';
+import '../utils/onboarding_completion.dart';
 
-class OnboardingStep3Screen extends ConsumerWidget {
-  const OnboardingStep3Screen({super.key});
+class OnboardingTrackingOvulationScreen extends ConsumerWidget {
+  const OnboardingTrackingOvulationScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final onboardingData = ref.watch(onboardingProvider);
+    final isTracking = onboardingData.isTrackingOvulation;
 
     return Scaffold(
       backgroundColor: WommiColors.bg,
@@ -34,37 +35,20 @@ class OnboardingStep3Screen extends ConsumerWidget {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
               child: Row(
-                children: [
-                  Expanded(
-                    child: Container(
-                      height: 4,
-                      decoration: BoxDecoration(
-                        color: WommiColors.cyan,
-                        borderRadius: BorderRadius.circular(4),
+                children: List.generate(3, (i) {
+                  return Expanded(
+                    child: Padding(
+                      padding: EdgeInsets.only(right: i < 2 ? 6 : 0),
+                      child: Container(
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: WommiColors.cyan,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 6),
-                  Expanded(
-                    child: Container(
-                      height: 4,
-                      decoration: BoxDecoration(
-                        color: WommiColors.cyan,
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 6),
-                  Expanded(
-                    child: Container(
-                      height: 4,
-                      decoration: BoxDecoration(
-                        color: WommiColors.cyan,
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                    ),
-                  ),
-                ],
+                  );
+                }),
               ),
             ),
             // Body
@@ -88,7 +72,7 @@ class OnboardingStep3Screen extends ConsumerWidget {
                     const SizedBox(height: 12),
                     // Title
                     Text(
-                      'How are you trying\nto conceive?',
+                      'Are you tracking\novulation?',
                       style: TextStyle(
                         fontFamily: 'Unbounded',
                         fontWeight: FontWeight.w800,
@@ -99,7 +83,7 @@ class OnboardingStep3Screen extends ConsumerWidget {
                     ),
                     const SizedBox(height: 10),
                     Text(
-                      'Select all that apply. This helps us personalize your journey.',
+                      'This helps us show you the right day on your journey map.',
                       style: TextStyle(
                         fontFamily: 'Inter',
                         fontSize: 13.5,
@@ -108,22 +92,25 @@ class OnboardingStep3Screen extends ConsumerWidget {
                       ),
                     ),
                     const SizedBox(height: 26),
-                    // Chip row for trying methods
                     Wrap(
                       spacing: 8,
                       runSpacing: 8,
-                      children: TryingMethod.values.map((method) {
-                        return ChipButton(
-                          text: method.label,
-                          isSelected:
-                              onboardingData.tryingMethods.contains(method),
-                          onTap: () {
-                            ref
-                                .read(onboardingProvider.notifier)
-                                .toggleTryingMethod(method);
-                          },
-                        );
-                      }).toList(),
+                      children: [
+                        ChipButton(
+                          text: 'Yes',
+                          isSelected: isTracking == true,
+                          onTap: () => ref
+                              .read(onboardingProvider.notifier)
+                              .setTrackingOvulation(true),
+                        ),
+                        ChipButton(
+                          text: 'No',
+                          isSelected: isTracking == false,
+                          onTap: () => ref
+                              .read(onboardingProvider.notifier)
+                              .setTrackingOvulation(false),
+                        ),
+                      ],
                     ),
                   ],
                 ),
@@ -135,18 +122,25 @@ class OnboardingStep3Screen extends ConsumerWidget {
               child: SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: () {
-                    Navigator.of(context)
-                        .pushNamed('/onboarding-tracking-ovulation');
-                  },
+                  onPressed: isTracking == null
+                      ? null
+                      : () {
+                          if (onboardingData.needsDaysPastOvulationQuestion) {
+                            Navigator.of(context)
+                                .pushNamed('/onboarding-days-past-ovulation');
+                          } else {
+                            completeTtcOnboarding(context, ref, onboardingData);
+                          }
+                        },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: WommiColors.cyan,
+                    backgroundColor:
+                        isTracking == null ? WommiColors.line : WommiColors.cyan,
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(100),
                     ),
-                    elevation: 14,
+                    elevation: isTracking == null ? 0 : 14,
                     shadowColor: WommiColors.cyan.withOpacity(0.38),
                   ),
                   child: Text(
