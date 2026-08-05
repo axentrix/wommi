@@ -5,8 +5,6 @@ import '../theme.dart';
 import '../providers/user_state_provider.dart';
 import '../providers/repository_provider.dart';
 import '../widgets/bottom_navigation_bar.dart';
-import '../widgets/profile_collection_dialog.dart';
-import '../widgets/welcome_dialog.dart';
 import '../widgets/journey_map_widget.dart';
 import '../widgets/gem_balance_popup.dart';
 import 'challenges_screen.dart';
@@ -41,20 +39,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
         return;
       }
 
-      // Show profile collection dialog if profile is not complete
+      // Profile collection normally happens as part of the onboarding
+      // Navigator flow (see OnboardingProfileScreen) before the user ever
+      // reaches here. This is just a fallback for edge cases - e.g. direct
+      // navigation to '/home' with a cycle day already set but no profile.
       print('[Home] Checking profile - hasProfile: ${userState.hasProfile}, name: ${userState.name}, email: ${userState.email}');
       if (!userState.hasProfile) {
-        print('[Home] Showing profile collection dialog');
-        await showDialog(
-          context: context,
-          barrierDismissible: false,
-          builder: (context) => const ProfileCollectionDialog(),
-        );
-        if (!mounted) return;
-        // Welcome them only once, right after name/email are in - not
-        // before, since that's the last onboarding step before they
-        // actually land here.
-        await showWelcomeDialog(context);
+        print('[Home] No profile yet - redirecting to profile step');
+        Navigator.of(context).pushReplacementNamed('/onboarding-profile');
       }
     });
   }

@@ -242,17 +242,16 @@ class OnboardingStep3Screen extends ConsumerWidget {
                       ttcMethods: onboardingData.tryingMethods,
                       startingCycleDay: onboardingData.effectiveCycleDay,
                     ).then((_) async {
-                      // Initialize user state with onboarding data
+                      // Initialize user state with onboarding data and
+                      // continue to the profile step (push, not replace, so
+                      // the user can still back out to this question).
                       ref
                           .read(userStateProvider.notifier)
                           .initializeFromOnboarding(onboardingData.effectiveCycleDay);
                       await _applyOvulationAnswer(ref, onboardingData);
                       if (!context.mounted) return;
 
-                      Navigator.of(context).pushNamedAndRemoveUntil(
-                        '/home',
-                        (route) => false,
-                      );
+                      Navigator.of(context).pushNamed('/onboarding-profile');
                     }).catchError((error) async {
                       print('Error saving cycle profile: $error');
                       // Still navigate even if save fails
@@ -262,10 +261,7 @@ class OnboardingStep3Screen extends ConsumerWidget {
                       await _applyOvulationAnswer(ref, onboardingData);
                       if (!context.mounted) return;
 
-                      Navigator.of(context).pushNamedAndRemoveUntil(
-                        '/home',
-                        (route) => false,
-                      );
+                      Navigator.of(context).pushNamed('/onboarding-profile');
                     });
                   },
                   style: ElevatedButton.styleFrom(
