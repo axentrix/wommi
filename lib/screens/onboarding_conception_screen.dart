@@ -159,15 +159,14 @@ class OnboardingConceptionScreen extends ConsumerWidget {
                               ttcStatus: onboardingData.conceptionStatus,
                               startingCycleDay: onboardingData.effectiveCycleDay,
                             ).then((_) {
-                              // Initialize user state and go to home
+                              // Initialize user state and continue to the
+                              // profile step (push, not replace, so the
+                              // user can still back out to this question).
                               ref
                                   .read(userStateProvider.notifier)
                                   .initializeFromOnboarding(onboardingData.effectiveCycleDay);
 
-                              Navigator.of(context).pushNamedAndRemoveUntil(
-                                '/home',
-                                (route) => false,
-                              );
+                              Navigator.of(context).pushNamed('/onboarding-profile');
                             }).catchError((error) {
                               print('Error saving cycle profile: $error');
                               // Still navigate even if save fails
@@ -175,10 +174,7 @@ class OnboardingConceptionScreen extends ConsumerWidget {
                                   .read(userStateProvider.notifier)
                                   .initializeFromOnboarding(onboardingData.effectiveCycleDay);
 
-                              Navigator.of(context).pushNamedAndRemoveUntil(
-                                '/home',
-                                (route) => false,
-                              );
+                              Navigator.of(context).pushNamed('/onboarding-profile');
                             });
                           }
                         },
