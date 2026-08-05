@@ -9,7 +9,6 @@ enum ConceptionStatus {
 
 enum TryingMethod {
   naturally('Naturally'),
-  trackingOvulation('Tracking ovulation'),
   iui('IUI'),
   ivf('IVF'),
   anotherPath('Another path');
