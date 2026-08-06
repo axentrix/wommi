@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../theme.dart';
+import '../models/charm_rarity.dart';
 import '../providers/user_state_provider.dart';
 import '../providers/repository_provider.dart';
 import '../widgets/bottom_navigation_bar.dart';
@@ -192,7 +193,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     );
   }
 
-  void _showGemPopup(BuildContext badgeContext, int gemBalance, int streakDays) {
+  void _showGemPopup(BuildContext badgeContext, int gemBalance, int streakDays) async {
     final button = badgeContext.findRenderObject() as RenderBox;
     final overlay =
         Overlay.of(badgeContext).context.findRenderObject() as RenderBox;
@@ -211,6 +212,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       Offset.zero & overlay.size,
     );
 
+    // Fetch the real per-charm rarities so the necklace shows actual
+    // normal/rare/legendary beads instead of generic gems.
+    final charmRows = await ref.read(repositoryProvider).getAllCharms();
+    if (!mounted) return;
+    final charms = charmRows.map((c) => CharmRarity.fromName(c.rarity)).toList();
+
     showMenu(
       context: badgeContext,
       color: Colors.transparent,
@@ -224,6 +231,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
           child: GemBalancePopupContent(
             gemBalance: gemBalance,
             streakDays: streakDays,
+            charms: charms,
           ),
         ),
       ],

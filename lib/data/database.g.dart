@@ -951,6 +951,16 @@ class $CharmsEarnedTable extends CharmsEarned
     type: DriftSqlType.int,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _rarityMeta = const VerificationMeta('rarity');
+  @override
+  late final GeneratedColumn<String> rarity = GeneratedColumn<String>(
+    'rarity',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('normal'),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -958,6 +968,7 @@ class $CharmsEarnedTable extends CharmsEarned
     charmName,
     earnedAt,
     cycleProfileId,
+    rarity,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -1005,6 +1016,12 @@ class $CharmsEarnedTable extends CharmsEarned
         ),
       );
     }
+    if (data.containsKey('rarity')) {
+      context.handle(
+        _rarityMeta,
+        rarity.isAcceptableOrUnknown(data['rarity']!, _rarityMeta),
+      );
+    }
     return context;
   }
 
@@ -1034,6 +1051,10 @@ class $CharmsEarnedTable extends CharmsEarned
         DriftSqlType.int,
         data['${effectivePrefix}cycle_profile_id'],
       ),
+      rarity: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}rarity'],
+      )!,
     );
   }
 
@@ -1050,12 +1071,14 @@ class CharmsEarnedData extends DataClass
   final String charmName;
   final DateTime earnedAt;
   final int? cycleProfileId;
+  final String rarity;
   const CharmsEarnedData({
     required this.id,
     required this.cycleDay,
     required this.charmName,
     required this.earnedAt,
     this.cycleProfileId,
+    required this.rarity,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -1067,6 +1090,7 @@ class CharmsEarnedData extends DataClass
     if (!nullToAbsent || cycleProfileId != null) {
       map['cycle_profile_id'] = Variable<int>(cycleProfileId);
     }
+    map['rarity'] = Variable<String>(rarity);
     return map;
   }
 
@@ -1079,6 +1103,7 @@ class CharmsEarnedData extends DataClass
       cycleProfileId: cycleProfileId == null && nullToAbsent
           ? const Value.absent()
           : Value(cycleProfileId),
+      rarity: Value(rarity),
     );
   }
 
@@ -1093,6 +1118,7 @@ class CharmsEarnedData extends DataClass
       charmName: serializer.fromJson<String>(json['charmName']),
       earnedAt: serializer.fromJson<DateTime>(json['earnedAt']),
       cycleProfileId: serializer.fromJson<int?>(json['cycleProfileId']),
+      rarity: serializer.fromJson<String>(json['rarity']),
     );
   }
   @override
@@ -1104,6 +1130,7 @@ class CharmsEarnedData extends DataClass
       'charmName': serializer.toJson<String>(charmName),
       'earnedAt': serializer.toJson<DateTime>(earnedAt),
       'cycleProfileId': serializer.toJson<int?>(cycleProfileId),
+      'rarity': serializer.toJson<String>(rarity),
     };
   }
 
@@ -1113,6 +1140,7 @@ class CharmsEarnedData extends DataClass
     String? charmName,
     DateTime? earnedAt,
     Value<int?> cycleProfileId = const Value.absent(),
+    String? rarity,
   }) => CharmsEarnedData(
     id: id ?? this.id,
     cycleDay: cycleDay ?? this.cycleDay,
@@ -1121,6 +1149,7 @@ class CharmsEarnedData extends DataClass
     cycleProfileId: cycleProfileId.present
         ? cycleProfileId.value
         : this.cycleProfileId,
+    rarity: rarity ?? this.rarity,
   );
   CharmsEarnedData copyWithCompanion(CharmsEarnedCompanion data) {
     return CharmsEarnedData(
@@ -1131,6 +1160,7 @@ class CharmsEarnedData extends DataClass
       cycleProfileId: data.cycleProfileId.present
           ? data.cycleProfileId.value
           : this.cycleProfileId,
+      rarity: data.rarity.present ? data.rarity.value : this.rarity,
     );
   }
 
@@ -1141,14 +1171,15 @@ class CharmsEarnedData extends DataClass
           ..write('cycleDay: $cycleDay, ')
           ..write('charmName: $charmName, ')
           ..write('earnedAt: $earnedAt, ')
-          ..write('cycleProfileId: $cycleProfileId')
+          ..write('cycleProfileId: $cycleProfileId, ')
+          ..write('rarity: $rarity')
           ..write(')'))
         .toString();
   }
 
   @override
   int get hashCode =>
-      Object.hash(id, cycleDay, charmName, earnedAt, cycleProfileId);
+      Object.hash(id, cycleDay, charmName, earnedAt, cycleProfileId, rarity);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -1157,7 +1188,8 @@ class CharmsEarnedData extends DataClass
           other.cycleDay == this.cycleDay &&
           other.charmName == this.charmName &&
           other.earnedAt == this.earnedAt &&
-          other.cycleProfileId == this.cycleProfileId);
+          other.cycleProfileId == this.cycleProfileId &&
+          other.rarity == this.rarity);
 }
 
 class CharmsEarnedCompanion extends UpdateCompanion<CharmsEarnedData> {
@@ -1166,12 +1198,14 @@ class CharmsEarnedCompanion extends UpdateCompanion<CharmsEarnedData> {
   final Value<String> charmName;
   final Value<DateTime> earnedAt;
   final Value<int?> cycleProfileId;
+  final Value<String> rarity;
   const CharmsEarnedCompanion({
     this.id = const Value.absent(),
     this.cycleDay = const Value.absent(),
     this.charmName = const Value.absent(),
     this.earnedAt = const Value.absent(),
     this.cycleProfileId = const Value.absent(),
+    this.rarity = const Value.absent(),
   });
   CharmsEarnedCompanion.insert({
     this.id = const Value.absent(),
@@ -1179,6 +1213,7 @@ class CharmsEarnedCompanion extends UpdateCompanion<CharmsEarnedData> {
     required String charmName,
     this.earnedAt = const Value.absent(),
     this.cycleProfileId = const Value.absent(),
+    this.rarity = const Value.absent(),
   }) : cycleDay = Value(cycleDay),
        charmName = Value(charmName);
   static Insertable<CharmsEarnedData> custom({
@@ -1187,6 +1222,7 @@ class CharmsEarnedCompanion extends UpdateCompanion<CharmsEarnedData> {
     Expression<String>? charmName,
     Expression<DateTime>? earnedAt,
     Expression<int>? cycleProfileId,
+    Expression<String>? rarity,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -1194,6 +1230,7 @@ class CharmsEarnedCompanion extends UpdateCompanion<CharmsEarnedData> {
       if (charmName != null) 'charm_name': charmName,
       if (earnedAt != null) 'earned_at': earnedAt,
       if (cycleProfileId != null) 'cycle_profile_id': cycleProfileId,
+      if (rarity != null) 'rarity': rarity,
     });
   }
 
@@ -1203,6 +1240,7 @@ class CharmsEarnedCompanion extends UpdateCompanion<CharmsEarnedData> {
     Value<String>? charmName,
     Value<DateTime>? earnedAt,
     Value<int?>? cycleProfileId,
+    Value<String>? rarity,
   }) {
     return CharmsEarnedCompanion(
       id: id ?? this.id,
@@ -1210,6 +1248,7 @@ class CharmsEarnedCompanion extends UpdateCompanion<CharmsEarnedData> {
       charmName: charmName ?? this.charmName,
       earnedAt: earnedAt ?? this.earnedAt,
       cycleProfileId: cycleProfileId ?? this.cycleProfileId,
+      rarity: rarity ?? this.rarity,
     );
   }
 
@@ -1231,6 +1270,9 @@ class CharmsEarnedCompanion extends UpdateCompanion<CharmsEarnedData> {
     if (cycleProfileId.present) {
       map['cycle_profile_id'] = Variable<int>(cycleProfileId.value);
     }
+    if (rarity.present) {
+      map['rarity'] = Variable<String>(rarity.value);
+    }
     return map;
   }
 
@@ -1241,7 +1283,8 @@ class CharmsEarnedCompanion extends UpdateCompanion<CharmsEarnedData> {
           ..write('cycleDay: $cycleDay, ')
           ..write('charmName: $charmName, ')
           ..write('earnedAt: $earnedAt, ')
-          ..write('cycleProfileId: $cycleProfileId')
+          ..write('cycleProfileId: $cycleProfileId, ')
+          ..write('rarity: $rarity')
           ..write(')'))
         .toString();
   }
@@ -2511,6 +2554,7 @@ typedef $$CharmsEarnedTableCreateCompanionBuilder =
       required String charmName,
       Value<DateTime> earnedAt,
       Value<int?> cycleProfileId,
+      Value<String> rarity,
     });
 typedef $$CharmsEarnedTableUpdateCompanionBuilder =
     CharmsEarnedCompanion Function({
@@ -2519,6 +2563,7 @@ typedef $$CharmsEarnedTableUpdateCompanionBuilder =
       Value<String> charmName,
       Value<DateTime> earnedAt,
       Value<int?> cycleProfileId,
+      Value<String> rarity,
     });
 
 class $$CharmsEarnedTableFilterComposer
@@ -2552,6 +2597,11 @@ class $$CharmsEarnedTableFilterComposer
 
   ColumnFilters<int> get cycleProfileId => $composableBuilder(
     column: $table.cycleProfileId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get rarity => $composableBuilder(
+    column: $table.rarity,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -2589,6 +2639,11 @@ class $$CharmsEarnedTableOrderingComposer
     column: $table.cycleProfileId,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get rarity => $composableBuilder(
+    column: $table.rarity,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$CharmsEarnedTableAnnotationComposer
@@ -2616,6 +2671,9 @@ class $$CharmsEarnedTableAnnotationComposer
     column: $table.cycleProfileId,
     builder: (column) => column,
   );
+
+  GeneratedColumn<String> get rarity =>
+      $composableBuilder(column: $table.rarity, builder: (column) => column);
 }
 
 class $$CharmsEarnedTableTableManager
@@ -2658,12 +2716,14 @@ class $$CharmsEarnedTableTableManager
                 Value<String> charmName = const Value.absent(),
                 Value<DateTime> earnedAt = const Value.absent(),
                 Value<int?> cycleProfileId = const Value.absent(),
+                Value<String> rarity = const Value.absent(),
               }) => CharmsEarnedCompanion(
                 id: id,
                 cycleDay: cycleDay,
                 charmName: charmName,
                 earnedAt: earnedAt,
                 cycleProfileId: cycleProfileId,
+                rarity: rarity,
               ),
           createCompanionCallback:
               ({
@@ -2672,12 +2732,14 @@ class $$CharmsEarnedTableTableManager
                 required String charmName,
                 Value<DateTime> earnedAt = const Value.absent(),
                 Value<int?> cycleProfileId = const Value.absent(),
+                Value<String> rarity = const Value.absent(),
               }) => CharmsEarnedCompanion.insert(
                 id: id,
                 cycleDay: cycleDay,
                 charmName: charmName,
                 earnedAt: earnedAt,
                 cycleProfileId: cycleProfileId,
+                rarity: rarity,
               ),
           withReferenceMapper: (p0) => p0
               .map((e) => (e.readTable(table), BaseReferences(db, table, e)))

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../theme.dart';
 import '../models/challenge.dart';
+import '../models/charm_rarity.dart';
 import '../providers/challenges_provider.dart';
 import '../providers/user_state_provider.dart';
 import '../providers/repository_provider.dart';
@@ -73,7 +74,15 @@ class _ChallengesScreenState extends ConsumerState<ChallengesScreen> {
     final repository = ref.read(repositoryProvider);
     if (await repository.hasCharmForDay(day)) return false;
 
-    await repository.awardCharm(day, 'daily_charm');
+    final userState = ref.read(userStateProvider);
+    final legendaryAwarded = await repository.hasLegendaryCharmThisJourney();
+    final rarity = computeDailyCharmRarity(
+      newStreak: userState.streakDays + 1,
+      legendaryAlreadyAwardedThisJourney: legendaryAwarded,
+      ovulationMarkedToday: userState.ovulationDay == day,
+    );
+
+    await repository.awardCharm(day, 'daily_charm', rarity: rarity.name);
     ref.read(userStateProvider.notifier).addGems(1);
     // Marks this day's node as completed on the journey map and counts it
     // toward the streak - regardless of whether this is today's default
