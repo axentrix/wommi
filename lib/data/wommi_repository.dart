@@ -77,9 +77,13 @@ class WommiRepository {
     return _db.getCharmCount(cycleProfileId);
   }
 
-  Future<void> awardCharm(int cycleDay, String charmName) async {
+  Future<void> awardCharm(
+    int cycleDay,
+    String charmName, {
+    String rarity = 'normal',
+  }) async {
     final cycleProfileId = await _currentCycleProfileId();
-    await _db.awardCharm(cycleDay, charmName, cycleProfileId);
+    await _db.awardCharm(cycleDay, charmName, cycleProfileId, rarity: rarity);
   }
 
   Future<bool> hasCharmForDay(int cycleDay) async {
@@ -92,8 +96,17 @@ class WommiRepository {
     return _db.getDaysWithCharms(cycleProfileId);
   }
 
-  Future<List<CharmsEarnedData>> getAllCharms() {
-    return _db.getCharmsForCycle();
+  Future<List<CharmsEarnedData>> getAllCharms() async {
+    final cycleProfileId = await _currentCycleProfileId();
+    return _db.getCharmsForCycle(cycleProfileId);
+  }
+
+  /// Legendary is a once-per-journey reward - callers check this before
+  /// awarding one, so a long streak or a later pregnancy detection in the
+  /// same journey doesn't hand out a second.
+  Future<bool> hasLegendaryCharmThisJourney() async {
+    final cycleProfileId = await _currentCycleProfileId();
+    return _db.hasLegendaryCharm(cycleProfileId);
   }
 
   // User Profile

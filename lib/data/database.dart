@@ -41,6 +41,9 @@ class CharmsEarned extends Table {
   DateTimeColumn get earnedAt => dateTime().withDefault(currentDateAndTime)();
   // See RitualCompletions.cycleProfileId.
   IntColumn get cycleProfileId => integer().nullable()();
+  // 'normal', 'rare', or 'legendary' - see CharmRarity. Defaults to
+  // 'normal' so pre-migration rows mean what they already meant.
+  TextColumn get rarity => text().withDefault(const Constant('normal'))();
 }
 
 class UserProfiles extends Table {
@@ -79,7 +82,7 @@ class WommiDatabase extends _$WommiDatabase {
   WommiDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 5;
+  int get schemaVersion => 6;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -113,6 +116,9 @@ class WommiDatabase extends _$WommiDatabase {
           if (from < 5) {
             await m.addColumn(cycleProfiles, cycleProfiles.startingCycleDay);
             await m.addColumn(cycleProfiles, cycleProfiles.ovulationDay);
+          }
+          if (from < 6) {
+            await m.addColumn(charmsEarned, charmsEarned.rarity);
           }
         },
       );
@@ -191,22 +197,38 @@ class WommiDatabase extends _$WommiDatabase {
   }
 
   // Charms Earned queries
-  Future<List<CharmsEarnedData>> getCharmsForCycle() async {
-    return await select(charmsEarned).get();
+  Future<List<CharmsEarnedData>> getCharmsForCycle(int? cycleProfileId) async {
+    return await (select(charmsEarned)
+          ..where((t) => t.cycleProfileId.equalsNullable(cycleProfileId)))
+        .get();
   }
 
   Future<int> awardCharm(
     int cycleDay,
     String charmName,
-    int? cycleProfileId,
-  ) async {
+    int? cycleProfileId, {
+    String rarity = 'normal',
+  }) async {
     return await into(charmsEarned).insert(
       CharmsEarnedCompanion.insert(
         cycleDay: cycleDay,
         charmName: charmName,
         cycleProfileId: Value(cycleProfileId),
+        rarity: Value(rarity),
       ),
     );
+  }
+
+  /// Whether a legendary charm has already been earned in the given
+  /// journey - legendary is a once-per-journey reward, so callers use this
+  /// to avoid awarding a second one.
+  Future<bool> hasLegendaryCharm(int? cycleProfileId) async {
+    final existing = await (select(charmsEarned)
+          ..where((t) =>
+              t.rarity.equals('legendary') &
+              t.cycleProfileId.equalsNullable(cycleProfileId)))
+        .getSingleOrNull();
+    return existing != null;
   }
 
   Future<int> getCharmCount(int? cycleProfileId) async {

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../models/charm_rarity.dart';
 import '../providers/user_state_provider.dart';
 import '../providers/onboarding_provider.dart';
 import '../providers/repository_provider.dart';
@@ -77,6 +78,7 @@ void showPeriodStartedFlow(BuildContext context, WidgetRef ref) {
 /// "Pregnancy detected": celebrates the win, then lets the user either keep
 /// this journey going or wrap it up and pick the new journey's start day.
 void showPregnancyDetectedFlow(BuildContext context, WidgetRef ref) {
+  _awardPregnancyLegendaryCharm(ref);
   showDialog(
     context: context,
     barrierDismissible: false,
@@ -91,6 +93,21 @@ void showPregnancyDetectedFlow(BuildContext context, WidgetRef ref) {
       },
     ),
   );
+}
+
+/// Pregnancy is a legendary moment regardless of the day's ritual/streak
+/// progress - awarded immediately on detection, once per journey (a long
+/// streak might already have claimed the journey's one legendary charm).
+Future<void> _awardPregnancyLegendaryCharm(WidgetRef ref) async {
+  final repository = ref.read(repositoryProvider);
+  if (await repository.hasLegendaryCharmThisJourney()) return;
+  final userState = ref.read(userStateProvider);
+  await repository.awardCharm(
+    userState.currentDay,
+    'pregnancy_charm',
+    rarity: CharmRarity.legendary.name,
+  );
+  ref.read(userStateProvider.notifier).addGems(1);
 }
 
 void _showContinueJourneyDialog(BuildContext context, WidgetRef ref) {

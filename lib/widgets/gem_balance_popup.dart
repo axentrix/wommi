@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../theme.dart';
+import '../models/charm_rarity.dart';
 import 'necklace_circle.dart';
 
 /// The mini dashboard shown when tapping the gem balance badge on the
@@ -9,11 +10,15 @@ import 'necklace_circle.dart';
 class GemBalancePopupContent extends StatelessWidget {
   final int gemBalance;
   final int streakDays;
+  // Real per-charm rarities for the active journey, in earned order - null
+  // falls back to generic beads (e.g. while still loading).
+  final List<CharmRarity>? charms;
 
   const GemBalancePopupContent({
     super.key,
     required this.gemBalance,
     required this.streakDays,
+    this.charms,
   });
 
   @override
@@ -39,6 +44,7 @@ class GemBalancePopupContent extends StatelessWidget {
           NecklaceCircle(
             diameter: 92,
             gemsCollected: gemBalance,
+            charms: charms,
             borderColor: WommiColors.gold,
             borderWidth: 2.5,
             color: Colors.white,
