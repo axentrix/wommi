@@ -99,7 +99,7 @@ class _WinStateDialogState extends State<WinStateDialog>
       child: Container(
         constraints: const BoxConstraints(maxWidth: 340),
         decoration: BoxDecoration(
-          color: WommiColors.bg,
+          color: WommiColors.deepBlue,
           borderRadius: BorderRadius.circular(24),
         ),
         child: Column(
@@ -113,8 +113,8 @@ class _WinStateDialogState extends State<WinStateDialog>
                   center: const Alignment(0, -0.3),
                   radius: 1.5,
                   colors: [
-                    WommiColors.lilac.withValues(alpha: 0.4),
-                    WommiColors.bg,
+                    WommiColors.deepBlueSoft,
+                    WommiColors.deepBlue,
                   ],
                 ),
                 borderRadius: const BorderRadius.vertical(
@@ -209,7 +209,7 @@ class _WinStateDialogState extends State<WinStateDialog>
                     style: GoogleFonts.unbounded(
                       fontSize: 23,
                       fontWeight: FontWeight.w800,
-                      color: WommiColors.ink,
+                      color: Colors.white,
                       height: 1.25,
                     ),
                   ),
@@ -220,7 +220,7 @@ class _WinStateDialogState extends State<WinStateDialog>
                     textAlign: TextAlign.center,
                     style: GoogleFonts.inter(
                       fontSize: 13.5,
-                      color: WommiColors.inkDim,
+                      color: Colors.white.withValues(alpha: 0.68),
                       height: 1.6,
                     ),
                   ),
@@ -383,7 +383,7 @@ class _WinStateDialogState extends State<WinStateDialog>
           label,
           style: GoogleFonts.spaceMono(
             fontSize: 11,
-            color: WommiColors.inkDim,
+            color: Colors.white.withValues(alpha: 0.55),
           ),
         ),
         Text(
@@ -391,7 +391,7 @@ class _WinStateDialogState extends State<WinStateDialog>
           style: GoogleFonts.unbounded(
             fontSize: 15,
             fontWeight: FontWeight.w800,
-            color: WommiColors.cyanDark,
+            color: WommiColors.cyan,
           ),
         ),
       ],
