@@ -24,6 +24,8 @@ class ChallengesScreen extends ConsumerStatefulWidget {
 }
 
 class _ChallengesScreenState extends ConsumerState<ChallengesScreen> {
+  CharmRarity _lastAwardedRarity = CharmRarity.normal;
+
   bool get _isSpecificDay => widget.day != null;
 
   StateNotifierProvider<ChallengesNotifier, List<Challenge>> get _provider =>
@@ -83,6 +85,7 @@ class _ChallengesScreenState extends ConsumerState<ChallengesScreen> {
     );
 
     await repository.awardCharm(day, 'daily_charm', rarity: rarity.name);
+    _lastAwardedRarity = rarity;
     ref.read(userStateProvider.notifier).addGems(1);
     // Marks this day's node as completed on the journey map and counts it
     // toward the streak - regardless of whether this is today's default
@@ -100,6 +103,7 @@ class _ChallengesScreenState extends ConsumerState<ChallengesScreen> {
         currentDay: _resolveDay(),
         gemBalance: userState.gemBalance,
         streakDays: userState.streakDays,
+        rarity: _lastAwardedRarity,
         onContinue: () {
           Navigator.of(context).pop();
         },
