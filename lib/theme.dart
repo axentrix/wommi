@@ -26,6 +26,10 @@ class WommiColors {
   static const roseSoft = Color(0xFFFCE1E8);
 
   static const sage = Color(0xFF3FBE87);
+
+  // Celebration dialogs (e.g. the gem-earned win state)
+  static const deepBlue = Color(0xFF10173A);
+  static const deepBlueSoft = Color(0xFF232D6B);
 }
 
 class WommiTheme {

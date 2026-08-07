@@ -147,20 +147,26 @@ class _ChallengesScreenState extends ConsumerState<ChallengesScreen> {
       await _awardCharmIfNeeded();
     }
 
-    // Show dialog after a short delay
+    // Show dialog after a short delay - every ritual (including the third)
+    // gets the same completion popup; the win dialog only follows after
+    // that one is dismissed, once all three are done.
     Future.delayed(const Duration(milliseconds: 300), () {
       if (!mounted) return;
-
-      if (justCompletedAll) {
-        _showWinDialog();
-      } else {
-        // Individual challenge complete - show simple completion dialog
-        _showChallengeCompletionDialog(challenge.title, completedCount, totalCount);
-      }
+      _showChallengeCompletionDialog(
+        challenge.title,
+        completedCount,
+        totalCount,
+        onDismissed: justCompletedAll ? _showWinDialog : null,
+      );
     });
   }
 
-  void _showChallengeCompletionDialog(String title, int completed, int total) {
+  void _showChallengeCompletionDialog(
+    String title,
+    int completed,
+    int total, {
+    VoidCallback? onDismissed,
+  }) {
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -168,7 +174,10 @@ class _ChallengesScreenState extends ConsumerState<ChallengesScreen> {
         challengeTitle: title,
         completedCount: completed,
         totalCount: total,
-        onContinue: () => Navigator.of(context).pop(),
+        onContinue: () {
+          Navigator.of(context).pop();
+          onDismissed?.call();
+        },
       ),
     );
   }
@@ -550,7 +559,7 @@ class ChallengeCard extends StatelessWidget {
                 shadowColor: WommiColors.cyan.withOpacity(0.4),
               ),
               child: Text(
-                'Start',
+                'Done',
                 style: GoogleFonts.unbounded(
                   fontSize: 11,
                   fontWeight: FontWeight.w700,
