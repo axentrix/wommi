@@ -101,6 +101,30 @@ class WommiRepository {
     return _db.getCharmsForCycle(cycleProfileId);
   }
 
+  /// The streak - distinct real calendar days with at least one charm
+  /// earned this journey, not the raw charm count. Catching up on several
+  /// past days from the journey map in one sitting still only counts as
+  /// one day toward the streak.
+  Future<int> getStreakDays() async {
+    final dates = await _distinctCharmEarnedDates();
+    return dates.length;
+  }
+
+  /// Whether a charm has already been earned today (device local time) -
+  /// callers use this to decide whether awarding another charm right now
+  /// should advance the streak or not.
+  Future<bool> hasCharmEarnedToday() async {
+    final dates = await _distinctCharmEarnedDates();
+    final now = DateTime.now();
+    return dates.contains(DateTime(now.year, now.month, now.day));
+  }
+
+  Future<Set<DateTime>> _distinctCharmEarnedDates() async {
+    final cycleProfileId = await _currentCycleProfileId();
+    final earnedAt = await _db.getCharmEarnedDates(cycleProfileId);
+    return earnedAt.map((d) => DateTime(d.year, d.month, d.day)).toSet();
+  }
+
   /// Legendary is a once-per-journey reward - callers check this before
   /// awarding one, so a long streak or a later pregnancy detection in the
   /// same journey doesn't hand out a second.

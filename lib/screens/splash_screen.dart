@@ -126,12 +126,14 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
 
     final gemBalance = await repository.getCharmCount();
     final currentDay = await repository.calculateCurrentCycleDay();
+    final streakDays = await repository.getStreakDays();
     final profile = await repository.getCurrentCycleProfile();
     if (!mounted) return false;
     print('[Splash] Restoring active journey: day $currentDay, $gemBalance gems');
     notifier.hydrateActiveJourney(
       currentDay: currentDay,
       gemBalance: gemBalance,
+      streakDays: streakDays,
       startingCycleDay: profile?.startingCycleDay,
       ovulationDay: profile?.ovulationDay,
     );

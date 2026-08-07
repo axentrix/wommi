@@ -240,6 +240,17 @@ class WommiDatabase extends _$WommiDatabase {
     return result.read(countQuery) ?? 0;
   }
 
+  /// The earnedAt timestamp of every charm in the given journey - used to
+  /// derive the streak from distinct calendar dates rather than raw charm
+  /// count, since a user can earn multiple charms (e.g. catching up on a
+  /// past day from the journey map) within the same real day.
+  Future<List<DateTime>> getCharmEarnedDates(int? cycleProfileId) async {
+    final rows = await (select(charmsEarned)
+          ..where((t) => t.cycleProfileId.equalsNullable(cycleProfileId)))
+        .get();
+    return rows.map((r) => r.earnedAt).toList();
+  }
+
   Future<bool> hasCharmForDay(int cycleDay, int? cycleProfileId) async {
     final existing = await (select(charmsEarned)
           ..where((t) =>
