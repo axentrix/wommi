@@ -78,8 +78,14 @@ class _ChallengesScreenState extends ConsumerState<ChallengesScreen> {
 
     final userState = ref.read(userStateProvider);
     final legendaryAwarded = await repository.hasLegendaryCharmThisJourney();
+    // The streak only advances once per real calendar day - completing a
+    // second (or third) day's rituals in the same sitting (e.g. catching
+    // up from the journey map) doesn't bump it further.
+    final priorStreak = await repository.getStreakDays();
+    final earnedToday = await repository.hasCharmEarnedToday();
+    final newStreak = earnedToday ? priorStreak : priorStreak + 1;
     final rarity = computeDailyCharmRarity(
-      newStreak: userState.streakDays + 1,
+      newStreak: newStreak,
       legendaryAlreadyAwardedThisJourney: legendaryAwarded,
       ovulationMarkedToday: userState.ovulationDay == day,
     );
@@ -87,10 +93,11 @@ class _ChallengesScreenState extends ConsumerState<ChallengesScreen> {
     await repository.awardCharm(day, 'daily_charm', rarity: rarity.name);
     _lastAwardedRarity = rarity;
     ref.read(userStateProvider.notifier).addGems(1);
-    // Marks this day's node as completed on the journey map and counts it
-    // toward the streak - regardless of whether this is today's default
-    // Challenges tab or a specific past/current day opened from the map.
+    // Marks this day's node as completed on the journey map - regardless
+    // of whether this is today's default Challenges tab or a specific
+    // past/current day opened from the map.
     ref.read(userStateProvider.notifier).completeDay(day);
+    ref.read(userStateProvider.notifier).setStreakDays(newStreak);
     return true;
   }
 

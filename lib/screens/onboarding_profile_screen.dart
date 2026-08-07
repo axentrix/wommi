@@ -182,8 +182,13 @@ class _OnboardingProfileScreenState
             // and past journeys were just found.
             final gemBalance = await repository.getCharmCount();
             final currentDay = await repository.calculateCurrentCycleDay();
+            final streakDays = await repository.getStreakDays();
             if (!mounted) return;
-            notifier.hydrateActiveJourney(currentDay: currentDay, gemBalance: gemBalance);
+            notifier.hydrateActiveJourney(
+              currentDay: currentDay,
+              gemBalance: gemBalance,
+              streakDays: streakDays,
+            );
 
             final completedDays = await repository.getDaysWithCharms();
             if (!mounted) return;

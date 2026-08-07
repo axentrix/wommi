@@ -46,6 +46,7 @@ class UserStateNotifier extends StateNotifier<UserState> {
   void hydrateActiveJourney({
     required int currentDay,
     required int gemBalance,
+    required int streakDays,
     int? startingCycleDay,
     int? ovulationDay,
   }) {
@@ -53,11 +54,7 @@ class UserStateNotifier extends StateNotifier<UserState> {
         .copyWith(
           currentDay: currentDay,
           gemBalance: gemBalance,
-          // A charm is awarded to the same day that completeDay() marks, so
-          // the streak (days completed this journey) always matches the
-          // charm count - restore it the same way gemBalance is restored,
-          // since it isn't tracked in its own database column.
-          streakDays: gemBalance,
+          streakDays: streakDays,
           startingCycleDay: startingCycleDay,
         )
         .withOvulationDay(ovulationDay);
@@ -98,14 +95,21 @@ class UserStateNotifier extends StateNotifier<UserState> {
     state = state.copyWith(gemBalance: state.gemBalance + amount);
   }
 
+  /// Marks [day]'s node complete on the journey map. Doesn't touch the
+  /// streak - a real calendar day can contain several of these (e.g.
+  /// catching up on past days), see setStreakDays().
   void completeDay(int day) {
     if (!state.completedDays.contains(day)) {
-      final completed = [...state.completedDays, day];
-      state = state.copyWith(
-        completedDays: completed,
-        streakDays: state.streakDays + 1,
-      );
+      state = state.copyWith(completedDays: [...state.completedDays, day]);
     }
+  }
+
+  /// Sets the streak to a value the caller already computed from real
+  /// calendar dates (repository.getStreakDays()) - the streak only ever
+  /// advances once per astronomical day, regardless of how many day-nodes
+  /// get completed within it.
+  void setStreakDays(int days) {
+    state = state.copyWith(streakDays: days);
   }
 
   void advanceDay() {
