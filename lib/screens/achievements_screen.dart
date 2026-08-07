@@ -3,15 +3,36 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import '../theme.dart';
+import '../models/charm_rarity.dart';
 import '../providers/user_state_provider.dart';
+import '../providers/repository_provider.dart';
 import '../models/journey.dart';
 import '../widgets/necklace_circle.dart';
 
-class AchievementsScreen extends ConsumerWidget {
+class AchievementsScreen extends ConsumerStatefulWidget {
   const AchievementsScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<AchievementsScreen> createState() => _AchievementsScreenState();
+}
+
+class _AchievementsScreenState extends ConsumerState<AchievementsScreen> {
+  List<CharmRarity>? _currentCharms;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final rows = await ref.read(repositoryProvider).getAllCharms();
+      if (!mounted) return;
+      setState(() {
+        _currentCharms = rows.map((c) => CharmRarity.fromName(c.rarity)).toList();
+      });
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final userState = ref.watch(userStateProvider);
     final hasCurrentJourney = userState.currentDay > 0;
     final pastJourneys = userState.journeyHistory;
@@ -59,6 +80,7 @@ class AchievementsScreen extends ConsumerWidget {
                     journeyNumber: userState.currentJourneyNumber,
                     gemsCollected: userState.gemBalance,
                     currentDay: userState.currentDay,
+                    charms: _currentCharms,
                   ),
                 // Past journey cards
                 ...pastJourneys.reversed.map((journey) {
@@ -114,11 +136,13 @@ class _CurrentJourneyCard extends StatelessWidget {
   final int journeyNumber;
   final int gemsCollected;
   final int currentDay;
+  final List<CharmRarity>? charms;
 
   const _CurrentJourneyCard({
     required this.journeyNumber,
     required this.gemsCollected,
     required this.currentDay,
+    this.charms,
   });
 
   @override
@@ -147,6 +171,7 @@ class _CurrentJourneyCard extends StatelessWidget {
           NecklaceCircle(
             diameter: 100,
             gemsCollected: gemsCollected,
+            charms: charms,
             borderColor: WommiColors.cyan,
             borderWidth: 3,
             color: Colors.white,

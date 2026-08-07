@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../theme.dart';
+import '../models/charm_rarity.dart';
 
 class WinStateDialog extends StatelessWidget {
   final int currentDay;
   final int gemBalance;
   final int streakDays;
+  final CharmRarity rarity;
   final VoidCallback onContinue;
 
   const WinStateDialog({
@@ -13,8 +15,57 @@ class WinStateDialog extends StatelessWidget {
     required this.currentDay,
     required this.gemBalance,
     required this.streakDays,
+    this.rarity = CharmRarity.normal,
     required this.onContinue,
   });
+
+  List<Color> get _orbColors {
+    switch (rarity) {
+      case CharmRarity.legendary:
+        return [
+          Colors.white,
+          WommiColors.goldSoft,
+          WommiColors.gold,
+          Color(0xFFB9822E),
+        ];
+      case CharmRarity.rare:
+        return [
+          Colors.white,
+          WommiColors.lilac,
+          WommiColors.cyan,
+          WommiColors.cyanDark,
+        ];
+      case CharmRarity.normal:
+        return [
+          Colors.white,
+          WommiColors.bgSoft,
+          WommiColors.line,
+          Color(0xFFB7AFC9),
+        ];
+    }
+  }
+
+  Color get _glowColor {
+    switch (rarity) {
+      case CharmRarity.legendary:
+        return WommiColors.gold;
+      case CharmRarity.rare:
+        return WommiColors.cyan;
+      case CharmRarity.normal:
+        return WommiColors.line;
+    }
+  }
+
+  String get _title {
+    switch (rarity) {
+      case CharmRarity.legendary:
+        return 'You earned a\nLEGENDARY charm!';
+      case CharmRarity.rare:
+        return 'You earned a\nrare charm!';
+      case CharmRarity.normal:
+        return 'You earned\na new gem!';
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -58,7 +109,8 @@ class WinStateDialog extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 14),
-                  // Charm orb with animation
+                  // Charm orb with animation - color/glow reflect the
+                  // rarity of the charm just earned.
                   TweenAnimationBuilder<double>(
                     tween: Tween(begin: 0.0, end: 1.0),
                     duration: const Duration(milliseconds: 600),
@@ -72,17 +124,12 @@ class WinStateDialog extends StatelessWidget {
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
                             gradient: RadialGradient(
-                              colors: [
-                                Colors.white,
-                                WommiColors.goldSoft,
-                                WommiColors.gold,
-                                Color(0xFFB9822E),
-                              ],
+                              colors: _orbColors,
                               stops: const [0.0, 0.45, 0.78, 1.0],
                             ),
                             boxShadow: [
                               BoxShadow(
-                                color: WommiColors.gold.withValues(alpha: 0.4),
+                                color: _glowColor.withValues(alpha: 0.4),
                                 blurRadius: 40,
                                 spreadRadius: 0,
                                 offset: const Offset(0, 20),
@@ -106,7 +153,7 @@ class WinStateDialog extends StatelessWidget {
                   const SizedBox(height: 20),
                   // Title
                   Text(
-                    'You earned\na new gem!',
+                    _title,
                     textAlign: TextAlign.center,
                     style: GoogleFonts.unbounded(
                       fontSize: 23,
@@ -207,14 +254,27 @@ class WinStateDialog extends StatelessWidget {
           final isNew = index == filledGems - 1;
           return Padding(
             padding: const EdgeInsets.symmetric(horizontal: 5),
-            child: _buildGemSlot(isFilled, isNew),
+            // Only the just-earned slot reflects this charm's actual
+            // rarity - earlier slots in the bangle don't have their own
+            // rarity history threaded through here, so they stay gold.
+            child: _buildGemSlot(isFilled, isNew, isNew ? rarity : CharmRarity.legendary),
           );
         }),
       ),
     );
   }
 
-  Widget _buildGemSlot(bool isFilled, bool isNew) {
+  Widget _buildGemSlot(bool isFilled, bool isNew, CharmRarity slotRarity) {
+    final gradientColors = switch (slotRarity) {
+      CharmRarity.legendary => [WommiColors.goldSoft, WommiColors.gold],
+      CharmRarity.rare => [WommiColors.lilac, WommiColors.cyan],
+      CharmRarity.normal => [Colors.white, WommiColors.line],
+    };
+    final borderColor = switch (slotRarity) {
+      CharmRarity.legendary => WommiColors.gold,
+      CharmRarity.rare => WommiColors.cyan,
+      CharmRarity.normal => WommiColors.inkDim,
+    };
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: isNew ? 0.0 : 1.0, end: 1.0),
       duration: Duration(milliseconds: isNew ? 600 : 0),
@@ -231,15 +291,12 @@ class WinStateDialog extends StatelessWidget {
                   ? LinearGradient(
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
-                      colors: [
-                        WommiColors.goldSoft,
-                        WommiColors.gold,
-                      ],
+                      colors: gradientColors,
                     )
                   : null,
               color: isFilled ? null : WommiColors.bgSoft,
               border: Border.all(
-                color: isFilled ? WommiColors.gold : Color(0xFFD8D2E8),
+                color: isFilled ? borderColor : Color(0xFFD8D2E8),
                 width: 1.5,
                 style: isFilled ? BorderStyle.solid : BorderStyle.solid,
               ),
