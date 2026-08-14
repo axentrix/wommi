@@ -29,6 +29,22 @@ class WommiRepository {
     await _db.createCycleProfile(companion);
   }
 
+  /// Corrects the current journey's cycle day - unlike saveCycleProfile
+  /// (which always starts a fresh journey), this updates the existing
+  /// journey in place so its ritual completions, charms, and streak
+  /// history stay attached instead of being orphaned under a new journey
+  /// row. currentDay still advances with real calendar time from here on,
+  /// exactly as it does normally - only the anchor point moves.
+  Future<void> updateCycleDay(int day) async {
+    final cycleProfileId = await _currentCycleProfileId();
+    if (cycleProfileId == null) return;
+    await _db.updateCycleProfileDay(
+      cycleProfileId,
+      startDate: DateTime.now().subtract(Duration(days: day - 1)),
+      startingCycleDay: day,
+    );
+  }
+
   /// Records the cycle day the user says ovulation started on. Pass null to
   /// undo a mistaken mark.
   Future<void> setOvulationDay(int? day) async {

@@ -140,6 +140,25 @@ class WommiDatabase extends _$WommiDatabase {
     return await into(cycleProfiles).insert(profile);
   }
 
+  /// Corrects the current journey's cycle day in place, unlike
+  /// createCycleProfile which always starts a fresh journey row - keeps
+  /// prior ritual completions, charms, and streak history (all scoped to
+  /// this row's id) attached to it instead of orphaning them under a new
+  /// row every time the day is edited.
+  Future<void> updateCycleProfileDay(
+    int cycleProfileId, {
+    required DateTime startDate,
+    required int startingCycleDay,
+  }) async {
+    await (update(cycleProfiles)..where((t) => t.id.equals(cycleProfileId)))
+        .write(
+      CycleProfilesCompanion(
+        startDate: Value(startDate),
+        startingCycleDay: Value(startingCycleDay),
+      ),
+    );
+  }
+
   Future<void> setOvulationDay(int cycleProfileId, int day) async {
     await (update(cycleProfiles)..where((t) => t.id.equals(cycleProfileId)))
         .write(CycleProfilesCompanion(ovulationDay: Value(day)));
