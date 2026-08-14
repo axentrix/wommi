@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../theme.dart';
-import '../providers/onboarding_provider.dart';
 import '../providers/user_state_provider.dart';
 import '../providers/repository_provider.dart';
 import '../widgets/number_scroll_picker.dart';
@@ -120,18 +119,15 @@ class _EditCycleDayDialogState extends ConsumerState<EditCycleDayDialog> {
                               _selectedDay,
                               startingCycleDay: _selectedDay,
                             );
-                        // Persist so a later login restores this day too,
-                        // instead of calculateCurrentCycleDay() recomputing
-                        // from the stale startDate saved at onboarding.
-                        final onboardingData = ref.read(onboardingProvider);
-                        ref.read(repositoryProvider).saveCycleProfile(
-                              startDate: DateTime.now()
-                                  .subtract(Duration(days: _selectedDay - 1)),
-                              cycleLength: 28,
-                              ttcStatus: onboardingData.conceptionStatus,
-                              ttcMethods: onboardingData.tryingMethods,
-                              startingCycleDay: _selectedDay,
-                            );
+                        // Corrects the existing journey's anchor day rather
+                        // than starting a new journey row - so today's
+                        // ritual completions, charms, and streak stay
+                        // attached to it instead of being orphaned. From
+                        // here on the day still advances with real
+                        // calendar time on its own, same as always.
+                        ref
+                            .read(repositoryProvider)
+                            .updateCycleDay(_selectedDay);
                         Navigator.pop(context);
                       },
                       style: ElevatedButton.styleFrom(

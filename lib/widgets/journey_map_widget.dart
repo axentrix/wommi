@@ -588,6 +588,10 @@ class _JourneyMapWidgetState extends ConsumerState<JourneyMapWidget>
     // Started (at least one challenge done) but not all three yet - shown
     // with a rose accent instead of the plain "untouched" styling.
     final isInProgress = !isCompleted && userState.inProgressDays.contains(day);
+    // A past day with zero progress - the calendar day happened, but no
+    // rituals were ever done for it. Shown distinctly from both a future
+    // (locked) day and a completed one, instead of blending into either.
+    final isMissed = isPast && !isCompleted && !isInProgress;
 
     // A day's rituals can only be done once it's current or past - future
     // days stay locked - but every day is tappable to see its info popup,
@@ -616,8 +620,8 @@ class _JourneyMapWidgetState extends ConsumerState<JourneyMapWidget>
                         ? WommiColors.gold.withOpacity(0.85)
                         : isInProgress
                             ? WommiColors.roseSoft
-                            : isPast
-                                ? Colors.white.withOpacity(0.85)
+                            : isMissed
+                                ? WommiColors.inkDim.withOpacity(0.18)
                                 : Colors.white.withOpacity(0.55),
                 border: Border.all(
                   color: isCurrent
@@ -626,8 +630,8 @@ class _JourneyMapWidgetState extends ConsumerState<JourneyMapWidget>
                           ? WommiColors.gold
                           : isInProgress
                               ? WommiColors.rose
-                              : isClickable
-                                  ? WommiColors.line
+                              : isMissed
+                                  ? WommiColors.inkDim.withOpacity(0.55)
                                   : WommiColors.line.withOpacity(0.5),
                   width: isCurrent || isInProgress ? 2.5 : 1.5,
                 ),
@@ -693,6 +697,27 @@ class _JourneyMapWidgetState extends ConsumerState<JourneyMapWidget>
                                     color: Colors.white,
                                     width: 1,
                                   ),
+                                ),
+                              ),
+                            )
+                          else if (isMissed)
+                            Positioned(
+                              top: -2,
+                              right: -2,
+                              child: Container(
+                                padding: const EdgeInsets.all(1.5),
+                                decoration: BoxDecoration(
+                                  color: WommiColors.inkDim,
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
+                                    color: Colors.white,
+                                    width: 1,
+                                  ),
+                                ),
+                                child: Icon(
+                                  Icons.remove,
+                                  size: 8,
+                                  color: Colors.white,
                                 ),
                               ),
                             ),
