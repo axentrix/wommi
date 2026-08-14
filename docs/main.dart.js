@@ -28838,8 +28838,11 @@ adb:function adb(a){this.a=a},
 b1M(a,b,c,d){var s=a-d+1
 if(s<=b)return b
 return Math.min(s,c)},
-b1N(a,b){if(a.at==null)return 0
-return B.d.dw(Math.min(5,35-b),0,5)},
+b1N(a,b){var s,r=B.d.dw(Math.min(5,35-b),0,5)
+if(a.at!=null)return r
+s=a.a-b
+if(s<=0)return 0
+return Math.min(s,r)},
 b1O(){var s=t.qP,r=A.a_(new A.Z(B.i8,new A.awP(),s),s.h("ag.E"))
 return A.Qj(5,new A.awQ(new A.Q8(new A.Q7(A.aPM(r),!1,A.b([],t.sp))).gN(0),r),!0,t.o)},
 aPM(a){var s,r,q,p,o,n,m=A.ce($.a7().r)
