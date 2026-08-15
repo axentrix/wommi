@@ -1,16 +1,26 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../theme.dart';
-import '../models/onboarding_state.dart';
 import '../providers/onboarding_provider.dart';
 import '../widgets/chip_button.dart';
+import '../utils/onboarding_completion.dart';
 
-class OnboardingStep3Screen extends ConsumerWidget {
-  const OnboardingStep3Screen({super.key});
+/// Shown instead of the tracking-ovulation yes/no screen for IVF/IUI
+/// patients, who are already closely monitored - so we skip straight to
+/// where they are relative to ovulation rather than asking if they track
+/// it at all.
+class OnboardingOvulationTimingScreen extends ConsumerWidget {
+  const OnboardingOvulationTimingScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final onboardingData = ref.watch(onboardingProvider);
+    final isPostOvulation =
+        onboardingData.isTrackingOvulation == true &&
+        !onboardingData.ovulationNotYetHappened;
+    final isBeforeOvulation =
+        onboardingData.isTrackingOvulation == true &&
+        onboardingData.ovulationNotYetHappened;
 
     return Scaffold(
       backgroundColor: WommiColors.bg,
@@ -34,37 +44,20 @@ class OnboardingStep3Screen extends ConsumerWidget {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
               child: Row(
-                children: [
-                  Expanded(
-                    child: Container(
-                      height: 4,
-                      decoration: BoxDecoration(
-                        color: WommiColors.cyan,
-                        borderRadius: BorderRadius.circular(4),
+                children: List.generate(3, (i) {
+                  return Expanded(
+                    child: Padding(
+                      padding: EdgeInsets.only(right: i < 2 ? 6 : 0),
+                      child: Container(
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: WommiColors.cyan,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 6),
-                  Expanded(
-                    child: Container(
-                      height: 4,
-                      decoration: BoxDecoration(
-                        color: WommiColors.cyan,
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 6),
-                  Expanded(
-                    child: Container(
-                      height: 4,
-                      decoration: BoxDecoration(
-                        color: WommiColors.cyan,
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                    ),
-                  ),
-                ],
+                  );
+                }),
               ),
             ),
             // Body
@@ -88,7 +81,7 @@ class OnboardingStep3Screen extends ConsumerWidget {
                     const SizedBox(height: 12),
                     // Title
                     Text(
-                      'How are you trying\nto conceive?',
+                      'Where are you\nright now?',
                       style: TextStyle(
                         fontFamily: 'Unbounded',
                         fontWeight: FontWeight.w800,
@@ -99,7 +92,7 @@ class OnboardingStep3Screen extends ConsumerWidget {
                     ),
                     const SizedBox(height: 10),
                     Text(
-                      'Select all that apply. This helps us personalize your journey.',
+                      'This helps us show you the right day on your journey map.',
                       style: TextStyle(
                         fontFamily: 'Inter',
                         fontSize: 13.5,
@@ -108,22 +101,30 @@ class OnboardingStep3Screen extends ConsumerWidget {
                       ),
                     ),
                     const SizedBox(height: 26),
-                    // Chip row for trying methods
                     Wrap(
                       spacing: 8,
                       runSpacing: 8,
-                      children: TryingMethod.values.map((method) {
-                        return ChipButton(
-                          text: method.label,
-                          isSelected:
-                              onboardingData.tryingMethods.contains(method),
+                      children: [
+                        ChipButton(
+                          text: 'I am post ovulation',
+                          isSelected: isPostOvulation,
+                          onTap: () => ref
+                              .read(onboardingProvider.notifier)
+                              .setTrackingOvulation(true),
+                        ),
+                        ChipButton(
+                          text: 'I am before ovulation',
+                          isSelected: isBeforeOvulation,
                           onTap: () {
                             ref
                                 .read(onboardingProvider.notifier)
-                                .toggleTryingMethod(method);
+                                .setTrackingOvulation(true);
+                            ref
+                                .read(onboardingProvider.notifier)
+                                .setOvulationNotYetHappened();
                           },
-                        );
-                      }).toList(),
+                        ),
+                      ],
                     ),
                   ],
                 ),
@@ -135,21 +136,26 @@ class OnboardingStep3Screen extends ConsumerWidget {
               child: SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: () {
-                    Navigator.of(context).pushNamed(
-                      onboardingData.usesIvfOrIui
-                          ? '/onboarding-ovulation-timing'
-                          : '/onboarding-tracking-ovulation',
-                    );
-                  },
+                  onPressed: onboardingData.isTrackingOvulation != true
+                      ? null
+                      : () {
+                          if (onboardingData.ovulationNotYetHappened) {
+                            completeTtcOnboarding(context, ref, onboardingData);
+                          } else {
+                            Navigator.of(context)
+                                .pushNamed('/onboarding-days-past-ovulation');
+                          }
+                        },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: WommiColors.cyan,
+                    backgroundColor: onboardingData.isTrackingOvulation != true
+                        ? WommiColors.line
+                        : WommiColors.cyan,
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(100),
                     ),
-                    elevation: 14,
+                    elevation: onboardingData.isTrackingOvulation != true ? 0 : 14,
                     shadowColor: WommiColors.cyan.withOpacity(0.38),
                   ),
                   child: Text(

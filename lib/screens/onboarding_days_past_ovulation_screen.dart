@@ -92,13 +92,18 @@ class OnboardingDaysPastOvulationScreen extends ConsumerWidget {
                       ),
                     ),
                     const SizedBox(height: 26),
-                    ChipButton(
-                      text: 'Ovulation hasn\'t happened yet',
-                      isSelected: onboardingData.ovulationNotYetHappened,
-                      onTap: () => ref
-                          .read(onboardingProvider.notifier)
-                          .setOvulationNotYetHappened(),
-                    ),
+                    // IVF/IUI patients already answered this on the
+                    // previous screen, so re-offering it here would just
+                    // contradict what they picked.
+                    if (!onboardingData.usesIvfOrIui) ...[
+                      ChipButton(
+                        text: 'Ovulation hasn\'t happened yet',
+                        isSelected: onboardingData.ovulationNotYetHappened,
+                        onTap: () => ref
+                            .read(onboardingProvider.notifier)
+                            .setOvulationNotYetHappened(),
+                      ),
+                    ],
                     if (!onboardingData.ovulationNotYetHappened) ...[
                       const SizedBox(height: 20),
                       Center(
