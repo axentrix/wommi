@@ -8,6 +8,7 @@ import 'screens/onboarding_cycle_day_screen.dart';
 import 'screens/onboarding_conception_screen.dart';
 import 'screens/onboarding_step3_screen.dart';
 import 'screens/onboarding_tracking_ovulation_screen.dart';
+import 'screens/onboarding_ovulation_timing_screen.dart';
 import 'screens/onboarding_days_past_ovulation_screen.dart';
 import 'screens/onboarding_profile_screen.dart';
 import 'screens/home_screen.dart';
@@ -48,6 +49,8 @@ class WommiApp extends StatelessWidget {
         '/onboarding-step3': (context) => const OnboardingStep3Screen(),
         '/onboarding-tracking-ovulation': (context) =>
             const OnboardingTrackingOvulationScreen(),
+        '/onboarding-ovulation-timing': (context) =>
+            const OnboardingOvulationTimingScreen(),
         '/onboarding-days-past-ovulation': (context) =>
             const OnboardingDaysPastOvulationScreen(),
         '/onboarding-profile': (context) => const OnboardingProfileScreen(),

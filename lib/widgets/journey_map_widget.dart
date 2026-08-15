@@ -179,12 +179,21 @@ class _JourneyMapWidgetState extends ConsumerState<JourneyMapWidget>
     return math.min(daysSoFar, maxCount);
   }
 
-  /// How many of the tube's marker slots have a real day behind them. Zero
-  /// until ovulation is marked - until then we don't know which days (if
-  /// any) belong in the tube, so it's shown with empty placeholder dots.
+  /// How many of the tube's marker slots have a real day behind them.
+  /// Once ovulation is marked, all tubeStepSlots are real. Before that we
+  /// don't know for sure which days belong in the tube, but the user can
+  /// still be well past the ovary bundle without having marked it yet -
+  /// so, same as the ovary and uterus, this grows to keep up with
+  /// currentDay instead of leaving every slot as a dead placeholder until
+  /// the toggle is used.
   static int _tubeDayCount(UserState userState, int ovaryDayCount) {
-    if (userState.ovulationDay == null) return 0;
-    return math.min(tubeStepSlots, 35 - ovaryDayCount).clamp(0, tubeStepSlots);
+    final capacity =
+        math.min(tubeStepSlots, 35 - ovaryDayCount).clamp(0, tubeStepSlots);
+    if (userState.ovulationDay != null) return capacity;
+
+    final daysPastOvary = userState.currentDay - ovaryDayCount;
+    if (daysPastOvary <= 0) return 0;
+    return math.min(daysPastOvary, capacity);
   }
 
   /// The uterus phase's day count - defaults to [defaultUterusDayCount] but

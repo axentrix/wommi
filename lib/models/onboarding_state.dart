@@ -136,6 +136,14 @@ class OnboardingData {
 
   bool get needsStep3 => conceptionStatus == ConceptionStatus.activelyTrying;
 
+  /// IVF/IUI patients are already closely monitored for ovulation as part
+  /// of treatment, so instead of asking whether they track it at all, they
+  /// go straight to the more useful question of where they are relative to
+  /// it.
+  bool get usesIvfOrIui =>
+      tryingMethods.contains(TryingMethod.ivf) ||
+      tryingMethods.contains(TryingMethod.iui);
+
   /// Whether the "how many days past ovulation" follow-up is relevant -
   /// only once enough of the cycle has passed for it to matter.
   bool get needsDaysPastOvulationQuestion =>
