@@ -813,10 +813,15 @@ class _JourneyMapWidgetState extends ConsumerState<JourneyMapWidget>
     int uterusEndDay,
     Offset anchor,
   ) {
+    // t=0 would put "pull" at its max (1.0) below, collapsing this day's
+    // position onto the tube's last real marker (anchor) exactly - drawn
+    // on top of it in the stack, that hid the tube day completely instead
+    // of continuing the path forward from it (the reported "day 19 just
+    // vanishes" bug). Numerating from 1 instead keeps the first uterus day
+    // a step away from the anchor, while day uterusEndDay still lands on
+    // t=1 as before.
     final individualDayCount = uterusEndDay - uterusStartDay + 1;
-    final t = individualDayCount <= 1
-        ? 0.0
-        : (day - uterusStartDay) / (individualDayCount - 1);
+    final t = (day - uterusStartDay + 1) / individualDayCount;
 
     final baseY = 0.16 + t * 0.70;
     final baseX = 0.5 + 0.175 * math.sin(t * 2.2 * math.pi);

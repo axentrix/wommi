@@ -98107,8 +98107,8 @@ if(m){k=A.aM(8)
 B.b.L(r,A.b([B.mv,A.aD(A.S("YOU",o,o,o,A.dK().$4$color$fontSize$fontWeight$letterSpacing(B.e,7,B.B,1),o,o),B.l,o,o,new A.aA(B.k,o,o,k,o,o,B.z),o,o,B.oZ,o)],p))}return A.lB(o,A.ho(o,A.aY(r,B.o,o,B.n,B.a5),B.af,!1,o,o,o,o,o,o,o,o,o,o,o,o,o,o,new A.awH(this,d,b),o,o,o),o,o,e.a-9.5,o,e.b-9.5,o)},
 Vy(a,b,c,d,e,f){return A.jO(!0,new A.awS(this,b,this.gee().aD(0,$.dW(),t.YU).c,c,f,d,e),a,t.H)},
 ajw(a,b){A.bv(a,!1).mp(A.aMv(new A.awO(b),null,t.z))},
-RT(a,b,c,d){var s=c-b+1,r=s<=1?0:(a-b)/(s-1),q=Math.sin(r*2.2*3.141592653589793),p=B.d.dw(Math.pow(1-r,3),0,1)
-return new A.j(0.5+0.175*q+(d.a-0.5)*p,0.16+r*0.7+(d.b-0.16)*p)}}
+RT(a,b,c,d){var s=(a-b+1)/(c-b+1),r=Math.sin(s*2.2*3.141592653589793),q=B.d.dw(Math.pow(1-s,3),0,1)
+return new A.j(0.5+0.175*r+(d.a-0.5)*q,0.16+s*0.7+(d.b-0.16)*q)}}
 A.awP.prototype={
 $0(){var s=this.a
 s.Q=this.b
