@@ -48,11 +48,15 @@ class CycleDayInfoDialog extends ConsumerWidget {
     // started on any cycle day, so there's no "too late to ask" cutoff;
     // this toggle is the only way to close off the ovary phase (see
     // JourneyMapWidget._ovaryDayCount), so it must never become unreachable.
-    final showOvulationToggle = !isFuture &&
+    // None of this applies to a journey that isn't tracking a menstrual
+    // cycle in the first place (see UserState.tracksMenstrualCycle).
+    final showOvulationToggle = userState.tracksMenstrualCycle &&
+        !isFuture &&
         (userState.ovulationDay == null || userState.ovulationDay == day);
     final ovulationMarkedHere = userState.ovulationDay == day;
-    final showJourneyEndToggles =
-        !isFuture && _journeyEndToggleEligible(userState);
+    final showJourneyEndToggles = userState.tracksMenstrualCycle &&
+        !isFuture &&
+        _journeyEndToggleEligible(userState);
 
     return Dialog(
       backgroundColor: Colors.transparent,
@@ -374,27 +378,13 @@ class CycleDayInfoDialog extends ConsumerWidget {
                 borderRadius: BorderRadius.circular(100),
               ),
             ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  'Play daily game',
-                  style: GoogleFonts.unbounded(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                    color: color,
-                  ),
-                ),
-                const SizedBox(width: 6),
-                Text(
-                  '+1 💎',
-                  style: GoogleFonts.unbounded(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                    color: color,
-                  ),
-                ),
-              ],
+            child: Text(
+              'Play daily game',
+              style: GoogleFonts.unbounded(
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+                color: color,
+              ),
             ),
           ),
         ),

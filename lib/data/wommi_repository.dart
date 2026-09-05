@@ -18,6 +18,7 @@ class WommiRepository {
     ConceptionStatus? ttcStatus,
     List<TryingMethod>? ttcMethods,
     int? startingCycleDay,
+    GenderIdentity? genderIdentity,
   }) async {
     final companion = CycleProfilesCompanion.insert(
       cycleLength: Value(cycleLength),
@@ -25,6 +26,7 @@ class WommiRepository {
       ttcStatus: Value(ttcStatus?.name),
       ttcMethod: Value(ttcMethods?.map((m) => m.name).join(',')),
       startingCycleDay: Value(startingCycleDay),
+      genderIdentity: Value(genderIdentity?.name),
     );
     await _db.createCycleProfile(companion);
   }

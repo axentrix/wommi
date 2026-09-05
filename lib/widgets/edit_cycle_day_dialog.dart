@@ -29,6 +29,13 @@ class _EditCycleDayDialogState extends ConsumerState<EditCycleDayDialog> {
 
   @override
   Widget build(BuildContext context) {
+    // Same edit mechanism either way - just not framed as "your cycle" for
+    // a journey that isn't tracking a menstrual cycle (see
+    // UserState.tracksMenstrualCycle), since it may be tracking a
+    // partner's or nothing in particular.
+    final tracksMenstrualCycle =
+        ref.watch(userStateProvider).tracksMenstrualCycle;
+
     return Dialog(
       backgroundColor: Colors.transparent,
       child: Container(
@@ -46,7 +53,7 @@ class _EditCycleDayDialogState extends ConsumerState<EditCycleDayDialog> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    'Update Cycle Day',
+                    tracksMenstrualCycle ? 'Update Cycle Day' : 'Update Journey Day',
                     style: GoogleFonts.unbounded(
                       fontSize: 20,
                       fontWeight: FontWeight.w800,
@@ -55,7 +62,9 @@ class _EditCycleDayDialogState extends ConsumerState<EditCycleDayDialog> {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Where are you in your cycle today?',
+                    tracksMenstrualCycle
+                        ? 'Where are you in your cycle today?'
+                        : 'What day are you on?',
                     textAlign: TextAlign.center,
                     style: GoogleFonts.inter(
                       fontSize: 13,
@@ -74,7 +83,7 @@ class _EditCycleDayDialogState extends ConsumerState<EditCycleDayDialog> {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'DAY OF CYCLE',
+                    tracksMenstrualCycle ? 'DAY OF CYCLE' : 'JOURNEY DAY',
                     style: GoogleFonts.spaceMono(
                       fontSize: 11,
                       letterSpacing: 1.1,

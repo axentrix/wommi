@@ -1,9 +1,12 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../theme.dart';
 
 /// Placeholder for the "Piñata Smash" Rive scene: tap the piñata a handful
-/// of times, it shakes more with each hit, then bursts and [onWin] fires.
+/// of times, it shakes more with each hit, then bursts. Like the Lucky
+/// Wheel, this one is luck-based - the piñata doesn't always have candy in
+/// it, so [onWin] only fires when it does.
 class PinataGame extends StatefulWidget {
   final VoidCallback onWin;
 
@@ -16,10 +19,13 @@ class PinataGame extends StatefulWidget {
 class _PinataGameState extends State<PinataGame>
     with SingleTickerProviderStateMixin {
   static const _hitsToBreak = 5;
+  // About 7 in 10 piñatas have candy in them.
+  static const _winChance = 0.7;
 
   late final AnimationController _shakeController;
   int _hits = 0;
   bool _broken = false;
+  bool _won = false;
 
   @override
   void initState() {
@@ -41,8 +47,12 @@ class _PinataGameState extends State<PinataGame>
     _shakeController.forward(from: 0);
     setState(() => _hits++);
     if (_hits >= _hitsToBreak) {
-      setState(() => _broken = true);
-      widget.onWin();
+      final won = math.Random().nextDouble() < _winChance;
+      setState(() {
+        _broken = true;
+        _won = won;
+      });
+      if (won) widget.onWin();
     }
   }
 
@@ -85,9 +95,9 @@ class _PinataGameState extends State<PinataGame>
                     child: child,
                   );
                 },
-                child: _broken
-                    ? const Text('🎊', style: TextStyle(fontSize: 96))
-                    : const Text('🪅', style: TextStyle(fontSize: 96)),
+                child: !_broken
+                    ? const Text('🪅', style: TextStyle(fontSize: 96))
+                    : Text(_won ? '🎊' : '💨', style: const TextStyle(fontSize: 96)),
               ),
             ),
             const SizedBox(height: 28),
@@ -106,7 +116,7 @@ class _PinataGameState extends State<PinataGame>
             const SizedBox(height: 16),
             Text(
               _broken
-                  ? 'Charm collected!'
+                  ? (_won ? 'Charm collected!' : 'Empty - better luck tomorrow')
                   : 'Tap the piñata ($_hits/$_hitsToBreak)',
               style: GoogleFonts.inter(
                 fontSize: 13,

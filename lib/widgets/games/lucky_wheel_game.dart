@@ -4,7 +4,9 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../theme.dart';
 
 /// Placeholder for the "Lucky Wheel" Rive scene: tap to spin, the wheel
-/// settles on a random wedge, [onWin] fires once it stops. Pure Flutter
+/// settles on a random wedge. Unlike the other placeholder games, this one
+/// is luck-based - some wedges are a genuine miss, so [onWin] only fires
+/// when the wheel actually lands on a winning one. Pure Flutter
 /// (CustomPaint + an AnimationController) standing in until a real Rive
 /// state machine replaces it.
 class LuckyWheelGame extends StatefulWidget {
@@ -16,21 +18,30 @@ class LuckyWheelGame extends StatefulWidget {
   State<LuckyWheelGame> createState() => _LuckyWheelGameState();
 }
 
+class _WheelWedge {
+  final Color color;
+  final bool won;
+  const _WheelWedge(this.color, this.won);
+}
+
 class _LuckyWheelGameState extends State<LuckyWheelGame>
     with SingleTickerProviderStateMixin {
-  static const _wedgeColors = [
-    WommiColors.rose,
-    WommiColors.cyan,
-    WommiColors.gold,
-    WommiColors.lilac,
-    WommiColors.sage,
-    WommiColors.roseSoft,
+  // 4 winning wedges, 2 miss (grey) - about a two-in-three chance per spin,
+  // spread on opposite sides of the wheel rather than bunched together.
+  static const _wedges = [
+    _WheelWedge(WommiColors.rose, true),
+    _WheelWedge(WommiColors.inkDim, false),
+    _WheelWedge(WommiColors.cyan, true),
+    _WheelWedge(WommiColors.gold, true),
+    _WheelWedge(WommiColors.inkDim, false),
+    _WheelWedge(WommiColors.lilac, true),
   ];
 
   late final AnimationController _controller;
   late Animation<double> _spin;
   bool _spinning = false;
   bool _done = false;
+  bool _won = false;
 
   @override
   void initState() {
@@ -51,9 +62,18 @@ class _LuckyWheelGameState extends State<LuckyWheelGame>
   void _startSpin() {
     if (_spinning) return;
     final random = math.Random();
-    // A handful of full turns plus a random landing wedge.
-    final target =
-        (4 + random.nextInt(3)) * 2 * math.pi + random.nextDouble() * 2 * math.pi;
+    final wedgeIndex = random.nextInt(_wedges.length);
+    final won = _wedges[wedgeIndex].won;
+
+    // Rotate so the chosen wedge's center ends up under the fixed arrow at
+    // the top (angle -pi/2) - plus a few extra full turns just for show,
+    // which don't change where it actually lands.
+    final sweep = 2 * math.pi / _wedges.length;
+    final wedgeCenter = (wedgeIndex + 0.5) * sweep;
+    final baseTheta = (-math.pi / 2 - wedgeCenter) % (2 * math.pi);
+    final extraSpins = (4 + random.nextInt(3)) * 2 * math.pi;
+    final target = extraSpins + baseTheta;
+
     _spin = Tween<double>(begin: 0, end: target).animate(
       CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic),
     );
@@ -65,8 +85,9 @@ class _LuckyWheelGameState extends State<LuckyWheelGame>
         setState(() {
           _spinning = false;
           _done = true;
+          _won = won;
         });
-        widget.onWin();
+        if (won) widget.onWin();
       });
   }
 
@@ -112,7 +133,8 @@ class _LuckyWheelGameState extends State<LuckyWheelGame>
                     ),
                     child: CustomPaint(
                       size: const Size(240, 240),
-                      painter: _WheelPainter(colors: _wedgeColors),
+                      painter: _WheelPainter(
+                          wedges: _wedges.map((w) => w.color).toList()),
                     ),
                   ),
                   const Positioned(
@@ -136,7 +158,9 @@ class _LuckyWheelGameState extends State<LuckyWheelGame>
                 ),
               ),
               child: Text(
-                _done ? 'Charm collected!' : (_spinning ? 'Spinning…' : 'Spin'),
+                _done
+                    ? (_won ? 'Charm collected!' : 'No luck this time')
+                    : (_spinning ? 'Spinning…' : 'Spin'),
                 style: GoogleFonts.unbounded(
                   fontWeight: FontWeight.w700,
                   fontSize: 14,
@@ -151,16 +175,16 @@ class _LuckyWheelGameState extends State<LuckyWheelGame>
 }
 
 class _WheelPainter extends CustomPainter {
-  final List<Color> colors;
-  _WheelPainter({required this.colors});
+  final List<Color> wedges;
+  _WheelPainter({required this.wedges});
 
   @override
   void paint(Canvas canvas, Size size) {
     final center = Offset(size.width / 2, size.height / 2);
     final radius = size.width / 2;
-    final sweep = 2 * math.pi / colors.length;
-    for (var i = 0; i < colors.length; i++) {
-      final paint = Paint()..color = colors[i];
+    final sweep = 2 * math.pi / wedges.length;
+    for (var i = 0; i < wedges.length; i++) {
+      final paint = Paint()..color = wedges[i];
       canvas.drawArc(
         Rect.fromCircle(center: center, radius: radius),
         i * sweep,

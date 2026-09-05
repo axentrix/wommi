@@ -1,3 +1,17 @@
+/// How the user defines themselves - asked first, before anything about
+/// cycles or conception, since it decides whether those questions are even
+/// relevant. A man or someone who identifies otherwise isn't asked about
+/// their own menstrual cycle or ovulation at all; see
+/// OnboardingData.tracksMenstrualCycle.
+enum GenderIdentity {
+  woman('Woman'),
+  man('Man'),
+  other('Other');
+
+  const GenderIdentity(this.label);
+  final String label;
+}
+
 enum ConceptionStatus {
   thinkingAboutIt('Just starting to think about it'),
   activelyTrying('Actively trying'),
@@ -29,6 +43,7 @@ enum CycleDayDisclosure {
 }
 
 class OnboardingData {
+  final GenderIdentity? genderIdentity;
   final int cycleDay;
   final CycleDayDisclosure? cycleDayDisclosure;
   final ConceptionStatus? conceptionStatus;
@@ -42,6 +57,7 @@ class OnboardingData {
   final bool ovulationNotYetHappened;
 
   OnboardingData({
+    this.genderIdentity,
     this.cycleDay = 13,
     this.cycleDayDisclosure,
     this.conceptionStatus,
@@ -55,7 +71,14 @@ class OnboardingData {
   /// day 1 (a neutral default) when the user opted out of specifying one.
   int get effectiveCycleDay => cycleDayDisclosure != null ? 1 : cycleDay;
 
+  /// Whether any of the cycle/ovulation/conception questions apply at all -
+  /// false for a man or someone who identifies otherwise, whose journey
+  /// just starts from day 1 with none of that asked.
+  bool get tracksMenstrualCycle =>
+      genderIdentity == null || genderIdentity == GenderIdentity.woman;
+
   OnboardingData copyWith({
+    GenderIdentity? genderIdentity,
     int? cycleDay,
     ConceptionStatus? conceptionStatus,
     List<TryingMethod>? tryingMethods,
@@ -64,6 +87,7 @@ class OnboardingData {
     bool? ovulationNotYetHappened,
   }) {
     return OnboardingData(
+      genderIdentity: genderIdentity ?? this.genderIdentity,
       cycleDay: cycleDay ?? this.cycleDay,
       // Picking a specific day supersedes any earlier opt-out.
       cycleDayDisclosure: cycleDay != null ? null : cycleDayDisclosure,
@@ -81,6 +105,7 @@ class OnboardingData {
   /// current value".
   OnboardingData withCycleDayDisclosure(CycleDayDisclosure? disclosure) {
     return OnboardingData(
+      genderIdentity: genderIdentity,
       cycleDay: cycleDay,
       cycleDayDisclosure: disclosure,
       conceptionStatus: conceptionStatus,
@@ -96,6 +121,7 @@ class OnboardingData {
   /// answer makes any previous follow-up answer stale.
   OnboardingData withTrackingOvulation(bool value) {
     return OnboardingData(
+      genderIdentity: genderIdentity,
       cycleDay: cycleDay,
       cycleDayDisclosure: cycleDayDisclosure,
       conceptionStatus: conceptionStatus,
@@ -110,6 +136,7 @@ class OnboardingData {
   /// yet" if that was previously picked instead.
   OnboardingData withDaysPastOvulation(int days) {
     return OnboardingData(
+      genderIdentity: genderIdentity,
       cycleDay: cycleDay,
       cycleDayDisclosure: cycleDayDisclosure,
       conceptionStatus: conceptionStatus,
@@ -124,6 +151,7 @@ class OnboardingData {
   /// instead.
   OnboardingData withOvulationNotYetHappened() {
     return OnboardingData(
+      genderIdentity: genderIdentity,
       cycleDay: cycleDay,
       cycleDayDisclosure: cycleDayDisclosure,
       conceptionStatus: conceptionStatus,

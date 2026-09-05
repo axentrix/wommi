@@ -76,78 +76,86 @@ class ProfileScreen extends ConsumerWidget {
               ),
             ),
             const SizedBox(height: 20),
-            // Period started toggle
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                border: Border.all(
-                  color: WommiColors.line,
-                  width: 1.5,
+            // Period/pregnancy toggles don't apply to a journey that isn't
+            // tracking a menstrual cycle in the first place (see
+            // UserState.tracksMenstrualCycle).
+            if (userState.tracksMenstrualCycle) ...[
+              // Period started toggle
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  border: Border.all(
+                    color: WommiColors.line,
+                    width: 1.5,
+                  ),
+                  borderRadius: BorderRadius.circular(100),
                 ),
-                borderRadius: BorderRadius.circular(100),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    'Period started',
-                    style: GoogleFonts.unbounded(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: WommiColors.ink,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'Period started',
+                      style: GoogleFonts.unbounded(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: WommiColors.ink,
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 12),
-                  Switch(
-                    value: false,
-                    activeColor: WommiColors.cyan,
-                    onChanged: (value) {
-                      if (value) {
-                        showPeriodStartedFlow(context, ref);
-                      }
-                    },
-                  ),
-                ],
+                    const SizedBox(width: 12),
+                    Switch(
+                      value: false,
+                      activeColor: WommiColors.cyan,
+                      onChanged: (value) {
+                        if (value) {
+                          showPeriodStartedFlow(context, ref);
+                        }
+                      },
+                    ),
+                  ],
+                ),
               ),
-            ),
+              const SizedBox(height: 16),
+              // Pregnancy detected toggle
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  border: Border.all(
+                    color: WommiColors.line,
+                    width: 1.5,
+                  ),
+                  borderRadius: BorderRadius.circular(100),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'Pregnancy detected',
+                      style: GoogleFonts.unbounded(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: WommiColors.ink,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Switch(
+                      value: false,
+                      activeColor: WommiColors.rose,
+                      onChanged: (value) {
+                        if (value) {
+                          showPregnancyDetectedFlow(context, ref);
+                        }
+                      },
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+            ],
             const SizedBox(height: 16),
-            // Pregnancy detected toggle
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                border: Border.all(
-                  color: WommiColors.line,
-                  width: 1.5,
-                ),
-                borderRadius: BorderRadius.circular(100),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    'Pregnancy detected',
-                    style: GoogleFonts.unbounded(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: WommiColors.ink,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Switch(
-                    value: false,
-                    activeColor: WommiColors.rose,
-                    onChanged: (value) {
-                      if (value) {
-                        showPregnancyDetectedFlow(context, ref);
-                      }
-                    },
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 32),
             // Stats cards
             Row(
               children: [
@@ -161,9 +169,11 @@ class ProfileScreen extends ConsumerWidget {
                 const SizedBox(width: 12),
                 Expanded(
                   child: _StatCard(
-                    label: 'Cycle Day',
+                    label: userState.tracksMenstrualCycle
+                        ? 'Cycle Day'
+                        : 'Journey Day',
                     value: '${userState.currentDay}',
-                    icon: '🌸',
+                    icon: userState.tracksMenstrualCycle ? '🌸' : '📅',
                   ),
                 ),
               ],
@@ -193,18 +203,29 @@ class ProfileScreen extends ConsumerWidget {
             _buildSectionHeader('Your Journey Settings'),
             const SizedBox(height: 12),
             _SettingCard(
-              title: 'Cycle Information',
-              subtitle: 'Currently on day ${userState.currentDay} of your cycle',
+              title: userState.tracksMenstrualCycle
+                  ? 'Cycle Information'
+                  : 'Journey Day',
+              // Editing this still just moves the day-tracking anchor
+              // point (see EditCycleDayDialog) - for a journey that isn't
+              // tracking a menstrual cycle, it's just not framed as "your
+              // cycle", since it may be tracking a partner's or nothing in
+              // particular.
+              subtitle: userState.tracksMenstrualCycle
+                  ? 'Currently on day ${userState.currentDay} of your cycle'
+                  : 'Currently on day ${userState.currentDay}',
               onTap: () => _showEditCycleDay(context),
             ),
-            const SizedBox(height: 12),
-            _SettingCard(
-              title: 'Method of Conception',
-              subtitle: onboardingData.tryingMethods.isNotEmpty
-                  ? onboardingData.tryingMethods.first.label
-                  : 'Not set',
-              onTap: () => _showEditConceptionMethod(context),
-            ),
+            if (userState.tracksMenstrualCycle) ...[
+              const SizedBox(height: 12),
+              _SettingCard(
+                title: 'Method of Conception',
+                subtitle: onboardingData.tryingMethods.isNotEmpty
+                    ? onboardingData.tryingMethods.first.label
+                    : 'Not set',
+                onTap: () => _showEditConceptionMethod(context),
+              ),
+            ],
             const SizedBox(height: 48),
             // Delete account link
             Center(

@@ -1,10 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/journey.dart';
+import '../models/onboarding_state.dart';
 import '../providers/repository_provider.dart';
 import '../providers/user_state_provider.dart';
 import '../services/device_storage.dart';
 import '../theme.dart';
+
+/// Parses the stored genderIdentity column back into its enum - null (no
+/// match, or a pre-migration row that never had one) is treated as "not
+/// recorded" rather than an error, same as any other legacy-row default.
+GenderIdentity? _parseGenderIdentity(String? raw) {
+  if (raw == null) return null;
+  for (final value in GenderIdentity.values) {
+    if (value.name == raw) return value;
+  }
+  return null;
+}
 
 class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
@@ -136,6 +148,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
       streakDays: streakDays,
       startingCycleDay: profile?.startingCycleDay,
       ovulationDay: profile?.ovulationDay,
+      genderIdentity: _parseGenderIdentity(profile?.genderIdentity),
     );
 
     final completedDays = await repository.getDaysWithCharms();

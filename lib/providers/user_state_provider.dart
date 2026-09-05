@@ -1,15 +1,17 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/user_state.dart';
 import '../models/journey.dart';
+import '../models/onboarding_state.dart';
 
 class UserStateNotifier extends StateNotifier<UserState> {
   UserStateNotifier() : super(UserState(currentDay: 0));
 
-  void initializeFromOnboarding(int cycleDay) {
+  void initializeFromOnboarding(int cycleDay, {GenderIdentity? genderIdentity}) {
     state = state.copyWith(
       currentDay: cycleDay,
       startingCycleDay: cycleDay,
       lastOpenedDate: DateTime.now(),
+      genderIdentity: genderIdentity,
     );
   }
 
@@ -49,6 +51,7 @@ class UserStateNotifier extends StateNotifier<UserState> {
     required int streakDays,
     int? startingCycleDay,
     int? ovulationDay,
+    GenderIdentity? genderIdentity,
   }) {
     state = state
         .copyWith(
@@ -56,6 +59,7 @@ class UserStateNotifier extends StateNotifier<UserState> {
           gemBalance: gemBalance,
           streakDays: streakDays,
           startingCycleDay: startingCycleDay,
+          genderIdentity: genderIdentity,
         )
         .withOvulationDay(ovulationDay);
   }
