@@ -5,9 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../theme.dart';
 import '../models/user_state.dart';
 import '../providers/user_state_provider.dart';
-import '../providers/onboarding_provider.dart';
-import '../screens/challenges_screen.dart';
-import 'cycle_day_info_dialog.dart';
+import '../screens/daily_game_screen.dart';
 import 'ovary_phase_dialog.dart';
 
 /// Journey map laid out over the isometric womb illustration: a single
@@ -15,8 +13,10 @@ import 'ovary_phase_dialog.dart';
 /// varies and isn't known in advance) connected by the fallopian tube into
 /// the uterus, then individual day markers for the rest of the cycle.
 /// This is a placeholder background - it will be replaced with a Rive
-/// animation. Tapping any marker previews the "zoom into this region"
-/// camera move that the eventual Rive scene will own for real.
+/// animation. Tapping the ovary bundle still previews the "zoom into this
+/// region" camera move that the eventual Rive scene will own for real;
+/// tapping an individual day now opens that day's full-screen mini-game
+/// (see DailyGameScreen) instead of zooming.
 class JourneyMapWidget extends ConsumerStatefulWidget {
   const JourneyMapWidget({super.key});
 
@@ -64,14 +64,13 @@ class _JourneyMapWidgetState extends ConsumerState<JourneyMapWidget>
   late final Animation<double> _zoomCurve;
   Alignment _zoomFocal = Alignment.center;
 
-  // Which marker the map is currently zoomed into, so the reopen chip below
-  // can bring its dialog back without re-triggering the zoom - and so the
-  // back button knows there's something to zoom back out of. Closing the
-  // dialog itself (X, tap-outside, "Not now"...) no longer un-zooms; only
-  // the back button does.
+  // Whether the map is currently zoomed into the ovary bundle - the only
+  // marker that still zooms (individual days open DailyGameScreen instead).
+  // The reopen chip below uses this to bring the ovary dialog back without
+  // re-triggering the zoom, and the back button uses it to know there's
+  // something to zoom back out of. Closing the dialog itself (X, tap-
+  // outside, "Not now"...) no longer un-zooms; only the back button does.
   bool _zoomed = false;
-  int? _activeDay;
-  bool _activeIsOvary = false;
 
   @override
   void initState() {
@@ -93,19 +92,11 @@ class _JourneyMapWidgetState extends ConsumerState<JourneyMapWidget>
     super.dispose();
   }
 
-  /// Zooms the map in on [focal] (fractional 0..1 position of whatever was
-  /// tapped) if it isn't already zoomed in, remembers it as the active
-  /// marker, then shows its dialog. Does *not* zoom back out when the
-  /// dialog closes - only [_exitZoom] does that.
-  Future<void> _openZoomedMarker(
-    Offset focal, {
-    int? day,
-    bool isOvary = false,
-  }) async {
-    setState(() {
-      _activeDay = day;
-      _activeIsOvary = isOvary;
-    });
+  /// Zooms the map in on [focal] (fractional 0..1 position of the ovary
+  /// bundle) if it isn't already zoomed in, then shows its dialog. Does
+  /// *not* zoom back out when the dialog closes - only [_exitZoom] does
+  /// that.
+  Future<void> _openZoomedOvary(Offset focal) async {
     if (!_zoomed) {
       setState(() {
         _zoomed = true;
@@ -116,39 +107,18 @@ class _JourneyMapWidgetState extends ConsumerState<JourneyMapWidget>
     await _showActiveDialog();
   }
 
-  /// Re-shows whichever dialog belongs to the currently zoomed-in marker,
-  /// recomputing its state fresh - used by the reopen chip.
+  /// Re-shows the ovary phase dialog, recomputing its state fresh - used by
+  /// the reopen chip.
   Future<void> _showActiveDialog() async {
     final userState = ref.read(userStateProvider);
-    if (_activeIsOvary) {
-      await _showOvaryPhase(
-        context,
-        userState.currentDay,
-        _ovaryDayCount(userState),
-      );
-    } else if (_activeDay != null) {
-      final day = _activeDay!;
-      final isCompleted = userState.completedDays.contains(day);
-      await _showDayInfo(
-        context,
-        day,
-        isCompleted: isCompleted,
-        isInProgress: !isCompleted && userState.inProgressDays.contains(day),
-        isCurrent: day == userState.currentDay,
-        isFuture: day > userState.currentDay,
-      );
-    }
+    await _showOvaryPhase(context, _ovaryDayCount(userState));
   }
 
   /// The only way back to the normal map view once zoomed in.
   Future<void> _exitZoom() async {
     await _zoomController.reverse();
     if (!mounted) return;
-    setState(() {
-      _zoomed = false;
-      _activeDay = null;
-      _activeIsOvary = false;
-    });
+    setState(() => _zoomed = false);
   }
 
   // Clamped so there are always at least 2 individually-plotted days after
@@ -327,7 +297,6 @@ class _JourneyMapWidgetState extends ConsumerState<JourneyMapWidget>
                                 context,
                                 ovaryDayCount + 1 + i,
                                 currentDay,
-                                tubeFractions[i],
                                 Offset(tubeFractions[i].dx * size.width,
                                     tubeFractions[i].dy * size.height),
                               )
@@ -340,8 +309,6 @@ class _JourneyMapWidgetState extends ConsumerState<JourneyMapWidget>
                           context,
                           day,
                           currentDay,
-                          _getFractionForDay(
-                              day, uterusStartDay, uterusEndDay, uterusAnchor),
                           _getPositionForDay(
                               day, uterusStartDay, uterusEndDay, uterusAnchor, size),
                         ),
@@ -457,7 +424,7 @@ class _JourneyMapWidgetState extends ConsumerState<JourneyMapWidget>
       left: position.dx * size.width - nodeSize / 2,
       top: position.dy * size.height - nodeSize / 2,
       child: GestureDetector(
-        onTap: () => _openZoomedMarker(position, isOvary: true),
+        onTap: () => _openZoomedOvary(position),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -531,7 +498,6 @@ class _JourneyMapWidgetState extends ConsumerState<JourneyMapWidget>
 
   Future<void> _showOvaryPhase(
     BuildContext context,
-    int currentDay,
     int ovaryDayCount,
   ) {
     return showDialog(
@@ -540,19 +506,8 @@ class _JourneyMapWidgetState extends ConsumerState<JourneyMapWidget>
         dayCount: ovaryDayCount,
         onDayTap: (day) {
           Navigator.pop(context);
-          setState(() {
-            _activeIsOvary = false;
-            _activeDay = day;
-          });
-          final userState = ref.read(userStateProvider);
-          _showDayInfo(
-            context,
-            day,
-            isCompleted: userState.completedDays.contains(day),
-            isInProgress: !userState.completedDays.contains(day) &&
-                userState.inProgressDays.contains(day),
-            isCurrent: day == currentDay,
-            isFuture: day > currentDay,
+          Navigator.of(context).push(
+            MaterialPageRoute(builder: (context) => DailyGameScreen(day: day)),
           );
         },
       ),
@@ -583,7 +538,6 @@ class _JourneyMapWidgetState extends ConsumerState<JourneyMapWidget>
     BuildContext context,
     int day,
     int currentDay,
-    Offset fraction,
     Offset position,
   ) {
     final userState = ref.watch(userStateProvider);
@@ -613,7 +567,9 @@ class _JourneyMapWidgetState extends ConsumerState<JourneyMapWidget>
       left: position.dx - markerSize / 2,
       top: position.dy - markerSize / 2,
       child: GestureDetector(
-        onTap: () => _openZoomedMarker(fraction, day: day),
+        onTap: () => Navigator.of(context).push(
+          MaterialPageRoute(builder: (context) => DailyGameScreen(day: day)),
+        ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -765,44 +721,6 @@ class _JourneyMapWidgetState extends ConsumerState<JourneyMapWidget>
     );
   }
 
-  /// Tapping a day shows a summary of what's typically happening in the
-  /// cycle on that day, and - if it isn't fully completed yet and isn't in
-  /// the future - offers to open its rituals from there.
-  Future<void> _showDayInfo(
-    BuildContext context,
-    int day, {
-    required bool isCompleted,
-    required bool isInProgress,
-    required bool isCurrent,
-    required bool isFuture,
-  }) {
-    final conceptionStatus = ref.read(onboardingProvider).conceptionStatus;
-    return showDialog(
-      context: context,
-      builder: (context) => CycleDayInfoDialog(
-        day: day,
-        conceptionStatus: conceptionStatus,
-        isCompleted: isCompleted,
-        isInProgress: isInProgress,
-        isCurrent: isCurrent,
-        isFuture: isFuture,
-        onOpenMissions: () {
-          Navigator.pop(context);
-          _openDayChallenges(context, day);
-        },
-      ),
-    );
-  }
-
-  void _openDayChallenges(BuildContext context, int day) {
-    // Same 3 daily missions/rituals as the Challenges tab, just scoped to
-    // this specific day and pushed as its own screen with a back button.
-    // Awards exactly 1 gem, same as any other day, only once all 3 are
-    // complete.
-    Navigator.of(context).push(
-      MaterialPageRoute(builder: (context) => ChallengesScreen(day: day)),
-    );
-  }
 
   /// Same t/curve math as [_getPositionForDay], stopping short of the
   /// final size multiplication - used as the zoom's focal point, which

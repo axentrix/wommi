@@ -112,6 +112,17 @@ class UserStateNotifier extends StateNotifier<UserState> {
     state = state.copyWith(streakDays: days);
   }
 
+  /// Marks [day]'s mini-game as played - a second, independent charm from
+  /// the day's 3 rituals. Idempotent, same as completeDay(), since a day's
+  /// game can be revisited for fun without earning a second charm for it.
+  void markDailyGameComplete(int day) {
+    if (!state.dailyGameCompletedDays.contains(day)) {
+      state = state.copyWith(
+        dailyGameCompletedDays: [...state.dailyGameCompletedDays, day],
+      );
+    }
+  }
+
   void advanceDay() {
     final nextDay = state.currentDay < state.cycleLength
         ? state.currentDay + 1

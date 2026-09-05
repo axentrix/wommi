@@ -22,6 +22,11 @@ class UserState {
   final int? startingCycleDay;
   // The cycle day the user told us ovulation started on. Null until marked.
   final int? ovulationDay;
+  // Days whose daily mini-game (see DailyGame) has already been played and
+  // rewarded - a second, independent charm from the day's 3 rituals. Not
+  // yet persisted to the database (these are placeholders standing in for
+  // real Rive scenes), so this resets on reload for now.
+  final List<int> dailyGameCompletedDays;
 
   UserState({
     required this.currentDay,
@@ -38,6 +43,7 @@ class UserState {
     this.profileId,
     this.startingCycleDay,
     this.ovulationDay,
+    this.dailyGameCompletedDays = const [],
   });
 
   bool get hasProfile => name != null && email != null;
@@ -57,6 +63,7 @@ class UserState {
     int? profileId,
     int? startingCycleDay,
     int? ovulationDay,
+    List<int>? dailyGameCompletedDays,
   }) {
     return UserState(
       currentDay: currentDay ?? this.currentDay,
@@ -73,6 +80,8 @@ class UserState {
       profileId: profileId ?? this.profileId,
       startingCycleDay: startingCycleDay ?? this.startingCycleDay,
       ovulationDay: ovulationDay ?? this.ovulationDay,
+      dailyGameCompletedDays:
+          dailyGameCompletedDays ?? this.dailyGameCompletedDays,
     );
   }
 
@@ -95,6 +104,7 @@ class UserState {
       profileId: profileId,
       startingCycleDay: startingCycleDay,
       ovulationDay: day,
+      dailyGameCompletedDays: dailyGameCompletedDays,
     );
   }
 }
