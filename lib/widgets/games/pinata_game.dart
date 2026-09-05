@@ -9,8 +9,9 @@ import '../../theme.dart';
 /// it, so [onWin] only fires when it does.
 class PinataGame extends StatefulWidget {
   final VoidCallback onWin;
+  final VoidCallback onPlayed;
 
-  const PinataGame({super.key, required this.onWin});
+  const PinataGame({super.key, required this.onWin, required this.onPlayed});
 
   @override
   State<PinataGame> createState() => _PinataGameState();
@@ -52,6 +53,7 @@ class _PinataGameState extends State<PinataGame>
         _broken = true;
         _won = won;
       });
+      widget.onPlayed();
       if (won) widget.onWin();
     }
   }

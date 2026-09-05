@@ -282,6 +282,7 @@ class CycleDayInfoDialog extends ConsumerWidget {
                 color: info.color,
                 ritualsLabel: 'Revisit daily rituals',
                 showRitualsReward: false,
+                gameAlreadyPlayed: userState.dailyGamePlayedDays.contains(day),
               ),
             ] else ...[
               Text(
@@ -304,6 +305,7 @@ class CycleDayInfoDialog extends ConsumerWidget {
                 ritualsLabel:
                     isInProgress ? 'Finish daily rituals' : 'Complete daily rituals',
                 showRitualsReward: true,
+                gameAlreadyPlayed: userState.dailyGamePlayedDays.contains(day),
               ),
             ],
           ],
@@ -324,6 +326,7 @@ class CycleDayInfoDialog extends ConsumerWidget {
     required Color color,
     required String ritualsLabel,
     required bool showRitualsReward,
+    required bool gameAlreadyPlayed,
   }) {
     return Column(
       children: [
@@ -369,21 +372,28 @@ class CycleDayInfoDialog extends ConsumerWidget {
         SizedBox(
           width: double.infinity,
           child: OutlinedButton(
+            // Still just dismisses either way - the game (or, once played,
+            // its locked state) is already running behind this dialog, see
+            // DailyGameScreen. Greyed out here just as a heads-up so
+            // tapping it isn't a surprise.
             onPressed: () => Navigator.pop(context),
             style: OutlinedButton.styleFrom(
-              foregroundColor: color,
+              foregroundColor: gameAlreadyPlayed ? WommiColors.inkDim : color,
               padding: const EdgeInsets.symmetric(vertical: 14),
-              side: BorderSide(color: color, width: 1.5),
+              side: BorderSide(
+                color: gameAlreadyPlayed ? WommiColors.line : color,
+                width: 1.5,
+              ),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(100),
               ),
             ),
             child: Text(
-              'Play daily game',
+              gameAlreadyPlayed ? 'Game already played today' : 'Play daily game',
               style: GoogleFonts.unbounded(
                 fontSize: 12,
                 fontWeight: FontWeight.w700,
-                color: color,
+                color: gameAlreadyPlayed ? WommiColors.inkDim : color,
               ),
             ),
           ),
