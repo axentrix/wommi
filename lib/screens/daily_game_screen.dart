@@ -13,6 +13,22 @@ import '../widgets/games/avatar_customization_game.dart';
 import '../widgets/games/room_customization_game.dart';
 import 'challenges_screen.dart';
 
+/// A plain cross-fade for entering/exiting the full-screen game - the
+/// zoom-in preview it replaces was itself just a placeholder for the real
+/// Rive camera move, so a simple fade keeps that same "not the final
+/// polish" honesty rather than a directional slide that implies more than
+/// it is.
+Route<void> dailyGameRoute(int day) {
+  return PageRouteBuilder<void>(
+    pageBuilder: (context, animation, secondaryAnimation) =>
+        DailyGameScreen(day: day),
+    transitionsBuilder: (context, animation, secondaryAnimation, child) =>
+        FadeTransition(opacity: animation, child: child),
+    transitionDuration: const Duration(milliseconds: 320),
+    reverseTransitionDuration: const Duration(milliseconds: 260),
+  );
+}
+
 /// Full-screen mini-game opened by tapping a day marker on the journey map -
 /// replaces the old "zoom into the map" preview. The day's info dialog
 /// (phase description, missions, ovulation/period toggles) still opens on
