@@ -158,21 +158,24 @@ class OnboardingConceptionScreen extends ConsumerWidget {
                               cycleLength: 28,
                               ttcStatus: onboardingData.conceptionStatus,
                               startingCycleDay: onboardingData.effectiveCycleDay,
+                              genderIdentity: onboardingData.genderIdentity,
                             ).then((_) {
                               // Initialize user state and continue to the
                               // profile step (push, not replace, so the
                               // user can still back out to this question).
-                              ref
-                                  .read(userStateProvider.notifier)
-                                  .initializeFromOnboarding(onboardingData.effectiveCycleDay);
+                              ref.read(userStateProvider.notifier).initializeFromOnboarding(
+                                    onboardingData.effectiveCycleDay,
+                                    genderIdentity: onboardingData.genderIdentity,
+                                  );
 
                               Navigator.of(context).pushNamed('/onboarding-profile');
                             }).catchError((error) {
                               print('Error saving cycle profile: $error');
                               // Still navigate even if save fails
-                              ref
-                                  .read(userStateProvider.notifier)
-                                  .initializeFromOnboarding(onboardingData.effectiveCycleDay);
+                              ref.read(userStateProvider.notifier).initializeFromOnboarding(
+                                    onboardingData.effectiveCycleDay,
+                                    genderIdentity: onboardingData.genderIdentity,
+                                  );
 
                               Navigator.of(context).pushNamed('/onboarding-profile');
                             });

@@ -35,10 +35,12 @@ class OvaryPhaseDialog extends ConsumerWidget {
 
     // Always offered until marked, regardless of when the journey started -
     // this toggle is the only way to close off the ovary phase, so it must
-    // never become unreachable (see JourneyMapWidget._ovaryDayCount).
+    // never become unreachable (see JourneyMapWidget._ovaryDayCount). Not
+    // offered at all for a journey that isn't tracking a menstrual cycle
+    // (see UserState.tracksMenstrualCycle) - it just keeps growing instead.
     final ovulationMarkedToday = userState.ovulationDay == currentDay;
-    final showOvulationToggle =
-        userState.ovulationDay == null || ovulationMarkedToday;
+    final showOvulationToggle = userState.tracksMenstrualCycle &&
+        (userState.ovulationDay == null || ovulationMarkedToday);
 
     return Dialog(
       backgroundColor: Colors.transparent,

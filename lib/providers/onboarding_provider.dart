@@ -4,6 +4,10 @@ import '../models/onboarding_state.dart';
 class OnboardingNotifier extends StateNotifier<OnboardingData> {
   OnboardingNotifier() : super(OnboardingData());
 
+  void setGenderIdentity(GenderIdentity value) {
+    state = state.copyWith(genderIdentity: value);
+  }
+
   void setCycleDay(int day) {
     state = state.copyWith(cycleDay: day);
   }

@@ -20,6 +20,10 @@ class CycleProfiles extends Table {
   // a day's popup. Null until they mark it - the app has no other way to
   // learn this.
   IntColumn get ovulationDay => integer().nullable()();
+  // How the user defines themselves ('woman', 'man', 'other') - see
+  // GenderIdentity. Null for pre-migration rows, treated the same as
+  // 'woman' (the only kind of journey that existed before this).
+  TextColumn get genderIdentity => text().nullable()();
 }
 
 class RitualCompletions extends Table {
@@ -82,7 +86,7 @@ class WommiDatabase extends _$WommiDatabase {
   WommiDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 6;
+  int get schemaVersion => 7;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -119,6 +123,9 @@ class WommiDatabase extends _$WommiDatabase {
           }
           if (from < 6) {
             await m.addColumn(charmsEarned, charmsEarned.rarity);
+          }
+          if (from < 7) {
+            await m.addColumn(cycleProfiles, cycleProfiles.genderIdentity);
           }
         },
       );

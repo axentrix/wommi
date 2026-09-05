@@ -133,7 +133,7 @@ class LandingScreen extends ConsumerWidget {
                         // Now reset and start new journey
                         ref.read(userStateProvider.notifier).resetState();
                         if (!context.mounted) return;
-                        Navigator.of(context).pushReplacementNamed('/onboarding');
+                        Navigator.of(context).pushReplacementNamed('/onboarding-gender');
                       },
                       style: OutlinedButton.styleFrom(
                         foregroundColor: WommiColors.ink,
@@ -158,7 +158,7 @@ class LandingScreen extends ConsumerWidget {
                     width: double.infinity,
                     child: ElevatedButton(
                       onPressed: () {
-                        Navigator.of(context).pushReplacementNamed('/onboarding');
+                        Navigator.of(context).pushReplacementNamed('/onboarding-gender');
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: WommiColors.cyan,

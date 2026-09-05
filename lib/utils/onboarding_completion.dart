@@ -25,16 +25,50 @@ Future<void> completeTtcOnboarding(
       ttcStatus: onboardingData.conceptionStatus,
       ttcMethods: onboardingData.tryingMethods,
       startingCycleDay: onboardingData.effectiveCycleDay,
+      genderIdentity: onboardingData.genderIdentity,
     );
   } catch (error) {
     print('Error saving cycle profile: $error');
     // Still continue even if save fails.
   }
 
-  ref
-      .read(userStateProvider.notifier)
-      .initializeFromOnboarding(onboardingData.effectiveCycleDay);
+  ref.read(userStateProvider.notifier).initializeFromOnboarding(
+        onboardingData.effectiveCycleDay,
+        genderIdentity: onboardingData.genderIdentity,
+      );
   await _applyOvulationAnswer(ref, onboardingData);
+  if (!context.mounted) return;
+
+  Navigator.of(context).pushNamed('/onboarding-profile');
+}
+
+/// The whole-other branch for a man or someone who identifies otherwise
+/// (see OnboardingData.tracksMenstrualCycle): none of the cycle/ovulation
+/// questions apply, so this skips straight from the gender question to a
+/// day-1 journey and the profile step - no cycle day, conception status,
+/// trying methods, or ovulation to save.
+Future<void> completeNonCycleOnboarding(
+  BuildContext context,
+  WidgetRef ref,
+  OnboardingData onboardingData,
+) async {
+  final repository = ref.read(repositoryProvider);
+  try {
+    await repository.saveCycleProfile(
+      startDate: DateTime.now(),
+      cycleLength: 28,
+      startingCycleDay: 1,
+      genderIdentity: onboardingData.genderIdentity,
+    );
+  } catch (error) {
+    print('Error saving cycle profile: $error');
+    // Still continue even if save fails.
+  }
+
+  ref.read(userStateProvider.notifier).initializeFromOnboarding(
+        1,
+        genderIdentity: onboardingData.genderIdentity,
+      );
   if (!context.mounted) return;
 
   Navigator.of(context).pushNamed('/onboarding-profile');

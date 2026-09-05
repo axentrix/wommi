@@ -1,6 +1,10 @@
 import 'journey.dart';
+import 'onboarding_state.dart';
 
 class UserState {
+  // How the user defines themselves - null for a journey started before
+  // this existed, treated the same as woman (see tracksMenstrualCycle).
+  final GenderIdentity? genderIdentity;
   final int currentDay;
   final int cycleLength;
   final int gemBalance;
@@ -29,6 +33,7 @@ class UserState {
   final List<int> dailyGameCompletedDays;
 
   UserState({
+    this.genderIdentity,
     required this.currentDay,
     this.cycleLength = 28,
     this.gemBalance = 0,
@@ -48,7 +53,14 @@ class UserState {
 
   bool get hasProfile => name != null && email != null;
 
+  /// Whether cycle/ovulation tracking applies to this journey at all -
+  /// false for a man or someone who identifies otherwise, whose journey
+  /// just tracks a day count with none of that.
+  bool get tracksMenstrualCycle =>
+      genderIdentity == null || genderIdentity == GenderIdentity.woman;
+
   UserState copyWith({
+    GenderIdentity? genderIdentity,
     int? currentDay,
     int? cycleLength,
     int? gemBalance,
@@ -66,6 +78,7 @@ class UserState {
     List<int>? dailyGameCompletedDays,
   }) {
     return UserState(
+      genderIdentity: genderIdentity ?? this.genderIdentity,
       currentDay: currentDay ?? this.currentDay,
       cycleLength: cycleLength ?? this.cycleLength,
       gemBalance: gemBalance ?? this.gemBalance,
@@ -90,6 +103,7 @@ class UserState {
   /// value".
   UserState withOvulationDay(int? day) {
     return UserState(
+      genderIdentity: genderIdentity,
       currentDay: currentDay,
       cycleLength: cycleLength,
       gemBalance: gemBalance,
