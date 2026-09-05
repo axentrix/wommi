@@ -5,7 +5,9 @@ import 'package:google_fonts/google_fonts.dart';
 import '../theme.dart';
 import '../models/user_state.dart';
 import '../providers/user_state_provider.dart';
+import '../providers/onboarding_provider.dart';
 import '../screens/daily_game_screen.dart';
+import 'cycle_day_info_dialog.dart';
 import 'ovary_phase_dialog.dart';
 
 /// Journey map laid out over the isometric womb illustration: a single
@@ -506,10 +508,36 @@ class _JourneyMapWidgetState extends ConsumerState<JourneyMapWidget>
         dayCount: ovaryDayCount,
         onDayTap: (day) {
           Navigator.pop(context);
-          Navigator.of(context).push(
-            MaterialPageRoute(builder: (context) => DailyGameScreen(day: day)),
-          );
+          _openDay(context, day);
         },
+      ),
+    );
+  }
+
+  /// Opens [day]'s full-screen mini-game - unless it's a future day, which
+  /// just shows the info popup's "come back later" message instead, since
+  /// there's nothing to play or complete yet.
+  void _openDay(BuildContext context, int day) {
+    final currentDay = ref.read(userStateProvider).currentDay;
+    if (day > currentDay) {
+      _showFutureDayInfo(context, day);
+    } else {
+      Navigator.of(context).push(dailyGameRoute(day));
+    }
+  }
+
+  Future<void> _showFutureDayInfo(BuildContext context, int day) {
+    final conceptionStatus = ref.read(onboardingProvider).conceptionStatus;
+    return showDialog(
+      context: context,
+      builder: (context) => CycleDayInfoDialog(
+        day: day,
+        conceptionStatus: conceptionStatus,
+        isCompleted: false,
+        isInProgress: false,
+        isCurrent: false,
+        isFuture: true,
+        onOpenMissions: () {},
       ),
     );
   }
@@ -556,9 +584,10 @@ class _JourneyMapWidgetState extends ConsumerState<JourneyMapWidget>
     // (locked) day and a completed one, instead of blending into either.
     final isMissed = isPast && !isCompleted && !isInProgress;
 
-    // A day's rituals can only be done once it's current or past - future
-    // days stay locked - but every day is tappable to see its info popup,
-    // future ones just can't offer to start missions from there.
+    // A day's rituals - and its mini-game - can only be done once it's
+    // current or past; future days stay locked. Every day is still tappable
+    // to see its info popup, future ones just show a "come back later"
+    // message instead of opening the game (see _openDay).
     final isClickable = !isFuture;
 
     const markerSize = 19.0;
@@ -567,9 +596,7 @@ class _JourneyMapWidgetState extends ConsumerState<JourneyMapWidget>
       left: position.dx - markerSize / 2,
       top: position.dy - markerSize / 2,
       child: GestureDetector(
-        onTap: () => Navigator.of(context).push(
-          MaterialPageRoute(builder: (context) => DailyGameScreen(day: day)),
-        ),
+        onTap: () => _openDay(context, day),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [

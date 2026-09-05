@@ -273,51 +273,11 @@ class CycleDayInfoDialog extends ConsumerWidget {
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 16),
-              Row(
-                children: [
-                  Expanded(
-                    child: TextButton(
-                      onPressed: () => Navigator.pop(context),
-                      style: TextButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(100),
-                          side: BorderSide(color: WommiColors.line, width: 1.5),
-                        ),
-                      ),
-                      child: Text(
-                        'Close',
-                        style: GoogleFonts.unbounded(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: WommiColors.ink,
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: onOpenMissions,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: info.color,
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(100),
-                        ),
-                        elevation: 0,
-                      ),
-                      child: Text(
-                        'View missions',
-                        style: GoogleFonts.unbounded(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
+              _buildActionButtons(
+                context,
+                color: info.color,
+                ritualsLabel: 'Revisit daily rituals',
+                showRitualsReward: false,
               ),
             ] else ...[
               Text(
@@ -334,70 +294,123 @@ class CycleDayInfoDialog extends ConsumerWidget {
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 16),
-              Row(
-                children: [
-                  Expanded(
-                    child: TextButton(
-                      onPressed: () => Navigator.pop(context),
-                      style: TextButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(100),
-                          side: BorderSide(color: WommiColors.line, width: 1.5),
-                        ),
-                      ),
-                      child: Text(
-                        'Not now',
-                        style: GoogleFonts.unbounded(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: WommiColors.ink,
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: onOpenMissions,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: info.color,
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(100),
-                        ),
-                        elevation: 0,
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            isInProgress ? 'Finish' : 'Complete',
-                            style: GoogleFonts.unbounded(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w700,
-                              color: Colors.white,
-                            ),
-                          ),
-                          const SizedBox(width: 6),
-                          Text(
-                            '+1 💎',
-                            style: GoogleFonts.unbounded(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
+              _buildActionButtons(
+                context,
+                color: info.color,
+                ritualsLabel:
+                    isInProgress ? 'Finish daily rituals' : 'Complete daily rituals',
+                showRitualsReward: true,
               ),
             ],
           ],
         ),
       ),
+    );
+  }
+
+  /// The two things to do on a non-future day - the 3 rituals and the
+  /// day's mini-game, each a real button since both are independent ways
+  /// to earn a charm - with a plain "Not now" text link below for
+  /// dismissing without doing either. Dismissing (including "Play daily
+  /// game") just closes this dialog: the game is already running full-
+  /// screen behind it (see DailyGameScreen), so there's nothing else to
+  /// navigate to.
+  Widget _buildActionButtons(
+    BuildContext context, {
+    required Color color,
+    required String ritualsLabel,
+    required bool showRitualsReward,
+  }) {
+    return Column(
+      children: [
+        SizedBox(
+          width: double.infinity,
+          child: ElevatedButton(
+            onPressed: onOpenMissions,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: color,
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(100),
+              ),
+              elevation: 0,
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  ritualsLabel,
+                  style: GoogleFonts.unbounded(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
+                  ),
+                ),
+                if (showRitualsReward) ...[
+                  const SizedBox(width: 6),
+                  Text(
+                    '+1 💎',
+                    style: GoogleFonts.unbounded(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 10),
+        SizedBox(
+          width: double.infinity,
+          child: OutlinedButton(
+            onPressed: () => Navigator.pop(context),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: color,
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              side: BorderSide(color: color, width: 1.5),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(100),
+              ),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  'Play daily game',
+                  style: GoogleFonts.unbounded(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: color,
+                  ),
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  '+1 💎',
+                  style: GoogleFonts.unbounded(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: color,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 8),
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: Text(
+            'Not now',
+            style: GoogleFonts.unbounded(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: WommiColors.inkDim,
+            ),
+          ),
+        ),
+      ],
     );
   }
 
