@@ -6,8 +6,10 @@ import '../../theme.dart';
 /// and a piece of furniture, then save the room to fire [onWin].
 class RoomCustomizationGame extends StatefulWidget {
   final VoidCallback onWin;
+  final VoidCallback onPlayed;
 
-  const RoomCustomizationGame({super.key, required this.onWin});
+  const RoomCustomizationGame(
+      {super.key, required this.onWin, required this.onPlayed});
 
   @override
   State<RoomCustomizationGame> createState() => _RoomCustomizationGameState();
@@ -29,6 +31,7 @@ class _RoomCustomizationGameState extends State<RoomCustomizationGame> {
   void _save() {
     if (_saved) return;
     setState(() => _saved = true);
+    widget.onPlayed();
     widget.onWin();
   }
 

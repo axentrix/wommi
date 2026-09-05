@@ -368,15 +368,18 @@ class _ChallengesScreenState extends ConsumerState<ChallengesScreen> {
                 );
 
                 if (completedCount == totalCount) {
-                  // All done - show completion message
+                  // All done - show the completion message, but the 3
+                  // rituals themselves stay visible (in their completed
+                  // state) rather than disappearing behind it, so revisiting
+                  // this day still shows what was actually done.
                   return Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
+                    mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
                         '✨',
-                        style: TextStyle(fontSize: 64),
+                        style: TextStyle(fontSize: 56),
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 12),
                       Text(
                         'All rituals complete!',
                         style: GoogleFonts.unbounded(
@@ -397,6 +400,15 @@ class _ChallengesScreenState extends ConsumerState<ChallengesScreen> {
                           height: 1.5,
                         ),
                       ),
+                      const SizedBox(height: 24),
+                      for (final challenge in challenges)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 12),
+                          child: ChallengeCard(
+                            challenge: challenge,
+                            onToggle: () {},
+                          ),
+                        ),
                     ],
                   );
                 }
@@ -490,28 +502,6 @@ class ChallengeCard extends StatelessWidget {
                     fontSize: 12,
                     color: WommiColors.inkDim,
                     height: 1.5,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 9,
-                    vertical: 3,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Color(0xFFFFF8EB),
-                    border: Border.all(
-                      color: WommiColors.goldSoft,
-                      width: 1.5,
-                    ),
-                    borderRadius: BorderRadius.circular(100),
-                  ),
-                  child: Text(
-                    '+1 Gem',
-                    style: GoogleFonts.spaceMono(
-                      fontSize: 10,
-                      color: Color(0xFFB9822E),
-                    ),
                   ),
                 ),
               ],

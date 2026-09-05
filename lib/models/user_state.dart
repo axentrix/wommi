@@ -26,11 +26,15 @@ class UserState {
   final int? startingCycleDay;
   // The cycle day the user told us ovulation started on. Null until marked.
   final int? ovulationDay;
-  // Days whose daily mini-game (see DailyGame) has already been played and
-  // rewarded - a second, independent charm from the day's 3 rituals. Not
-  // yet persisted to the database (these are placeholders standing in for
-  // real Rive scenes), so this resets on reload for now.
+  // Days whose daily mini-game (see DailyGame) was actually won, and so
+  // earned a second, independent charm from the day's 3 rituals. Not yet
+  // persisted to the database (these are placeholders standing in for real
+  // Rive scenes), so this resets on reload for now.
   final List<int> dailyGameCompletedDays;
+  // Days whose daily mini-game has been played at all, win or lose - a day
+  // only gets one attempt, so this is what actually locks the game out
+  // (dailyGameCompletedDays only tracks whether that attempt paid off).
+  final List<int> dailyGamePlayedDays;
 
   UserState({
     this.genderIdentity,
@@ -49,6 +53,7 @@ class UserState {
     this.startingCycleDay,
     this.ovulationDay,
     this.dailyGameCompletedDays = const [],
+    this.dailyGamePlayedDays = const [],
   });
 
   bool get hasProfile => name != null && email != null;
@@ -76,6 +81,7 @@ class UserState {
     int? startingCycleDay,
     int? ovulationDay,
     List<int>? dailyGameCompletedDays,
+    List<int>? dailyGamePlayedDays,
   }) {
     return UserState(
       genderIdentity: genderIdentity ?? this.genderIdentity,
@@ -95,6 +101,7 @@ class UserState {
       ovulationDay: ovulationDay ?? this.ovulationDay,
       dailyGameCompletedDays:
           dailyGameCompletedDays ?? this.dailyGameCompletedDays,
+      dailyGamePlayedDays: dailyGamePlayedDays ?? this.dailyGamePlayedDays,
     );
   }
 
@@ -119,6 +126,7 @@ class UserState {
       startingCycleDay: startingCycleDay,
       ovulationDay: day,
       dailyGameCompletedDays: dailyGameCompletedDays,
+      dailyGamePlayedDays: dailyGamePlayedDays,
     );
   }
 }

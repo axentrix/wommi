@@ -8,8 +8,9 @@ import '../../theme.dart';
 /// rebuild), so bubbles don't jump around as they're popped.
 class BubblePopGame extends StatefulWidget {
   final VoidCallback onWin;
+  final VoidCallback onPlayed;
 
-  const BubblePopGame({super.key, required this.onWin});
+  const BubblePopGame({super.key, required this.onWin, required this.onPlayed});
 
   @override
   State<BubblePopGame> createState() => _BubblePopGameState();
@@ -48,6 +49,7 @@ class _BubblePopGameState extends State<BubblePopGame> {
     setState(() => _popped.add(index));
     if (_popped.length == _bubbles.length) {
       setState(() => _won = true);
+      widget.onPlayed();
       widget.onWin();
     }
   }

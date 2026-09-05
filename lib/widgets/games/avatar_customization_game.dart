@@ -6,8 +6,10 @@ import '../../theme.dart';
 /// and an accessory, then save the look to fire [onWin].
 class AvatarCustomizationGame extends StatefulWidget {
   final VoidCallback onWin;
+  final VoidCallback onPlayed;
 
-  const AvatarCustomizationGame({super.key, required this.onWin});
+  const AvatarCustomizationGame(
+      {super.key, required this.onWin, required this.onPlayed});
 
   @override
   State<AvatarCustomizationGame> createState() =>
@@ -31,6 +33,7 @@ class _AvatarCustomizationGameState extends State<AvatarCustomizationGame> {
   void _save() {
     if (_saved) return;
     setState(() => _saved = true);
+    widget.onPlayed();
     widget.onWin();
   }
 

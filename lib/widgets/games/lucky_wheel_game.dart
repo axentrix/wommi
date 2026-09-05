@@ -11,8 +11,9 @@ import '../../theme.dart';
 /// state machine replaces it.
 class LuckyWheelGame extends StatefulWidget {
   final VoidCallback onWin;
+  final VoidCallback onPlayed;
 
-  const LuckyWheelGame({super.key, required this.onWin});
+  const LuckyWheelGame({super.key, required this.onWin, required this.onPlayed});
 
   @override
   State<LuckyWheelGame> createState() => _LuckyWheelGameState();
@@ -87,6 +88,7 @@ class _LuckyWheelGameState extends State<LuckyWheelGame>
           _done = true;
           _won = won;
         });
+        widget.onPlayed();
         if (won) widget.onWin();
       });
   }

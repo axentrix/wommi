@@ -82,14 +82,17 @@ class _DailyGameScreenState extends ConsumerState<DailyGameScreen> {
     );
   }
 
-  /// Awards the day's second charm the first time its game is won. Calling
-  /// this again on a replay (the games stay interactive) just skips the
-  /// reward - markDailyGameComplete() is idempotent, same as completeDay().
+  /// Locks the day's game out after this attempt, win or lose - a day only
+  /// gets one play. Triggers a rebuild via userStateProvider, which is what
+  /// swaps in _buildAlreadyPlayed() below.
+  void _onPlayed() {
+    ref.read(userStateProvider.notifier).markDailyGamePlayed(widget.day);
+  }
+
+  /// Awards the day's second charm if this attempt won.
   void _onWin() {
-    final alreadyEarned =
-        ref.read(userStateProvider).dailyGameCompletedDays.contains(widget.day);
     ref.read(userStateProvider.notifier).markDailyGameComplete(widget.day);
-    if (alreadyEarned || !mounted) return;
+    if (!mounted) return;
 
     ref.read(userStateProvider.notifier).addGems(1);
     ScaffoldMessenger.of(context).showSnackBar(
@@ -122,25 +125,73 @@ class _DailyGameScreenState extends ConsumerState<DailyGameScreen> {
   Widget _buildGame(DailyGame game) {
     switch (game) {
       case DailyGame.luckyWheel:
-        return LuckyWheelGame(onWin: _onWin);
+        return LuckyWheelGame(onWin: _onWin, onPlayed: _onPlayed);
       case DailyGame.pinata:
-        return PinataGame(onWin: _onWin);
+        return PinataGame(onWin: _onWin, onPlayed: _onPlayed);
       case DailyGame.bubblePop:
-        return BubblePopGame(onWin: _onWin);
+        return BubblePopGame(onWin: _onWin, onPlayed: _onPlayed);
       case DailyGame.avatarCustomization:
-        return AvatarCustomizationGame(onWin: _onWin);
+        return AvatarCustomizationGame(onWin: _onWin, onPlayed: _onPlayed);
       case DailyGame.roomCustomization:
-        return RoomCustomizationGame(onWin: _onWin);
+        return RoomCustomizationGame(onWin: _onWin, onPlayed: _onPlayed);
     }
+  }
+
+  /// Shown instead of the real game once this day's single attempt is used
+  /// up - win or lose, a day only gets one play (see
+  /// UserState.dailyGamePlayedDays).
+  Widget _buildAlreadyPlayed(DailyGame game) {
+    final won = ref.watch(userStateProvider).dailyGameCompletedDays.contains(widget.day);
+    return Container(
+      color: WommiColors.bgSoft,
+      child: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(game.emoji, style: const TextStyle(fontSize: 40)),
+            const SizedBox(height: 12),
+            Icon(Icons.lock_outline, size: 28, color: WommiColors.inkDim),
+            const SizedBox(height: 16),
+            Text(
+              '${game.label} already played',
+              style: GoogleFonts.unbounded(
+                fontSize: 18,
+                fontWeight: FontWeight.w800,
+                color: WommiColors.ink,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 40),
+              child: Text(
+                won
+                    ? 'You already collected this day\'s charm from it.'
+                    : 'No luck this time - each day only gets one go.',
+                textAlign: TextAlign.center,
+                style: GoogleFonts.inter(
+                  fontSize: 13,
+                  color: WommiColors.inkDim,
+                  height: 1.5,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     final game = dailyGameForDay(widget.day);
+    final alreadyPlayed =
+        ref.watch(userStateProvider).dailyGamePlayedDays.contains(widget.day);
     return Scaffold(
       body: Stack(
         children: [
-          Positioned.fill(child: _buildGame(game)),
+          Positioned.fill(
+            child: alreadyPlayed ? _buildAlreadyPlayed(game) : _buildGame(game),
+          ),
           Positioned(
             top: 0,
             left: 0,
