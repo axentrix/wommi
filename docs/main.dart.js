@@ -99762,43 +99762,43 @@ n=A.cv(A.eb(A.O("Yes, continue",r,r,r,A.aM().$2$fontSize$fontWeight(14,B.A),r,r)
 s=A.DZ(r,r,r,r,r,r,r,r,r,B.r,r,r,B.b7,r,new A.bE(A.aL(100),B.w),new A.aT(B.C,2,B.p,-1),r,r,r,r)
 return A.k7(r,B.D,A.au(r,A.aN(A.b([new A.aC(B.hW,o,r),A.au(r,A.aN(A.b([n,B.ap,A.cv(A.DX(A.O("No, complete journey",r,r,r,A.aM().$2$fontSize$fontWeight(14,B.A),r,r),this.d,s),r,1/0)],p),B.n,r,B.m,B.q),B.l,r,r,r,r,r,r,B.HG,r,r,r)],p),B.n,r,B.m,B.Y),B.l,r,B.k5,new A.at(B.e,r,r,q,r,r,B.y),r,r,r,r,r,r,r),r,r,r,r,B.c5,r,r,r)}}
 A.vE.prototype={
-fI(a0,a1){var s,r,q,p,o,n,m,l,k,j,i=this,h=null,g=a1.en($.c1(),t.E),f=i.e,e=g.ax,d=i.aeP(f,i.f,e),c=g.a,b=c!=null,a=!1
-if(!b||c===B.bS)if(!i.y){s=e==null||e===f
-a=s}r=e===f
-q=(!b||c===B.bS)&&!i.y&&e!=null&&f>=e+12
-e=A.aL(24)
-c=A.ch(B.C,B.p,2)
-b=d.c
-s=A.a2(51,b.n()>>>16&255,b.n()>>>8&255,b.n()&255)
+fI(a,a0){var s,r,q,p,o,n,m,l,k,j=this,i=null,h=a0.en($.c1(),t.E),g=j.e,f=h.ax,e=j.aeP(g,j.f,f),d=h.a,c=d!=null,b=!1
+if(!c||d===B.bS)if(!j.y){s=f==null||f===g
+b=s}r=f===g
+q=(!c||d===B.bS)&&!j.y&&f!=null&&g>=f+12
+f=A.aL(24)
+d=A.ch(B.C,B.p,2)
+c=e.c
+s=A.a2(51,c.n()>>>16&255,c.n()>>>8&255,c.n()&255)
 p=A.aL(100)
-o=A.ch(b,B.p,1.5)
-n=""+f
+o=A.ch(c,B.p,1.5)
+n=""+g
 m=t.p
-p=A.b([A.au(h,A.bP(A.b([A.O(d.b,h,h,h,B.mW,h,h),B.d1,A.O("Day "+n,h,h,h,A.aM().$3$color$fontSize$fontWeight(B.r,16,B.A),h,h)],m),B.n,B.m,B.Y),B.l,h,h,new A.at(s,h,o,p,h,h,B.y),h,h,h,B.Ht,h,h,h),B.cp,A.O(d.a,h,h,h,A.aM().$3$color$fontSize$fontWeight(b,14,B.A),h,h),B.ap,A.O(d.d,h,h,h,A.cf().$3$color$fontSize$height(B.r,13,1.5),B.am,h),B.cp,A.au(h,h,B.l,B.C,h,h,h,1,h,h,h,h,h),B.cp],m)
-if(a){s=A.a2(31,B.E.n()>>>16&255,B.E.n()>>>8&255,B.E.n()&255)
-o=A.aL(14)
-l=A.ch(A.a2(102,B.E.n()>>>16&255,B.E.n()>>>8&255,B.E.n()&255),B.p,1)
-k=A.O("Ovulation started",h,h,h,A.aM().$3$color$fontSize$fontWeight(B.r,12,B.A),h,h)
-j=r?"Marked on day "+n+". Tap to undo.":"Got a positive test or other sign today? Let us know."
-B.b.L(p,A.b([A.au(h,A.bP(A.b([A.ca(A.aN(A.b([k,B.h3,A.O(j,h,h,h,A.cf().$3$color$fontSize$height(B.t,10.5,1.35),h,h)],m),B.ad,h,B.m,B.q),1),B.d1,A.UE(h,B.E,new A.a8u(i,a1),r)],m),B.n,B.m,B.q),B.l,h,h,new A.at(s,h,l,o,h,h,B.y),h,h,h,B.pf,h,h,h),B.aZ],m))}if(q)B.b.L(p,A.b([i.QP(a0,a1,B.k,"Period started",new A.a8v(a0,a1)),B.bk,i.QP(a0,a1,B.R,"Pregnancy detected",new A.a8w(a0,a1)),B.aZ],m))
-if(i.y){f=A.bP(A.b([A.dA(B.Im,B.t,h,16),B.d1,A.O("This day hasn't arrived yet",h,h,h,A.cf().$3$color$fontSize$fontWeight(B.t,12,B.at),h,h)],m),B.n,B.m,B.Y)
-n=A.O("Come back once you reach day "+n+" to do its rituals and collect a conception charm.",h,h,h,A.cf().$3$color$fontSize$height(B.t,11,1.4),B.am,h)
-b=A.Gc(h,h,h,h,h,h,h,h,h,h,h,h,B.cV,h,new A.bE(A.aL(100),new A.aT(B.C,1.5,B.p,-1)),h,h,h,h,h)
-B.b.L(p,A.b([f,B.ap,n,B.aZ,A.cv(A.lZ(A.O("Close",h,h,h,A.aM().$3$color$fontSize$fontWeight(B.r,12,B.at),h,h),new A.a8x(a0),b),h,1/0)],m))}else if(i.r)B.b.L(p,A.b([A.bP(A.b([A.dA(B.Ig,B.E,h,16),B.d1,A.O("Missions completed!",h,h,h,A.cf().$3$color$fontSize$fontWeight(B.E,12,B.at),h,h)],m),B.n,B.m,B.Y),B.ap,A.O("You can revisit this day's rituals anytime, but its charm has already been collected.",h,h,h,A.cf().$3$color$fontSize$height(B.t,11,1.4),B.am,h),B.aZ,i.QL(a0,b,B.b.p(g.ch,f),"Revisit daily rituals",!1)],m))
-else{s=i.w
-if(s)o="You've started this day's rituals - want to finish them and collect the charm?"
-else o=i.x?"Ready to complete today's rituals?":"Would you like to complete this day's rituals and collect a conception charm?"
-o=A.O(o,h,h,h,A.cf().$3$color$fontSize$height(B.t,12,1.4),B.am,h)
+c=A.b([A.au(i,A.bP(A.b([A.O(e.b,i,i,i,B.mW,i,i),B.d1,A.O("Day "+n,i,i,i,A.aM().$3$color$fontSize$fontWeight(B.r,16,B.A),i,i)],m),B.n,B.m,B.Y),B.l,i,i,new A.at(s,i,o,p,i,i,B.y),i,i,i,B.Ht,i,i,i),B.cp,A.O(e.a,i,i,i,A.aM().$3$color$fontSize$fontWeight(c,14,B.A),i,i),B.ap,A.O(e.d,i,i,i,A.cf().$3$color$fontSize$height(B.r,13,1.5),B.am,i),B.cp,A.au(i,i,B.l,B.C,i,i,i,1,i,i,i,i,i),B.cp],m)
+if(b){s=A.a2(31,B.E.n()>>>16&255,B.E.n()>>>8&255,B.E.n()&255)
+p=A.aL(14)
+o=A.ch(A.a2(102,B.E.n()>>>16&255,B.E.n()>>>8&255,B.E.n()&255),B.p,1)
+l=A.O("Ovulation started",i,i,i,A.aM().$3$color$fontSize$fontWeight(B.r,12,B.A),i,i)
+k=r?"Marked on day "+n+". Tap to undo.":"Got a positive test or other sign today? Let us know."
+B.b.L(c,A.b([A.au(i,A.bP(A.b([A.ca(A.aN(A.b([l,B.h3,A.O(k,i,i,i,A.cf().$3$color$fontSize$height(B.t,10.5,1.35),i,i)],m),B.ad,i,B.m,B.q),1),B.d1,A.UE(i,B.E,new A.a8u(j,a0),r)],m),B.n,B.m,B.q),B.l,i,i,new A.at(s,i,o,p,i,i,B.y),i,i,i,B.pf,i,i,i),B.aZ],m))}if(q)B.b.L(c,A.b([j.QP(a,a0,B.k,"Period started",new A.a8v(a,a0)),B.bk,j.QP(a,a0,B.R,"Pregnancy detected",new A.a8w(a,a0)),B.aZ],m))
+if(j.y){g=A.bP(A.b([A.dA(B.Im,B.t,i,16),B.d1,A.O("This day hasn't arrived yet",i,i,i,A.cf().$3$color$fontSize$fontWeight(B.t,12,B.at),i,i)],m),B.n,B.m,B.Y)
+n=A.O("Come back once you reach day "+n+" to do its rituals and collect a conception charm.",i,i,i,A.cf().$3$color$fontSize$height(B.t,11,1.4),B.am,i)
+s=A.Gc(i,i,i,i,i,i,i,i,i,i,i,i,B.cV,i,new A.bE(A.aL(100),new A.aT(B.C,1.5,B.p,-1)),i,i,i,i,i)
+B.b.L(c,A.b([g,B.ap,n,B.aZ,A.cv(A.lZ(A.O("Close",i,i,i,A.aM().$3$color$fontSize$fontWeight(B.r,12,B.at),i,i),new A.a8x(a),s),i,1/0)],m))}else if(j.r)B.b.L(c,A.b([A.bP(A.b([A.dA(B.Ig,B.E,i,16),B.d1,A.O("Missions completed!",i,i,i,A.cf().$3$color$fontSize$fontWeight(B.E,12,B.at),i,i)],m),B.n,B.m,B.Y),B.ap,A.O("You can revisit this day's rituals anytime, but its charm has already been collected.",i,i,i,A.cf().$3$color$fontSize$height(B.t,11,1.4),B.am,i),B.aZ,j.QL(a,B.b.p(h.ch,g),"Revisit daily rituals",!1)],m))
+else{s=j.w
+if(s)p="You've started this day's rituals - want to finish them and collect the charm?"
+else p=j.x?"Ready to complete today's rituals?":"Would you like to complete this day's rituals and collect a conception charm?"
+p=A.O(p,i,i,i,A.cf().$3$color$fontSize$height(B.t,12,1.4),B.am,i)
 s=s?"Finish daily rituals":"Complete daily rituals"
-B.b.L(p,A.b([o,B.aZ,i.QL(a0,b,B.b.p(g.ch,f),s,!0)],m))}return A.k7(h,B.D,A.au(h,A.aN(p,B.n,h,B.m,B.Y),B.l,h,B.nN,new A.at(B.e,h,c,e,h,h,B.y),h,h,h,B.fm,h,h,h),h,h,h,h,B.c5,h,h,h)},
-QL(a,b,c,d,e){var s,r=null,q=A.dT(r,r,b,r,r,r,0,r,r,r,r,r,B.cV,r,new A.bE(A.aL(100),B.w),r,r,r,r,r),p=t.p,o=A.b([A.O(d,r,r,r,A.aM().$3$color$fontSize$fontWeight(B.e,12,B.A),r,r)],p)
-if(e)B.b.L(o,A.b([B.co,A.O("+1 \ud83d\udc8e",r,r,r,A.aM().$3$color$fontSize$fontWeight(B.e,11,B.at),r,r)],p))
+B.b.L(c,A.b([p,B.aZ,j.QL(a,B.b.p(h.ch,g),s,!0)],m))}return A.k7(i,B.D,A.au(i,A.aN(c,B.n,i,B.m,B.Y),B.l,i,B.nN,new A.at(B.e,i,d,f,i,i,B.y),i,i,i,B.fm,i,i,i),i,i,i,i,B.c5,i,i,i)},
+QL(a,b,c,d){var s,r=null,q=A.dT(r,r,B.k,r,r,r,0,r,r,r,r,r,B.cV,r,new A.bE(A.aL(100),B.w),r,r,r,r,r),p=t.p,o=A.b([A.O(c,r,r,r,A.aM().$3$color$fontSize$fontWeight(B.e,12,B.A),r,r)],p)
+if(d)B.b.L(o,A.b([B.co,A.O("+1 \ud83d\udc8e",r,r,r,A.aM().$3$color$fontSize$fontWeight(B.e,11,B.at),r,r)],p))
 q=A.cv(A.eb(A.bP(o,B.n,B.b9,B.q),this.z,q),r,1/0)
-o=c?B.t:b
-s=c?B.C:b
+o=b?B.t:B.k
+s=b?B.C:B.k
 s=A.DZ(r,r,r,r,r,r,r,r,r,o,r,r,B.cV,r,new A.bE(A.aL(100),B.w),new A.aT(s,1.5,B.p,-1),r,r,r,r)
-o=c?"Game already played today":"Play daily game"
-return A.aN(A.b([q,B.bk,A.cv(A.DX(A.O(o,r,r,r,A.aM().$3$color$fontSize$fontWeight(c?B.t:b,12,B.A),r,r),new A.a8r(a),s),r,1/0),B.b_,A.lZ(A.O("Not now",r,r,r,A.aM().$3$color$fontSize$fontWeight(B.t,12,B.at),r,r),new A.a8s(a),r)],p),B.n,r,B.m,B.q)},
+o=b?"Game already played today":"Play daily game"
+return A.aN(A.b([q,B.bk,A.cv(A.DX(A.O(o,r,r,r,A.aM().$3$color$fontSize$fontWeight(b?B.t:B.k,12,B.A),r,r),new A.a8r(a),s),r,1/0),B.b_,A.lZ(A.O("Not now",r,r,r,A.aM().$3$color$fontSize$fontWeight(B.t,12,B.at),r,r),new A.a8s(a),r)],p),B.n,r,B.m,B.q)},
 QP(a,b,c,d,e){var s=null,r=A.ch(B.C,B.p,1.5),q=A.aL(100)
 return A.au(s,A.bP(A.b([A.O(d,s,s,s,A.aM().$3$color$fontSize$fontWeight(B.r,12,B.at),s,s),A.UE(s,c,new A.a8t(e),!1)],t.p),B.n,B.fL,B.q),B.l,s,s,new A.at(B.e,s,r,q,s,s,B.y),s,s,s,B.ph,s,s,s)},
 aeP(a,b,c){var s,r="Follicular Phase",q="Your body is preparing for ovulation. Follicles in the ovaries are maturing, and estrogen levels are rising. Energy typically increases.",p="Ovulation Window",o="Peak fertility! This is the optimal time for conception. The egg is released and can be fertilized for 12-24 hours.",n="Ovulation is occurring. Your body releases an egg, and you may feel more energetic and social during this time.",m="Early Luteal Phase",l="Post-ovulation phase. If conception occurred, the fertilized egg is traveling to the uterus and may implant around day 6-12 after ovulation.",k="After ovulation, progesterone rises to prepare the uterine lining. Your body temperature may be slightly higher.",j="Late Luteal Phase",i="Implantation may have occurred by now if conception was successful. Some experience early pregnancy symptoms, though it's too early to test.",h="The final week before your next cycle begins. Progesterone drops if no pregnancy occurs, which may lead to PMS symptoms.",g="Extended Cycle",f="Cycles can vary in length. If your cycle extends beyond 28 days, it's still perfectly normal. You may be approaching menstruation.",e=b===B.ku

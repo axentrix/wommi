@@ -279,7 +279,6 @@ class CycleDayInfoDialog extends ConsumerWidget {
               const SizedBox(height: 16),
               _buildActionButtons(
                 context,
-                color: info.color,
                 ritualsLabel: 'Revisit daily rituals',
                 showRitualsReward: false,
                 gameAlreadyPlayed: userState.dailyGamePlayedDays.contains(day),
@@ -301,7 +300,6 @@ class CycleDayInfoDialog extends ConsumerWidget {
               const SizedBox(height: 16),
               _buildActionButtons(
                 context,
-                color: info.color,
                 ritualsLabel:
                     isInProgress ? 'Finish daily rituals' : 'Complete daily rituals',
                 showRitualsReward: true,
@@ -321,13 +319,19 @@ class CycleDayInfoDialog extends ConsumerWidget {
   /// game") just closes this dialog: the game is already running full-
   /// screen behind it (see DailyGameScreen), so there's nothing else to
   /// navigate to.
+  ///
+  /// Always styled in cyan, deliberately independent of the phase's own
+  /// accent color (info.color) used for the day badge/title above - some
+  /// phases (Follicular, Late Luteal) use WommiColors.lilac there, which is
+  /// far too pale for a solid button fill and made these fully-clickable
+  /// buttons look disabled.
   Widget _buildActionButtons(
     BuildContext context, {
-    required Color color,
     required String ritualsLabel,
     required bool showRitualsReward,
     required bool gameAlreadyPlayed,
   }) {
+    const color = WommiColors.cyan;
     return Column(
       children: [
         SizedBox(
