@@ -49,9 +49,19 @@ class DailyGameScreen extends ConsumerStatefulWidget {
 }
 
 class _DailyGameScreenState extends ConsumerState<DailyGameScreen> {
+  // Captured once when this screen opens, rather than watched reactively -
+  // the whole point of onPlayed/markDailyGamePlayed is to lock the game out
+  // on the *next* visit, not to yank the interactive game out from under
+  // the player mid-attempt the moment it fires (which is exactly what
+  // watching it live did: the win/lose result never got a chance to show
+  // before this screen swapped to the locked view).
+  late final bool _alreadyPlayedOnOpen;
+
   @override
   void initState() {
     super.initState();
+    _alreadyPlayedOnOpen =
+        ref.read(userStateProvider).dailyGamePlayedDays.contains(widget.day);
     WidgetsBinding.instance.addPostFrameCallback((_) => _showDayInfo());
   }
 
@@ -82,9 +92,9 @@ class _DailyGameScreenState extends ConsumerState<DailyGameScreen> {
     );
   }
 
-  /// Locks the day's game out after this attempt, win or lose - a day only
-  /// gets one play. Triggers a rebuild via userStateProvider, which is what
-  /// swaps in _buildAlreadyPlayed() below.
+  /// Records that this day's single attempt is used up, win or lose - takes
+  /// effect the *next* time this day's game screen is opened (see
+  /// _alreadyPlayedOnOpen), not immediately.
   void _onPlayed() {
     ref.read(userStateProvider.notifier).markDailyGamePlayed(widget.day);
   }
@@ -141,7 +151,7 @@ class _DailyGameScreenState extends ConsumerState<DailyGameScreen> {
   /// up - win or lose, a day only gets one play (see
   /// UserState.dailyGamePlayedDays).
   Widget _buildAlreadyPlayed(DailyGame game) {
-    final won = ref.watch(userStateProvider).dailyGameCompletedDays.contains(widget.day);
+    final won = ref.read(userStateProvider).dailyGameCompletedDays.contains(widget.day);
     return Container(
       color: WommiColors.bgSoft,
       child: Center(
@@ -184,13 +194,13 @@ class _DailyGameScreenState extends ConsumerState<DailyGameScreen> {
   @override
   Widget build(BuildContext context) {
     final game = dailyGameForDay(widget.day);
-    final alreadyPlayed =
-        ref.watch(userStateProvider).dailyGamePlayedDays.contains(widget.day);
     return Scaffold(
       body: Stack(
         children: [
           Positioned.fill(
-            child: alreadyPlayed ? _buildAlreadyPlayed(game) : _buildGame(game),
+            child: _alreadyPlayedOnOpen
+                ? _buildAlreadyPlayed(game)
+                : _buildGame(game),
           ),
           Positioned(
             top: 0,
