@@ -43,7 +43,9 @@ class CycleDayInfoDialog extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final userState = ref.watch(userStateProvider);
-    final info = _getCycleDayInfo(day, conceptionStatus, userState.ovulationDay);
+    final info = userState.tracksMenstrualCycle
+        ? _getCycleDayInfo(day, conceptionStatus, userState.ovulationDay)
+        : _generalDayInfo;
     // Always offered on any non-future day until marked - a journey can be
     // started on any cycle day, so there's no "too late to ask" cutoff;
     // this toggle is the only way to close off the ovary phase (see
@@ -459,6 +461,18 @@ class CycleDayInfoDialog extends ConsumerWidget {
       ),
     );
   }
+
+  /// Shown instead of any cycle phase for a journey that isn't tracking a
+  /// menstrual cycle (see UserState.tracksMenstrualCycle) - there's no
+  /// phase to describe, since it may be tracking a partner's cycle or
+  /// nothing in particular.
+  _CycleDayInfo get _generalDayInfo => _CycleDayInfo(
+        phase: 'Your Journey',
+        icon: '🌱',
+        color: WommiColors.cyan,
+        description:
+            'Every day here is a small ritual - showing up for yourself, or someone you love, one step at a time.',
+      );
 
   _CycleDayInfo _getCycleDayInfo(int day, ConceptionStatus? status, int? ovulationDay) {
     final isTrying = status == ConceptionStatus.activelyTrying;

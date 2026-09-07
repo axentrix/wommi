@@ -104,6 +104,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
               userState.currentDay,
               userState.gemBalance,
               userState.streakDays,
+              userState.tracksMenstrualCycle,
             ),
             // Main content area
             Expanded(
@@ -123,7 +124,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     );
   }
 
-  Widget _buildHeader(int currentDay, int gemBalance, int streakDays) {
+  Widget _buildHeader(
+    int currentDay,
+    int gemBalance,
+    int streakDays,
+    bool tracksMenstrualCycle,
+  ) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 16),
       child: Row(
@@ -134,7 +140,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'CYCLE',
+                tracksMenstrualCycle ? 'CYCLE' : 'JOURNEY',
                 style: GoogleFonts.spaceMono(
                   fontSize: 9.5,
                   letterSpacing: 1.33,

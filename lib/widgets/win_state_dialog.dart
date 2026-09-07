@@ -9,6 +9,7 @@ class WinStateDialog extends StatefulWidget {
   final int currentDay;
   final int gemBalance;
   final int streakDays;
+  final bool tracksMenstrualCycle;
   final CharmRarity rarity;
   final VoidCallback onContinue;
 
@@ -17,6 +18,7 @@ class WinStateDialog extends StatefulWidget {
     required this.currentDay,
     required this.gemBalance,
     required this.streakDays,
+    required this.tracksMenstrualCycle,
     this.rarity = CharmRarity.normal,
     required this.onContinue,
   });
@@ -236,7 +238,10 @@ class _WinStateDialogState extends State<WinStateDialog>
                       const SizedBox(width: 22),
                       _buildStat('Gems', '${widget.gemBalance} total'),
                       const SizedBox(width: 22),
-                      _buildStat('Cycle', 'day ${widget.currentDay}'),
+                      _buildStat(
+                        widget.tracksMenstrualCycle ? 'Cycle' : 'Journey',
+                        'day ${widget.currentDay}',
+                      ),
                     ],
                   ),
                 ],

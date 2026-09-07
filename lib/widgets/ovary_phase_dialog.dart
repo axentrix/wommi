@@ -81,7 +81,9 @@ class OvaryPhaseDialog extends ConsumerWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    'Ovulation timing varies cycle to cycle, so these early days are grouped together on the map. Tap any day below to see what\'s going on and do its rituals.',
+                    userState.tracksMenstrualCycle
+                        ? 'Ovulation timing varies cycle to cycle, so these early days are grouped together on the map. Tap any day below to see what\'s going on and do its rituals.'
+                        : 'These early days are grouped together on the map. Tap any day below to see what\'s going on and do its rituals.',
                     style: GoogleFonts.inter(
                       fontSize: 12.5,
                       color: WommiColors.inkDim,
