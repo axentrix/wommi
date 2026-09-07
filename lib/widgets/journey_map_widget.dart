@@ -6,6 +6,7 @@ import '../theme.dart';
 import '../models/user_state.dart';
 import '../providers/user_state_provider.dart';
 import '../providers/onboarding_provider.dart';
+import '../screens/challenges_screen.dart';
 import '../screens/daily_game_screen.dart';
 import 'cycle_day_info_dialog.dart';
 import 'ovary_phase_dialog.dart';
@@ -516,16 +517,48 @@ class _JourneyMapWidgetState extends ConsumerState<JourneyMapWidget>
     );
   }
 
-  /// Opens [day]'s full-screen mini-game - unless it's a future day, which
-  /// just shows the info popup's "come back later" message instead, since
-  /// there's nothing to play or complete yet.
+  /// Opens [day]'s info popup on top of the map - for a future day it's
+  /// just the "come back later" message, since there's nothing to play or
+  /// complete yet; otherwise its "Complete daily rituals"/"Play daily game"
+  /// buttons push their respective screens (see _showDayInfoDialog) on top
+  /// of the map, so backing out of either lands back here rather than on
+  /// some intermediate screen.
   void _openDay(BuildContext context, int day) {
     final currentDay = ref.read(userStateProvider).currentDay;
     if (day > currentDay) {
       _showFutureDayInfo(context, day);
     } else {
-      Navigator.of(context).push(dailyGameRoute(day));
+      _showDayInfoDialog(context, day);
     }
+  }
+
+  Future<void> _showDayInfoDialog(BuildContext context, int day) {
+    final userState = ref.read(userStateProvider);
+    final conceptionStatus = ref.read(onboardingProvider).conceptionStatus;
+    final isCompleted = userState.completedDays.contains(day);
+    return showDialog(
+      context: context,
+      builder: (context) => CycleDayInfoDialog(
+        day: day,
+        conceptionStatus: conceptionStatus,
+        isCompleted: isCompleted,
+        isInProgress: !isCompleted && userState.inProgressDays.contains(day),
+        isCurrent: day == userState.currentDay,
+        isFuture: false,
+        onOpenMissions: () {
+          Navigator.pop(context);
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (context) => ChallengesScreen(day: day),
+            ),
+          );
+        },
+        onPlayGame: () {
+          Navigator.pop(context);
+          Navigator.of(context).push(dailyGameRoute(day));
+        },
+      ),
+    );
   }
 
   Future<void> _showFutureDayInfo(BuildContext context, int day) {
@@ -540,6 +573,7 @@ class _JourneyMapWidgetState extends ConsumerState<JourneyMapWidget>
         isCurrent: false,
         isFuture: true,
         onOpenMissions: () {},
+        onPlayGame: () {},
       ),
     );
   }

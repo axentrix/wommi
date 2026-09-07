@@ -20,6 +20,7 @@ class CycleDayInfoDialog extends ConsumerWidget {
   final bool isCurrent;
   final bool isFuture;
   final VoidCallback onOpenMissions;
+  final VoidCallback onPlayGame;
 
   const CycleDayInfoDialog({
     super.key,
@@ -30,6 +31,7 @@ class CycleDayInfoDialog extends ConsumerWidget {
     required this.isCurrent,
     required this.isFuture,
     required this.onOpenMissions,
+    required this.onPlayGame,
   });
 
   /// The "period started / pregnancy detected" pair only makes sense once
@@ -317,10 +319,11 @@ class CycleDayInfoDialog extends ConsumerWidget {
   /// The two things to do on a non-future day - the 3 rituals and the
   /// day's mini-game, each a real button since both are independent ways
   /// to earn a charm - with a plain "Not now" text link below for
-  /// dismissing without doing either. Dismissing (including "Play daily
-  /// game") just closes this dialog: the game is already running full-
-  /// screen behind it (see DailyGameScreen), so there's nothing else to
-  /// navigate to.
+  /// dismissing without doing either. "Not now" just closes this dialog,
+  /// revealing whatever screen it was opened on top of (normally the map);
+  /// onOpenMissions/onPlayGame are left to the caller, since what they
+  /// should do depends on where this dialog was opened from (see
+  /// JourneyMapWidget._showDayInfoDialog and DailyGameScreen._showDayInfo).
   ///
   /// Always styled in cyan, deliberately independent of the phase's own
   /// accent color (info.color) used for the day badge/title above - some
@@ -378,11 +381,10 @@ class CycleDayInfoDialog extends ConsumerWidget {
         SizedBox(
           width: double.infinity,
           child: OutlinedButton(
-            // Still just dismisses either way - the game (or, once played,
-            // its locked state) is already running behind this dialog, see
-            // DailyGameScreen. Greyed out here just as a heads-up so
-            // tapping it isn't a surprise.
-            onPressed: () => Navigator.pop(context),
+            // Greyed out (but still tappable) once played, just as a
+            // heads-up that there's nothing new to win - onPlayGame still
+            // opens the game screen, which shows its own locked state.
+            onPressed: onPlayGame,
             style: OutlinedButton.styleFrom(
               foregroundColor: gameAlreadyPlayed ? WommiColors.inkDim : color,
               padding: const EdgeInsets.symmetric(vertical: 14),

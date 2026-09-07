@@ -277,10 +277,19 @@ class WommiDatabase extends _$WommiDatabase {
     return rows.map((r) => r.earnedAt).toList();
   }
 
-  Future<bool> hasCharmForDay(int cycleDay, int? cycleProfileId) async {
+  /// Scoped by [charmName] as well as the day, since a single day can carry
+  /// two independent charms - one from its rituals ('daily_charm'), one
+  /// from its mini-game ('game_charm') - and awarding one must never block
+  /// the other.
+  Future<bool> hasCharmForDay(
+    int cycleDay,
+    int? cycleProfileId, {
+    required String charmName,
+  }) async {
     final existing = await (select(charmsEarned)
           ..where((t) =>
               t.cycleDay.equals(cycleDay) &
+              t.charmName.equals(charmName) &
               t.cycleProfileId.equalsNullable(cycleProfileId)))
         .getSingleOrNull();
     return existing != null;
@@ -290,13 +299,20 @@ class WommiDatabase extends _$WommiDatabase {
     await delete(charmsEarned).go();
   }
 
-  /// Which cycle days already have their charm earned in the given journey
-  /// - used to mark days as completed on the journey map, so that persists
-  /// across reloads instead of only living in in-memory UserState.
-  /// completedDays.
-  Future<Set<int>> getDaysWithCharms(int? cycleProfileId) async {
+  /// Which cycle days already have their *rituals* charm earned in the
+  /// given journey - used to mark days as completed on the journey map, so
+  /// that persists across reloads instead of only living in in-memory
+  /// UserState.completedDays. Scoped to [charmName] (always 'daily_charm'
+  /// in practice) so a day where only the mini-game was won, not the
+  /// rituals, doesn't get counted as completed too.
+  Future<Set<int>> getDaysWithCharms(
+    int? cycleProfileId, {
+    required String charmName,
+  }) async {
     final rows = await (select(charmsEarned)
-          ..where((t) => t.cycleProfileId.equalsNullable(cycleProfileId)))
+          ..where((t) =>
+              t.charmName.equals(charmName) &
+              t.cycleProfileId.equalsNullable(cycleProfileId)))
         .get();
     return rows.map((r) => r.cycleDay).toSet();
   }
