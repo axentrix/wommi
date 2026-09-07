@@ -47,6 +47,8 @@ class _ChallengesScreenState extends ConsumerState<ChallengesScreen> {
       ref.read(_provider.notifier).generateChallengesForDay(
             day,
             completedIds: completedIds,
+            tracksMenstrualCycle:
+                ref.read(userStateProvider).tracksMenstrualCycle,
           );
       if (completedIds.isNotEmpty) {
         ref.read(userStateProvider.notifier).markDayInProgress(day);
@@ -110,6 +112,7 @@ class _ChallengesScreenState extends ConsumerState<ChallengesScreen> {
         currentDay: _resolveDay(),
         gemBalance: userState.gemBalance,
         streakDays: userState.streakDays,
+        tracksMenstrualCycle: userState.tracksMenstrualCycle,
         rarity: _lastAwardedRarity,
         onContinue: () {
           Navigator.of(context).pop();
@@ -192,7 +195,8 @@ class _ChallengesScreenState extends ConsumerState<ChallengesScreen> {
 
     final Widget body = challenges.isEmpty
         ? const Center(child: CircularProgressIndicator())
-        : _buildContent(challenges, challengesNotifier, day, isToday);
+        : _buildContent(challenges, challengesNotifier, day, isToday,
+            userState.tracksMenstrualCycle);
 
     if (!_isSpecificDay) {
       // Embedded as the Challenges tab inside HomeScreen's own Scaffold.
@@ -223,6 +227,7 @@ class _ChallengesScreenState extends ConsumerState<ChallengesScreen> {
     ChallengesNotifier challengesNotifier,
     int day,
     bool isToday,
+    bool tracksMenstrualCycle,
   ) {
     final phaseName = ChallengeTemplates.getPhaseNameForDay(day);
     final completedCount = challengesNotifier.completedCount;
@@ -239,7 +244,7 @@ class _ChallengesScreenState extends ConsumerState<ChallengesScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'CYCLE DAY $day',
+                  tracksMenstrualCycle ? 'CYCLE DAY $day' : 'JOURNEY DAY $day',
                   style: GoogleFonts.spaceMono(
                     fontSize: 10.5,
                     letterSpacing: 1.68,

@@ -483,7 +483,9 @@ class _JourneyMapWidgetState extends ConsumerState<JourneyMapWidget>
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Text(
-                'Ovary • tap to open',
+                userState.tracksMenstrualCycle
+                    ? 'Ovary • tap to open'
+                    : 'Early days • tap to open',
                 style: GoogleFonts.spaceMono(
                   fontSize: 6.5,
                   fontWeight: FontWeight.w700,

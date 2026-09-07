@@ -34,9 +34,16 @@ class Challenge {
   }
 }
 
-// Challenge templates for different cycle phases
+// Challenge templates for different phases of the journey - the phase
+// itself is still cycle-derived, but the ritual content is only allowed to
+// name-check the user's own cycle/body when tracksMenstrualCycle is true
+// (see UserState.tracksMenstrualCycle); otherwise it stays general enough
+// to fit a journey that isn't tracking one.
 class ChallengeTemplates {
-  static List<Map<String, String>> getChallengesForDay(int day) {
+  static List<Map<String, String>> getChallengesForDay(
+    int day, [
+    bool tracksMenstrualCycle = true,
+  ]) {
     // Days 1-5: Menstruation - Rest & Release
     if (day >= 1 && day <= 5) {
       return [
@@ -47,13 +54,17 @@ class ChallengeTemplates {
         },
         {
           'icon': '🫧',
-          'title': 'Womb Rest Breath',
-          'description': 'Five slow belly breaths, one hand resting gently over your womb space.',
+          'title': tracksMenstrualCycle ? 'Womb Rest Breath' : 'Restful Breath',
+          'description': tracksMenstrualCycle
+              ? 'Five slow belly breaths, one hand resting gently over your womb space.'
+              : 'Five slow belly breaths, one hand resting gently over your middle.',
         },
         {
           'icon': '🪶',
           'title': 'Release Journal',
-          'description': 'Write one line about something you\'re ready to let go of this cycle.',
+          'description': tracksMenstrualCycle
+              ? 'Write one line about something you\'re ready to let go of this cycle.'
+              : 'Write one line about something you\'re ready to let go of.',
         },
       ];
     }
@@ -82,8 +93,10 @@ class ChallengeTemplates {
       return [
         {
           'icon': '✨',
-          'title': 'Ovulation Celebration',
-          'description': 'Honor this powerful moment in your cycle with a moment of stillness.',
+          'title': tracksMenstrualCycle ? 'Ovulation Celebration' : 'Milestone Moment',
+          'description': tracksMenstrualCycle
+              ? 'Honor this powerful moment in your cycle with a moment of stillness.'
+              : 'Honor this powerful moment in your journey with a moment of stillness.',
         },
         {
           'icon': '🌺',

@@ -4,8 +4,13 @@ import '../models/challenge.dart';
 class ChallengesNotifier extends StateNotifier<List<Challenge>> {
   ChallengesNotifier() : super([]);
 
-  void generateChallengesForDay(int day, {List<String> completedIds = const []}) {
-    final templates = ChallengeTemplates.getChallengesForDay(day);
+  void generateChallengesForDay(
+    int day, {
+    List<String> completedIds = const [],
+    bool tracksMenstrualCycle = true,
+  }) {
+    final templates =
+        ChallengeTemplates.getChallengesForDay(day, tracksMenstrualCycle);
     state = templates
         .asMap()
         .entries
