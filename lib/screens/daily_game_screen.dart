@@ -5,6 +5,7 @@ import '../theme.dart';
 import '../models/daily_game.dart';
 import '../providers/user_state_provider.dart';
 import '../providers/onboarding_provider.dart';
+import '../providers/repository_provider.dart';
 import '../widgets/cycle_day_info_dialog.dart';
 import '../widgets/games/lucky_wheel_game.dart';
 import '../widgets/games/pinata_game.dart';
@@ -107,9 +108,20 @@ class _DailyGameScreenState extends ConsumerState<DailyGameScreen> {
     ref.read(userStateProvider.notifier).markDailyGamePlayed(widget.day);
   }
 
-  /// Awards the day's second charm if this attempt won.
-  void _onWin() {
+  /// Awards the day's second, independent charm if this attempt won -
+  /// persisted the same way a ritual charm is (see
+  /// ChallengesScreen._awardCharmIfNeeded), just under its own 'game_charm'
+  /// name so the two never collide on the same day. Without this, the gem
+  /// count shown by the Achievements necklace (which counts rows in the
+  /// charms table) would fall behind the balance shown in the header
+  /// (which counts every addGems call, rituals and games alike).
+  Future<void> _onWin() async {
     ref.read(userStateProvider.notifier).markDailyGameComplete(widget.day);
+
+    final repository = ref.read(repositoryProvider);
+    if (!await repository.hasCharmForDay(widget.day, charmName: 'game_charm')) {
+      await repository.awardCharm(widget.day, 'game_charm');
+    }
     if (!mounted) return;
 
     ref.read(userStateProvider.notifier).addGems(1);

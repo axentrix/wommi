@@ -76,7 +76,9 @@ class _ChallengesScreenState extends ConsumerState<ChallengesScreen> {
 
     final day = _resolveDay();
     final repository = ref.read(repositoryProvider);
-    if (await repository.hasCharmForDay(day)) return false;
+    if (await repository.hasCharmForDay(day, charmName: 'daily_charm')) {
+      return false;
+    }
 
     final userState = ref.read(userStateProvider);
     final legendaryAwarded = await repository.hasLegendaryCharmThisJourney();

@@ -104,14 +104,14 @@ class WommiRepository {
     await _db.awardCharm(cycleDay, charmName, cycleProfileId, rarity: rarity);
   }
 
-  Future<bool> hasCharmForDay(int cycleDay) async {
+  Future<bool> hasCharmForDay(int cycleDay, {required String charmName}) async {
     final cycleProfileId = await _currentCycleProfileId();
-    return _db.hasCharmForDay(cycleDay, cycleProfileId);
+    return _db.hasCharmForDay(cycleDay, cycleProfileId, charmName: charmName);
   }
 
   Future<Set<int>> getDaysWithCharms() async {
     final cycleProfileId = await _currentCycleProfileId();
-    return _db.getDaysWithCharms(cycleProfileId);
+    return _db.getDaysWithCharms(cycleProfileId, charmName: 'daily_charm');
   }
 
   Future<List<CharmsEarnedData>> getAllCharms() async {
