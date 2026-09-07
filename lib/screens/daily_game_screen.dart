@@ -29,12 +29,11 @@ Route<void> dailyGameRoute(int day) {
   );
 }
 
-/// Full-screen mini-game opened by tapping a day marker on the journey map -
-/// replaces the old "zoom into the map" preview. The day's info dialog
-/// (phase description, missions, ovulation/period toggles) still opens on
-/// top of it, same as before, just as a dismissable overlay above the game
-/// instead of above the zoomed map - dismissing it reveals the game
-/// underneath rather than leaving this screen.
+/// Full-screen mini-game pushed on top of the journey map after choosing
+/// "Play daily game" from a day's info dialog (see
+/// JourneyMapWidget._showDayInfoDialog) - so backing out of this screen
+/// lands back on the map. The same info dialog can still be reopened from
+/// here via the "Day X details" button, for reference while playing.
 ///
 /// Each game widget under widgets/games/ is a placeholder standing in for
 /// a real Rive scene, and awards a second, independent charm on top of
@@ -62,9 +61,15 @@ class _DailyGameScreenState extends ConsumerState<DailyGameScreen> {
     super.initState();
     _alreadyPlayedOnOpen =
         ref.read(userStateProvider).dailyGamePlayedDays.contains(widget.day);
-    WidgetsBinding.instance.addPostFrameCallback((_) => _showDayInfo());
   }
 
+  /// Opened via the "Day X details" button while the game is already on
+  /// screen - so unlike the same dialog shown from the map
+  /// (JourneyMapWidget._showDayInfoDialog), "Play daily game" here just
+  /// closes the dialog to reveal the game already running behind it, and
+  /// "Complete daily rituals" backs all the way out to the map before
+  /// pushing the rituals screen, so backing out of *that* lands on the map
+  /// too instead of on this game screen.
   Future<void> _showDayInfo() async {
     final day = widget.day;
     final userState = ref.read(userStateProvider);
@@ -81,13 +86,16 @@ class _DailyGameScreenState extends ConsumerState<DailyGameScreen> {
         isCurrent: day == userState.currentDay,
         isFuture: day > userState.currentDay,
         onOpenMissions: () {
-          Navigator.pop(context);
-          Navigator.of(context).push(
+          final navigator = Navigator.of(context);
+          navigator.pop(); // close dialog
+          navigator.pop(); // close this game screen, back to the map
+          navigator.push(
             MaterialPageRoute(
               builder: (context) => ChallengesScreen(day: day),
             ),
           );
         },
+        onPlayGame: () => Navigator.pop(context),
       ),
     );
   }
