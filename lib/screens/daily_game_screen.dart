@@ -128,6 +128,8 @@ class _DailyGameScreenState extends ConsumerState<DailyGameScreen> {
 
     ref.read(userStateProvider.notifier).addGems(1);
     final game = dailyGameForDay(widget.day);
+    final ritualsCompleted =
+        ref.read(userStateProvider).completedDays.contains(widget.day);
     showDialog(
       context: context,
       builder: (context) => GameWinDialog(
@@ -139,7 +141,26 @@ class _DailyGameScreenState extends ConsumerState<DailyGameScreen> {
         // ever changes.
         rarity: CharmRarity.normal,
         gemEmoji: game.emoji,
-        onContinue: () => Navigator.of(context).pop(),
+        // Closing this popup - either way - always lands back on the map,
+        // not on this game screen, same as every other exit from here
+        // (see class doc and _showDayInfo's onOpenMissions above).
+        onBackToMap: () {
+          final navigator = Navigator.of(context);
+          navigator.pop(); // close dialog
+          navigator.pop(); // close this game screen, back to the map
+        },
+        onCompleteRituals: ritualsCompleted
+            ? null
+            : () {
+                final navigator = Navigator.of(context);
+                navigator.pop(); // close dialog
+                navigator.pop(); // close this game screen, back to the map
+                navigator.push(
+                  MaterialPageRoute(
+                    builder: (context) => ChallengesScreen(day: widget.day),
+                  ),
+                );
+              },
       ),
     );
   }

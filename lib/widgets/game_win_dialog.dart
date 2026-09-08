@@ -17,7 +17,10 @@ class GameWinDialog extends StatefulWidget {
   final int gemBalance;
   final CharmRarity rarity;
   final String gemEmoji;
-  final VoidCallback onContinue;
+  final VoidCallback onBackToMap;
+  // Null when the day's rituals are already done - there's nothing left
+  // to offer, so only the plain "Back to map" button shows.
+  final VoidCallback? onCompleteRituals;
 
   const GameWinDialog({
     super.key,
@@ -25,7 +28,8 @@ class GameWinDialog extends StatefulWidget {
     required this.gemBalance,
     this.rarity = CharmRarity.normal,
     this.gemEmoji = '💎',
-    required this.onContinue,
+    required this.onBackToMap,
+    this.onCompleteRituals,
   });
 
   @override
@@ -236,28 +240,82 @@ class _GameWinDialogState extends State<GameWinDialog>
             ),
             Padding(
               padding: const EdgeInsets.all(26),
-              child: SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: widget.onContinue,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: WommiColors.cyan,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(100),
+              child: Column(
+                children: [
+                  if (widget.onCompleteRituals != null) ...[
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: widget.onCompleteRituals,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: WommiColors.cyan,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(100),
+                          ),
+                          elevation: 14,
+                          shadowColor: WommiColors.cyan.withValues(alpha: 0.38),
+                        ),
+                        child: Text(
+                          'Complete daily rituals',
+                          style: GoogleFonts.unbounded(
+                            fontWeight: FontWeight.w700,
+                            fontSize: 13.5,
+                          ),
+                        ),
+                      ),
                     ),
-                    elevation: 14,
-                    shadowColor: WommiColors.cyan.withValues(alpha: 0.38),
-                  ),
-                  child: Text(
-                    'Continue',
-                    style: GoogleFonts.unbounded(
-                      fontWeight: FontWeight.w700,
-                      fontSize: 13.5,
+                    const SizedBox(height: 10),
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton(
+                        onPressed: widget.onBackToMap,
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: Colors.white,
+                          side: BorderSide(
+                            color: Colors.white.withValues(alpha: 0.4),
+                            width: 1.5,
+                          ),
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(100),
+                          ),
+                        ),
+                        child: Text(
+                          'Back to map',
+                          style: GoogleFonts.unbounded(
+                            fontWeight: FontWeight.w700,
+                            fontSize: 13.5,
+                          ),
+                        ),
+                      ),
                     ),
-                  ),
-                ),
+                  ] else
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: widget.onBackToMap,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: WommiColors.cyan,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(100),
+                          ),
+                          elevation: 14,
+                          shadowColor: WommiColors.cyan.withValues(alpha: 0.38),
+                        ),
+                        child: Text(
+                          'Back to map',
+                          style: GoogleFonts.unbounded(
+                            fontWeight: FontWeight.w700,
+                            fontSize: 13.5,
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
               ),
             ),
           ],
