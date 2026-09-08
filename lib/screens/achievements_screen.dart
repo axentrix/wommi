@@ -3,10 +3,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import '../theme.dart';
+import '../data/database.dart';
 import '../models/charm_rarity.dart';
 import '../providers/user_state_provider.dart';
 import '../providers/repository_provider.dart';
 import '../models/journey.dart';
+import '../widgets/charm_album_grid.dart';
 import '../widgets/necklace_circle.dart';
 
 class AchievementsScreen extends ConsumerStatefulWidget {
@@ -17,7 +19,7 @@ class AchievementsScreen extends ConsumerStatefulWidget {
 }
 
 class _AchievementsScreenState extends ConsumerState<AchievementsScreen> {
-  List<CharmRarity>? _currentCharms;
+  List<CharmsEarnedData>? _currentCharmRows;
 
   @override
   void initState() {
@@ -26,7 +28,7 @@ class _AchievementsScreenState extends ConsumerState<AchievementsScreen> {
       final rows = await ref.read(repositoryProvider).getAllCharms();
       if (!mounted) return;
       setState(() {
-        _currentCharms = rows.map((c) => CharmRarity.fromName(c.rarity)).toList();
+        _currentCharmRows = rows;
       });
     });
   }
@@ -36,6 +38,11 @@ class _AchievementsScreenState extends ConsumerState<AchievementsScreen> {
     final userState = ref.watch(userStateProvider);
     final hasCurrentJourney = userState.currentDay > 0;
     final pastJourneys = userState.journeyHistory;
+    // Null (not just empty) until the async fetch in initState resolves -
+    // NecklaceCircle relies on that to fall back to gemsCollected instead
+    // of flashing "0 gems" while loading (see NecklaceCircle._count).
+    final currentCharms =
+        _currentCharmRows?.map((c) => CharmRarity.fromName(c.rarity)).toList();
 
     return Container(
       color: WommiColors.bg,
@@ -75,13 +82,22 @@ class _AchievementsScreenState extends ConsumerState<AchievementsScreen> {
               padding: const EdgeInsets.fromLTRB(22, 0, 22, 16),
               children: [
                 // Current journey card (in progress)
-                if (hasCurrentJourney)
+                if (hasCurrentJourney) ...[
                   _CurrentJourneyCard(
                     journeyNumber: userState.currentJourneyNumber,
                     gemsCollected: userState.gemBalance,
                     currentDay: userState.currentDay,
-                    charms: _currentCharms,
+                    charms: currentCharms,
                   ),
+                  if (_currentCharmRows != null) ...[
+                    const SizedBox(height: 20),
+                    CharmAlbumGrid(
+                      currentDay: userState.currentDay,
+                      charms: _currentCharmRows!,
+                    ),
+                  ],
+                  const SizedBox(height: 12),
+                ],
                 // Past journey cards
                 ...pastJourneys.reversed.map((journey) {
                   return Padding(
