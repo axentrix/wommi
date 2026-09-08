@@ -6,7 +6,9 @@ import '../models/daily_game.dart';
 import '../providers/user_state_provider.dart';
 import '../providers/onboarding_provider.dart';
 import '../providers/repository_provider.dart';
+import '../models/charm_rarity.dart';
 import '../widgets/cycle_day_info_dialog.dart';
+import '../widgets/game_win_dialog.dart';
 import '../widgets/games/lucky_wheel_game.dart';
 import '../widgets/games/pinata_game.dart';
 import '../widgets/games/bubble_pop_game.dart';
@@ -125,29 +127,19 @@ class _DailyGameScreenState extends ConsumerState<DailyGameScreen> {
     if (!mounted) return;
 
     ref.read(userStateProvider.notifier).addGems(1);
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        behavior: SnackBarBehavior.floating,
-        backgroundColor: WommiColors.deepBlue,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(14),
-        ),
-        content: Row(
-          children: [
-            const Text('💎', style: TextStyle(fontSize: 18)),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Text(
-                'Charm collected! +1 gem',
-                style: GoogleFonts.unbounded(
-                  fontWeight: FontWeight.w700,
-                  fontSize: 13,
-                  color: Colors.white,
-                ),
-              ),
-            ),
-          ],
-        ),
+    final game = dailyGameForDay(widget.day);
+    showDialog(
+      context: context,
+      builder: (context) => GameWinDialog(
+        gameName: game.label,
+        gemBalance: ref.read(userStateProvider).gemBalance,
+        // Game charms always award at normal rarity for now (see
+        // _onWin's awardCharm call above, which doesn't pass one) -
+        // rarity theming is still wired through so it's ready if that
+        // ever changes.
+        rarity: CharmRarity.normal,
+        gemEmoji: game.emoji,
+        onContinue: () => Navigator.of(context).pop(),
       ),
     );
   }
