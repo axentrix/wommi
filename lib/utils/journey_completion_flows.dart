@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/charm_rarity.dart';
 import '../providers/user_state_provider.dart';
-import '../providers/onboarding_provider.dart';
 import '../providers/repository_provider.dart';
 import '../services/local_backup_storage.dart';
 import '../widgets/journey_completion_dialog.dart';
@@ -42,7 +41,9 @@ Future<void> backupJourneyData(WidgetRef ref, int profileId) async {
 }
 
 /// "Period started": the journey is over with no pregnancy - celebrates
-/// what was done, then resets straight back to onboarding for the next one.
+/// what was done, then lets the user pick the new journey's start day (see
+/// _showStartNewJourneyDayDialog) without re-asking anything about who
+/// they are, since that's unchanged from the journey that just ended.
 void showPeriodStartedFlow(BuildContext context, WidgetRef ref) {
   final userState = ref.read(userStateProvider);
   showDialog(
@@ -50,26 +51,9 @@ void showPeriodStartedFlow(BuildContext context, WidgetRef ref) {
     barrierDismissible: false,
     builder: (context) => JourneyCompletionDialog(
       gemsCollected: userState.gemBalance,
-      onStartNewJourney: () async {
-        final profileId = userState.profileId;
-        if (profileId != null) {
-          await ref.read(repositoryProvider).saveJourneyRecord(
-                userProfileId: profileId,
-                journeyNumber: userState.currentJourneyNumber,
-                gemsCollected: userState.gemBalance,
-                startDate: userState.lastOpenedDate ?? DateTime.now(),
-                endDate: DateTime.now(),
-              );
-          await backupJourneyData(ref, profileId);
-        }
-        await ref.read(repositoryProvider).clearJourneyProgress();
-        ref.read(userStateProvider.notifier).completeCurrentJourney();
-        if (!context.mounted) return;
+      onStartNewJourney: () {
         Navigator.pop(context);
-        Navigator.of(context).pushNamedAndRemoveUntil(
-          '/landing',
-          (route) => false,
-        );
+        _showStartNewJourneyDayDialog(context, ref);
       },
     ),
   );
@@ -145,16 +129,15 @@ void _showStartNewJourneyDayDialog(BuildContext context, WidgetRef ref) {
         }
 
         await ref.read(repositoryProvider).clearJourneyProgress();
+        // Carries over gender identity and TTC status/method from the
+        // journey that's ending - see saveCycleProfileForNewJourney.
+        await ref.read(repositoryProvider).saveCycleProfileForNewJourney(
+              startDate: DateTime.now().subtract(Duration(days: startDay - 1)),
+              startingCycleDay: startDay,
+            );
         ref
             .read(userStateProvider.notifier)
             .completeCurrentJourney(startDay: startDay);
-        await ref.read(repositoryProvider).saveCycleProfile(
-              startDate: DateTime.now().subtract(Duration(days: startDay - 1)),
-              cycleLength: 28,
-              ttcStatus: ref.read(onboardingProvider).conceptionStatus,
-              ttcMethods: ref.read(onboardingProvider).tryingMethods,
-              startingCycleDay: startDay,
-            );
 
         if (!context.mounted) return;
         Navigator.pop(context);

@@ -7,6 +7,7 @@ import '../providers/onboarding_provider.dart';
 import '../providers/repository_provider.dart';
 import '../services/device_storage.dart';
 import '../services/local_backup_storage.dart';
+import '../widgets/start_new_journey_day_dialog.dart';
 
 class LandingScreen extends ConsumerWidget {
   const LandingScreen({super.key});
@@ -100,40 +101,60 @@ class LandingScreen extends ConsumerWidget {
                   ),
                   const SizedBox(height: 12),
                   // Secondary action: abandon the active journey and start
-                  // a new one
+                  // a new one - for the SAME profile, so gender/name/email
+                  // are already known and never re-asked; only the new
+                  // journey's start day needs picking (see
+                  // StartNewJourneyDayDialog).
                   SizedBox(
                     width: double.infinity,
                     child: OutlinedButton(
-                      onPressed: () async {
-                        final userState = ref.read(userStateProvider);
-                        final profileId = userState.profileId;
+                      onPressed: () {
+                        showDialog(
+                          context: context,
+                          barrierDismissible: false,
+                          builder: (dialogContext) => StartNewJourneyDayDialog(
+                            onConfirm: (startDay) async {
+                              final userState = ref.read(userStateProvider);
+                              final profileId = userState.profileId;
 
-                        // Save the current journey regardless of gem count.
-                        // This button only appears when hasExistingJourney is
-                        // true, so a real journey number was already assigned
-                        // - skipping the save on 0 gems leaves a permanent gap
-                        // in journey numbering (e.g. 1, 3, 4 with 2 missing).
-                        if (profileId != null) {
-                          print('[Landing] Saving current journey before starting new one');
-                          await ref.read(repositoryProvider).saveJourneyRecord(
-                                userProfileId: profileId,
-                                journeyNumber: userState.currentJourneyNumber,
-                                gemsCollected: userState.gemBalance,
-                                startDate: userState.lastOpenedDate ?? DateTime.now(),
-                                endDate: DateTime.now(),
-                              );
-                        } else {
-                          print('[Landing] Skipping journey save (no progress made)');
-                        }
+                              // Save the current journey regardless of gem
+                              // count. This button only appears when
+                              // hasExistingJourney is true, so a real journey
+                              // number was already assigned - skipping the
+                              // save on 0 gems leaves a permanent gap in
+                              // journey numbering (e.g. 1, 3, 4 with 2
+                              // missing).
+                              if (profileId != null) {
+                                await ref.read(repositoryProvider).saveJourneyRecord(
+                                      userProfileId: profileId,
+                                      journeyNumber: userState.currentJourneyNumber,
+                                      gemsCollected: userState.gemBalance,
+                                      startDate: userState.lastOpenedDate ?? DateTime.now(),
+                                      endDate: DateTime.now(),
+                                    );
+                              }
 
-                        // Clear all ritual completions and charms for the new journey
-                        print('[Landing] Clearing journey progress for new journey');
-                        await ref.read(repositoryProvider).clearJourneyProgress();
+                              await ref.read(repositoryProvider).clearJourneyProgress();
+                              // Carries over gender identity and TTC status/
+                              // method from the journey that's ending - see
+                              // saveCycleProfileForNewJourney.
+                              await ref
+                                  .read(repositoryProvider)
+                                  .saveCycleProfileForNewJourney(
+                                    startDate: DateTime.now()
+                                        .subtract(Duration(days: startDay - 1)),
+                                    startingCycleDay: startDay,
+                                  );
+                              ref
+                                  .read(userStateProvider.notifier)
+                                  .completeCurrentJourney(startDay: startDay);
 
-                        // Now reset and start new journey
-                        ref.read(userStateProvider.notifier).resetState();
-                        if (!context.mounted) return;
-                        Navigator.of(context).pushReplacementNamed('/onboarding-gender');
+                              if (!context.mounted) return;
+                              Navigator.of(context)
+                                  .pushReplacementNamed('/home');
+                            },
+                          ),
+                        );
                       },
                       style: OutlinedButton.styleFrom(
                         foregroundColor: WommiColors.ink,
