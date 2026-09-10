@@ -233,53 +233,35 @@ class _JourneyMapWidgetState extends ConsumerState<JourneyMapWidget>
     final uterusAnchor =
         tubeDayCount > 0 ? tubeFractions[tubeDayCount - 1] : _tubePoints.last;
 
-    // No hard width cap and much slimmer side padding than before - lets
-    // the map (and, via _getPositionForDay's fraction-of-size math, its day
-    // markers) grow as large as the available space allows while still
-    // showing the whole background illustration uncropped. LayoutBuilder
-    // below picks whichever of the available width/height is tighter, so
-    // this can never render taller than the space it's actually given -
-    // letting height grow unchecked (as an earlier version of this did)
-    // could overflow the page on some devices, scrolling the header out
-    // of view and detaching the bottom nav from the screen's true bottom.
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final ratio = _bgWidth / _bgHeight;
-          var width = constraints.maxWidth;
-          var height = width / ratio;
-          if (constraints.hasBoundedHeight && height > constraints.maxHeight) {
-            height = constraints.maxHeight;
-            width = height * ratio;
-          }
-          return Center(
-            child: SizedBox(
-              width: width,
-              height: height,
-              child: ClipRect(
-                child: Stack(
-                  children: [
-                    Positioned.fill(child: _buildZoomableMap(
-                      userState,
-                      currentDay,
-                      ovaryDayCount,
-                      tubeDayCount,
-                      tubeFractions,
-                      uterusStartDay,
-                      uterusEndDay,
-                      uterusAnchor,
-                    )),
-                    if (_zoomed) ...[
-                      _buildBackButton(),
-                      _buildReopenChip(),
-                    ],
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(20),
+      child: Center(
+        child: Container(
+          constraints: const BoxConstraints(maxWidth: 420),
+          child: AspectRatio(
+            aspectRatio: _bgWidth / _bgHeight,
+            child: ClipRect(
+              child: Stack(
+                children: [
+                  Positioned.fill(child: _buildZoomableMap(
+                    userState,
+                    currentDay,
+                    ovaryDayCount,
+                    tubeDayCount,
+                    tubeFractions,
+                    uterusStartDay,
+                    uterusEndDay,
+                    uterusAnchor,
+                  )),
+                  if (_zoomed) ...[
+                    _buildBackButton(),
+                    _buildReopenChip(),
                   ],
-                ),
+                ],
               ),
             ),
-          );
-        },
+          ),
+        ),
       ),
     );
   }
@@ -438,7 +420,7 @@ class _JourneyMapWidgetState extends ConsumerState<JourneyMapWidget>
     final isCurrentPhase = currentDay <= ovaryDayCount;
     final allCompleted = completedCount == ovaryDayCount;
 
-    const nodeSize = 54.0;
+    const nodeSize = 46.0;
     final position = _tubePoints.first;
 
     return Positioned(
@@ -483,20 +465,20 @@ class _JourneyMapWidgetState extends ConsumerState<JourneyMapWidget>
               ),
               child: Center(
                 child: allCompleted
-                    ? Icon(Icons.check, size: 21, color: WommiColors.ink)
+                    ? Icon(Icons.check, size: 18, color: WommiColors.ink)
                     : Text(
                         '1-$ovaryDayCount',
                         style: GoogleFonts.unbounded(
-                          fontSize: 11.5,
+                          fontSize: 10,
                           fontWeight: FontWeight.w700,
                           color: isCurrentPhase ? Colors.white : WommiColors.ink,
                         ),
                       ),
               ),
             ),
-            const SizedBox(height: 3),
+            const SizedBox(height: 2),
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 1.5),
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
               decoration: BoxDecoration(
                 color: WommiColors.bg.withOpacity(0.9),
                 borderRadius: BorderRadius.circular(8),
@@ -506,7 +488,7 @@ class _JourneyMapWidgetState extends ConsumerState<JourneyMapWidget>
                     ? 'Ovary • tap to open'
                     : 'Early days • tap to open',
                 style: GoogleFonts.spaceMono(
-                  fontSize: 7.5,
+                  fontSize: 6.5,
                   fontWeight: FontWeight.w700,
                   color: WommiColors.inkDim,
                   letterSpacing: 0.4,
@@ -600,7 +582,7 @@ class _JourneyMapWidgetState extends ConsumerState<JourneyMapWidget>
   /// doesn't have a real day behind it yet - ovulation hasn't been marked,
   /// so we don't know which days (if any) will travel through the tube.
   Widget _buildTubeStepPlaceholder(Offset position) {
-    const dotSize = 14.0;
+    const dotSize = 12.0;
     return Positioned(
       left: position.dx - dotSize / 2,
       top: position.dy - dotSize / 2,
@@ -644,7 +626,7 @@ class _JourneyMapWidgetState extends ConsumerState<JourneyMapWidget>
     // message instead of opening the game (see _openDay).
     final isClickable = !isFuture;
 
-    const markerSize = 22.0;
+    const markerSize = 19.0;
 
     return Positioned(
       left: position.dx - markerSize / 2,
@@ -699,7 +681,7 @@ class _JourneyMapWidgetState extends ConsumerState<JourneyMapWidget>
                           Text(
                             '$day',
                             style: GoogleFonts.unbounded(
-                              fontSize: 9,
+                              fontSize: 8,
                               fontWeight: FontWeight.w700,
                               color: isCurrent
                                   ? Colors.white
@@ -724,7 +706,7 @@ class _JourneyMapWidgetState extends ConsumerState<JourneyMapWidget>
                                 ),
                                 child: Icon(
                                   Icons.check,
-                                  size: 9,
+                                  size: 8,
                                   color: Colors.white,
                                 ),
                               ),
@@ -734,8 +716,8 @@ class _JourneyMapWidgetState extends ConsumerState<JourneyMapWidget>
                               top: -2,
                               right: -2,
                               child: Container(
-                                width: 10,
-                                height: 10,
+                                width: 9,
+                                height: 9,
                                 decoration: BoxDecoration(
                                   color: WommiColors.rose,
                                   shape: BoxShape.circle,
@@ -762,7 +744,7 @@ class _JourneyMapWidgetState extends ConsumerState<JourneyMapWidget>
                                 ),
                                 child: Icon(
                                   Icons.remove,
-                                  size: 9,
+                                  size: 8,
                                   color: Colors.white,
                                 ),
                               ),
@@ -771,7 +753,7 @@ class _JourneyMapWidgetState extends ConsumerState<JourneyMapWidget>
                       )
                     : Icon(
                         Icons.lock,
-                        size: 11,
+                        size: 10,
                         color: WommiColors.inkDim.withOpacity(0.5),
                       ),
               ),
@@ -780,7 +762,7 @@ class _JourneyMapWidgetState extends ConsumerState<JourneyMapWidget>
             if (isCurrent) ...[
               const SizedBox(height: 2),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 1.5),
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
                 decoration: BoxDecoration(
                   color: WommiColors.cyan,
                   borderRadius: BorderRadius.circular(8),
@@ -788,7 +770,7 @@ class _JourneyMapWidgetState extends ConsumerState<JourneyMapWidget>
                 child: Text(
                   'YOU',
                   style: GoogleFonts.spaceMono(
-                    fontSize: 8,
+                    fontSize: 7,
                     fontWeight: FontWeight.w700,
                     color: Colors.white,
                     letterSpacing: 1,
