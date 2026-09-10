@@ -324,10 +324,11 @@ class ProfileScreen extends ConsumerWidget {
               await DeviceStorage.clearEmail();
               await LocalBackupStorage.clearAll();
 
-              // Fully reset in-memory state. resetState() is intentionally
-              // *not* used here - it exists to carry journey history and
-              // identity across a legitimate "start a new journey", which
-              // is the opposite of what deleting an account should do.
+              // Fully reset in-memory state. completeCurrentJourney() is
+              // intentionally *not* used here - it exists to carry journey
+              // history and identity across a legitimate "start a new
+              // journey", which is the opposite of what deleting an account
+              // should do.
               ref.read(userStateProvider.notifier).hardReset();
               ref.read(onboardingProvider.notifier).reset();
 

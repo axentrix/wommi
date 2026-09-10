@@ -31,6 +31,30 @@ class WommiRepository {
     await _db.createCycleProfile(companion);
   }
 
+  /// Starts a new journey's cycle profile for an existing profile, carrying
+  /// over gender identity and TTC status/method from the journey that's
+  /// ending instead of asking for them again - they're the same person
+  /// continuing on, not fresh onboarding answers. Reads them straight from
+  /// the outgoing CycleProfile row rather than the in-memory onboarding
+  /// state, since that's transient and may be stale (or never
+  /// repopulated) if the app was restarted since this journey began.
+  Future<void> saveCycleProfileForNewJourney({
+    required DateTime startDate,
+    required int startingCycleDay,
+    int cycleLength = 28,
+  }) async {
+    final previous = await getCurrentCycleProfile();
+    final companion = CycleProfilesCompanion.insert(
+      cycleLength: Value(cycleLength),
+      startDate: startDate,
+      ttcStatus: Value(previous?.ttcStatus),
+      ttcMethod: Value(previous?.ttcMethod),
+      startingCycleDay: Value(startingCycleDay),
+      genderIdentity: Value(previous?.genderIdentity),
+    );
+    await _db.createCycleProfile(companion);
+  }
+
   /// Corrects the current journey's cycle day - unlike saveCycleProfile
   /// (which always starts a fresh journey), this updates the existing
   /// journey in place so its ritual completions, charms, and streak

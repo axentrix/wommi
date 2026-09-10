@@ -144,22 +144,6 @@ class UserStateNotifier extends StateNotifier<UserState> {
     state = state.copyWith(currentDay: nextDay);
   }
 
-  void resetState() {
-    print('[UserState] Resetting state - preserving ${state.journeyHistory.length} past journeys');
-    // Always preserve journey history and profile across resets
-    // (the actual journey saving to database happens in the UI layer before calling this)
-    state = UserState(
-      currentDay: 1,
-      journeyHistory: state.journeyHistory,
-      currentJourneyNumber: state.currentJourneyNumber + 1,
-      // The profile is the user's persistent identity across journeys,
-      // not journey-specific state, so it survives a reset.
-      name: state.name,
-      email: state.email,
-      profileId: state.profileId,
-    );
-  }
-
   void completeCurrentJourney({int startDay = 1}) {
     // Save current journey to history
     final completedJourney = Journey(
@@ -197,8 +181,8 @@ class UserStateNotifier extends StateNotifier<UserState> {
   }
 
   /// Full reset for testing - wipes everything in memory, including
-  /// profile/journey history. Unlike resetState(), which intentionally
-  /// preserves those across a legitimate "start new journey".
+  /// profile/journey history. Unlike completeCurrentJourney(), which
+  /// intentionally preserves those across a legitimate "start new journey".
   void hardReset() {
     state = UserState(currentDay: 0);
   }
