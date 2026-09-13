@@ -2,6 +2,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:rive/rive.dart' as rive;
 import '../theme.dart';
 import '../models/user_state.dart';
 import '../providers/user_state_provider.dart';
@@ -15,11 +16,11 @@ import 'ovary_phase_dialog.dart';
 /// combined node for the ovary/follicular days (whose real-world length
 /// varies and isn't known in advance) connected by the fallopian tube into
 /// the uterus, then individual day markers for the rest of the cycle.
-/// This is a placeholder background - it will be replaced with a Rive
-/// animation. Tapping the ovary bundle still previews the "zoom into this
-/// region" camera move that the eventual Rive scene will own for real;
-/// tapping an individual day now opens that day's full-screen mini-game
-/// (see DailyGameScreen) instead of zooming.
+/// The background is a Rive animation (assets/rive/wommi.riv). Tapping the
+/// ovary bundle still previews the "zoom into this region" camera move that
+/// the Rive scene will eventually own for real; tapping an individual day
+/// now opens that day's full-screen mini-game (see DailyGameScreen) instead
+/// of zooming.
 class JourneyMapWidget extends ConsumerStatefulWidget {
   const JourneyMapWidget({super.key});
 
@@ -59,6 +60,13 @@ class _JourneyMapWidgetState extends ConsumerState<JourneyMapWidget>
   static const int defaultUterusDayCount = 13;
   static const int maxUterusDayCount = 15;
 
+  // The hand-drawn tube path, ovary node, and day markers sit on top of the
+  // Rive canvas and swallow every tap meant for it - now that clicks are
+  // driven by the Rive scene itself (wommiClicked/stepClicked), keep this
+  // overlay hidden. Flip back on if the drawn overlay's interactions need
+  // to come back before Rive fully owns them.
+  static const bool _showDrawnOverlay = false;
+
   // How far a tapped marker's region "zooms in" to preview the eventual
   // Rive camera move - purely a placeholder interaction.
   static const double _zoomScale = 2.6;
@@ -66,6 +74,77 @@ class _JourneyMapWidgetState extends ConsumerState<JourneyMapWidget>
   late final AnimationController _zoomController;
   late final Animation<double> _zoomCurve;
   Alignment _zoomFocal = Alignment.center;
+
+  final rive.FileLoader _mapFileLoader = rive.FileLoader.fromAsset(
+    'assets/rive/wommi.riv',
+    riveFactory: rive.Factory.rive,
+  );
+
+  // WommiVM properties, fetched once the Rive file's default view model
+  // instance loads. Kept as fields (rather than looked up fresh each build)
+  // because the underlying native lookup isn't free and the instance is
+  // owned by this widget for its whole lifetime.
+  rive.ViewModelInstanceNumber? _cycleDayProperty;
+  rive.ViewModelInstanceNumber? _ovulationDayProperty;
+
+  // Click flags the Rive scene sets when the Wommi character or a step is
+  // tapped inside the artboard itself - set back to false as soon as we've
+  // acted on them, since being booleans (not triggers) they don't reset on
+  // their own and a stale `true` would just re-fire the popup forever.
+  rive.ViewModelInstanceBoolean? _wommiClickedProperty;
+  rive.ViewModelInstanceBoolean? _stepClickedProperty;
+  rive.ViewModelInstanceNumber? _clickedStepProperty;
+
+  void _onMapVmLoaded(rive.RiveLoaded state) {
+    final vmi = state.viewModelInstance;
+    if (vmi == null) return;
+    _cycleDayProperty = vmi.number('cycleDay');
+    _ovulationDayProperty = vmi.number('ovulationDay');
+    if (_cycleDayProperty == null || _ovulationDayProperty == null) {
+      debugPrint(
+          '[JourneyMap] WommiVM is missing cycleDay and/or ovulationDay '
+          'number properties.');
+    }
+    _syncMapViewModel(ref.read(userStateProvider));
+
+    _wommiClickedProperty = vmi.boolean('wommiClicked');
+    _stepClickedProperty = vmi.boolean('stepClicked');
+    _clickedStepProperty = vmi.number('clickedStep');
+    if (_wommiClickedProperty == null ||
+        _stepClickedProperty == null ||
+        _clickedStepProperty == null) {
+      debugPrint('[JourneyMap] WommiVM is missing wommiClicked, '
+          'stepClicked and/or clickedStep properties.');
+    }
+    _wommiClickedProperty?.addListener(_onWommiClicked);
+    _stepClickedProperty?.addListener(_onStepClicked);
+  }
+
+  void _syncMapViewModel(UserState userState) {
+    _cycleDayProperty?.value = userState.currentDay.toDouble();
+    _ovulationDayProperty?.value = (userState.ovulationDay ?? 0).toDouble();
+  }
+
+  void _onWommiClicked(bool clicked) {
+    if (!clicked) return;
+    _wommiClickedProperty?.value = false;
+    _openDay(context, ref.read(userStateProvider).currentDay);
+  }
+
+  void _onStepClicked(bool clicked) {
+    if (!clicked) return;
+    _stepClickedProperty?.value = false;
+    final step = _clickedStepProperty?.value.round();
+    if (step != null) _openDay(context, step);
+  }
+
+  Widget _buildLoadedMap(UserState userState, rive.RiveLoaded state) {
+    _syncMapViewModel(userState);
+    return rive.RiveWidget(
+      controller: state.controller,
+      fit: rive.Fit.contain,
+    );
+  }
 
   // Whether the map is currently zoomed into the ovary bundle - the only
   // marker that still zooms (individual days open DailyGameScreen instead).
@@ -92,6 +171,14 @@ class _JourneyMapWidgetState extends ConsumerState<JourneyMapWidget>
   @override
   void dispose() {
     _zoomController.dispose();
+    _cycleDayProperty?.dispose();
+    _ovulationDayProperty?.dispose();
+    _wommiClickedProperty?.removeListener(_onWommiClicked);
+    _stepClickedProperty?.removeListener(_onStepClicked);
+    _wommiClickedProperty?.dispose();
+    _stepClickedProperty?.dispose();
+    _clickedStepProperty?.dispose();
+    _mapFileLoader.dispose();
     super.dispose();
   }
 
@@ -234,32 +321,26 @@ class _JourneyMapWidgetState extends ConsumerState<JourneyMapWidget>
         tubeDayCount > 0 ? tubeFractions[tubeDayCount - 1] : _tubePoints.last;
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(20),
-      child: Center(
-        child: Container(
-          constraints: const BoxConstraints(maxWidth: 420),
-          child: AspectRatio(
-            aspectRatio: _bgWidth / _bgHeight,
-            child: ClipRect(
-              child: Stack(
-                children: [
-                  Positioned.fill(child: _buildZoomableMap(
-                    userState,
-                    currentDay,
-                    ovaryDayCount,
-                    tubeDayCount,
-                    tubeFractions,
-                    uterusStartDay,
-                    uterusEndDay,
-                    uterusAnchor,
-                  )),
-                  if (_zoomed) ...[
-                    _buildBackButton(),
-                    _buildReopenChip(),
-                  ],
-                ],
-              ),
-            ),
+      child: AspectRatio(
+        aspectRatio: _bgWidth / _bgHeight,
+        child: ClipRect(
+          child: Stack(
+            children: [
+              Positioned.fill(child: _buildZoomableMap(
+                userState,
+                currentDay,
+                ovaryDayCount,
+                tubeDayCount,
+                tubeFractions,
+                uterusStartDay,
+                uterusEndDay,
+                uterusAnchor,
+              )),
+              if (_zoomed) ...[
+                _buildBackButton(),
+                _buildReopenChip(),
+              ],
+            ],
           ),
         ),
       ),
@@ -282,39 +363,50 @@ class _JourneyMapWidgetState extends ConsumerState<JourneyMapWidget>
                   final mapStack = Stack(
                     children: [
                       Positioned.fill(
-                        child: Image.asset(
-                          'assets/images/womb_journey_bg.png',
-                          fit: BoxFit.contain,
+                        child: rive.RiveWidgetBuilder(
+                          fileLoader: _mapFileLoader,
+                          dataBind: rive.DataBind.auto(),
+                          onLoaded: _onMapVmLoaded,
+                          builder: (context, state) => switch (state) {
+                            rive.RiveLoaded() =>
+                              _buildLoadedMap(userState, state),
+                            rive.RiveLoading() => const SizedBox.shrink(),
+                            rive.RiveFailed() => const SizedBox.shrink(),
+                          },
                         ),
                       ),
-                      Positioned.fill(
-                        child: CustomPaint(
-                          painter: _TubePathPainter(points: _tubePoints),
+                      if (_showDrawnOverlay) ...[
+                        Positioned.fill(
+                          child: CustomPaint(
+                            painter: _TubePathPainter(points: _tubePoints),
+                          ),
                         ),
-                      ),
-                      _buildOvaryNode(
-                          context, userState, currentDay, ovaryDayCount, size),
-                      for (int i = 0; i < tubeStepSlots; i++)
-                        i < tubeDayCount
-                            ? _buildMapPosition(
-                                context,
-                                ovaryDayCount + 1 + i,
-                                currentDay,
-                                Offset(tubeFractions[i].dx * size.width,
-                                    tubeFractions[i].dy * size.height),
-                              )
-                            : _buildTubeStepPlaceholder(
-                                Offset(tubeFractions[i].dx * size.width,
-                                    tubeFractions[i].dy * size.height),
-                              ),
-                      for (int day = uterusStartDay; day <= uterusEndDay; day++)
-                        _buildMapPosition(
-                          context,
-                          day,
-                          currentDay,
-                          _getPositionForDay(
-                              day, uterusStartDay, uterusEndDay, uterusAnchor, size),
-                        ),
+                        _buildOvaryNode(context, userState, currentDay,
+                            ovaryDayCount, size),
+                        for (int i = 0; i < tubeStepSlots; i++)
+                          i < tubeDayCount
+                              ? _buildMapPosition(
+                                  context,
+                                  ovaryDayCount + 1 + i,
+                                  currentDay,
+                                  Offset(tubeFractions[i].dx * size.width,
+                                      tubeFractions[i].dy * size.height),
+                                )
+                              : _buildTubeStepPlaceholder(
+                                  Offset(tubeFractions[i].dx * size.width,
+                                      tubeFractions[i].dy * size.height),
+                                ),
+                        for (int day = uterusStartDay;
+                            day <= uterusEndDay;
+                            day++)
+                          _buildMapPosition(
+                            context,
+                            day,
+                            currentDay,
+                            _getPositionForDay(day, uterusStartDay,
+                                uterusEndDay, uterusAnchor, size),
+                          ),
+                      ],
                     ],
                   );
 
