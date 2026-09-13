@@ -21,6 +21,10 @@ class CycleDayInfoDialog extends ConsumerWidget {
   final bool isFuture;
   final VoidCallback onOpenMissions;
   final VoidCallback onPlayGame;
+  // Map-step popups open this as a bottom sheet (via showModalBottomSheet)
+  // instead of a centered Dialog, so they don't cover the map underneath -
+  // see JourneyMapWidget. DailyGameScreen still opens this the original way.
+  final bool asBottomSheet;
 
   const CycleDayInfoDialog({
     super.key,
@@ -32,6 +36,7 @@ class CycleDayInfoDialog extends ConsumerWidget {
     required this.isFuture,
     required this.onOpenMissions,
     required this.onPlayGame,
+    this.asBottomSheet = false,
   });
 
   /// The "period started / pregnancy detected" pair only makes sense once
@@ -62,22 +67,9 @@ class CycleDayInfoDialog extends ConsumerWidget {
         !isFuture &&
         _journeyEndToggleEligible(userState);
 
-    return Dialog(
-      backgroundColor: Colors.transparent,
-      child: Container(
-        constraints: const BoxConstraints(maxWidth: 360),
-        padding: const EdgeInsets.all(24),
-        decoration: BoxDecoration(
-          color: WommiColors.bg,
-          borderRadius: BorderRadius.circular(24),
-          border: Border.all(
-            color: WommiColors.line,
-            width: 2,
-          ),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
+    final content = Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
             // Day badge
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -310,8 +302,61 @@ class CycleDayInfoDialog extends ConsumerWidget {
                 gameAlreadyPlayed: userState.dailyGamePlayedDays.contains(day),
               ),
             ],
-          ],
+      ],
+    );
+
+    if (asBottomSheet) {
+      return SafeArea(
+        top: false,
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(24, 12, 24, 24),
+          decoration: BoxDecoration(
+            color: WommiColors.bg,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+            border: Border.all(
+              color: WommiColors.line,
+              width: 2,
+            ),
+          ),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _buildDragHandle(),
+                const SizedBox(height: 8),
+                content,
+              ],
+            ),
+          ),
         ),
+      );
+    }
+
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      child: Container(
+        constraints: const BoxConstraints(maxWidth: 360),
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          color: WommiColors.bg,
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(
+            color: WommiColors.line,
+            width: 2,
+          ),
+        ),
+        child: content,
+      ),
+    );
+  }
+
+  Widget _buildDragHandle() {
+    return Container(
+      width: 36,
+      height: 4,
+      decoration: BoxDecoration(
+        color: WommiColors.line,
+        borderRadius: BorderRadius.circular(100),
       ),
     );
   }
