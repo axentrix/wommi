@@ -12,11 +12,16 @@ import '../providers/repository_provider.dart';
 class OvaryPhaseDialog extends ConsumerWidget {
   final int dayCount;
   final ValueChanged<int> onDayTap;
+  // Opened from the map as a bottom sheet (via showModalBottomSheet) instead
+  // of a centered Dialog, so it doesn't cover the map underneath - see
+  // JourneyMapWidget._showOvaryPhase.
+  final bool asBottomSheet;
 
   const OvaryPhaseDialog({
     super.key,
     required this.dayCount,
     required this.onDayTap,
+    this.asBottomSheet = false,
   });
 
   @override
@@ -42,17 +47,9 @@ class OvaryPhaseDialog extends ConsumerWidget {
     final showOvulationToggle = userState.tracksMenstrualCycle &&
         (userState.ovulationDay == null || ovulationMarkedToday);
 
-    return Dialog(
-      backgroundColor: Colors.transparent,
-      child: Container(
-        constraints: const BoxConstraints(maxWidth: 400, maxHeight: 560),
-        decoration: BoxDecoration(
-          color: WommiColors.bg,
-          borderRadius: BorderRadius.circular(24),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
+    final content = Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
             Padding(
               padding: const EdgeInsets.fromLTRB(24, 24, 16, 12),
               child: Column(
@@ -177,7 +174,54 @@ class OvaryPhaseDialog extends ConsumerWidget {
                 ),
               ),
             ),
-          ],
+      ],
+    );
+
+    if (asBottomSheet) {
+      return SafeArea(
+        top: false,
+        child: Container(
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.of(context).size.height * 0.85,
+          ),
+          decoration: BoxDecoration(
+            color: WommiColors.bg,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const SizedBox(height: 10),
+              _buildDragHandle(),
+              Flexible(child: content),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      child: Container(
+        constraints: const BoxConstraints(maxWidth: 400, maxHeight: 560),
+        decoration: BoxDecoration(
+          color: WommiColors.bg,
+          borderRadius: BorderRadius.circular(24),
+        ),
+        child: content,
+      ),
+    );
+  }
+
+  Widget _buildDragHandle() {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 4),
+      child: Container(
+        width: 36,
+        height: 4,
+        decoration: BoxDecoration(
+          color: WommiColors.line,
+          borderRadius: BorderRadius.circular(100),
         ),
       ),
     );

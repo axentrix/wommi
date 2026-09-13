@@ -597,15 +597,31 @@ class _JourneyMapWidgetState extends ConsumerState<JourneyMapWidget>
     BuildContext context,
     int ovaryDayCount,
   ) {
-    return showDialog(
-      context: context,
-      builder: (context) => OvaryPhaseDialog(
+    return _showMapSheet(
+      context,
+      (context) => OvaryPhaseDialog(
         dayCount: ovaryDayCount,
+        asBottomSheet: true,
         onDayTap: (day) {
           Navigator.pop(context);
           _openDay(context, day);
         },
       ),
+    );
+  }
+
+  /// Popups opened from a map step (the ovary node or an individual day
+  /// marker) come up as a bottom sheet rather than a centered Dialog, so the
+  /// map stays visible behind them instead of being covered.
+  Future<T?> _showMapSheet<T>(
+    BuildContext context,
+    WidgetBuilder builder,
+  ) {
+    return showModalBottomSheet<T>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: builder,
     );
   }
 
@@ -628,15 +644,16 @@ class _JourneyMapWidgetState extends ConsumerState<JourneyMapWidget>
     final userState = ref.read(userStateProvider);
     final conceptionStatus = ref.read(onboardingProvider).conceptionStatus;
     final isCompleted = userState.completedDays.contains(day);
-    return showDialog(
-      context: context,
-      builder: (context) => CycleDayInfoDialog(
+    return _showMapSheet(
+      context,
+      (context) => CycleDayInfoDialog(
         day: day,
         conceptionStatus: conceptionStatus,
         isCompleted: isCompleted,
         isInProgress: !isCompleted && userState.inProgressDays.contains(day),
         isCurrent: day == userState.currentDay,
         isFuture: false,
+        asBottomSheet: true,
         onOpenMissions: () {
           Navigator.pop(context);
           Navigator.of(context).push(
@@ -655,15 +672,16 @@ class _JourneyMapWidgetState extends ConsumerState<JourneyMapWidget>
 
   Future<void> _showFutureDayInfo(BuildContext context, int day) {
     final conceptionStatus = ref.read(onboardingProvider).conceptionStatus;
-    return showDialog(
-      context: context,
-      builder: (context) => CycleDayInfoDialog(
+    return _showMapSheet(
+      context,
+      (context) => CycleDayInfoDialog(
         day: day,
         conceptionStatus: conceptionStatus,
         isCompleted: false,
         isInProgress: false,
         isCurrent: false,
         isFuture: true,
+        asBottomSheet: true,
         onOpenMissions: () {},
         onPlayGame: () {},
       ),
