@@ -128,14 +128,37 @@ class _JourneyMapWidgetState extends ConsumerState<JourneyMapWidget>
   void _onWommiClicked(bool clicked) {
     if (!clicked) return;
     _wommiClickedProperty?.value = false;
-    _openDay(context, ref.read(userStateProvider).currentDay);
+    final userState = ref.read(userStateProvider);
+    final currentDay = userState.currentDay;
+    if (_isComboDay(userState, currentDay)) {
+      _showOvaryPhase(context, _ovaryDayCount(userState));
+    } else {
+      _openDay(context, currentDay);
+    }
   }
 
   void _onStepClicked(bool clicked) {
     if (!clicked) return;
     _stepClickedProperty?.value = false;
     final step = _clickedStepProperty?.value.round();
+    // Individual step markers always open their own day's popup, even for a
+    // day that _isComboDay would treat as part of the combo grid when
+    // that's the character's *current* day - only tapping the character
+    // itself (see _onWommiClicked) opens the combo.
     if (step != null) _openDay(context, step);
+  }
+
+  /// Whether [day] should open the combo "grid of days" popup (see
+  /// OvaryPhaseDialog) instead of its own single-day popup, when tapping the
+  /// character on the map (_onWommiClicked). True for any day before
+  /// ovulation is marked - timing is unknown until then, same as the ovary
+  /// node's own days - and for the ovulation day itself plus its first 3
+  /// days after, since the tube's short trip through those days is still
+  /// too uncertain to treat one-at-a-time.
+  bool _isComboDay(UserState userState, int day) {
+    final ovulationDay = userState.ovulationDay;
+    if (ovulationDay == null) return true;
+    return day >= ovulationDay && day <= ovulationDay + 3;
   }
 
   Widget _buildLoadedMap(UserState userState, rive.RiveLoaded state) {
