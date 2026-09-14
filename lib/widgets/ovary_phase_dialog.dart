@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -29,13 +30,19 @@ class OvaryPhaseDialog extends ConsumerWidget {
     final userState = ref.watch(userStateProvider);
     final currentDay = userState.currentDay;
     // Reacts live to the toggle below instead of the count this dialog was
-    // opened with, so marking ovulation immediately shrinks the grid to
-    // match, no reopen needed. The marked day itself becomes day 1 of the
-    // tube phase (shown on the map, not here), so the ovary only covers up
-    // to the day before it - matches JourneyMapWidget._ovaryDayCount.
+    // opened with, so marking ovulation immediately reshapes the grid to
+    // match, no reopen needed. Once marked, the grid still grows 3 days past
+    // it - the tube's timing is short and uncertain enough early on that
+    // JourneyMapWidget keeps opening this same combo grid (instead of an
+    // individual day's popup) for the ovulation day itself and the 3 days
+    // after it; see JourneyMapWidget._isComboDay/_onWommiClicked. Before
+    // ovulation is marked at all, it grows with currentDay instead of
+    // stopping at the default 14 - tapping the character should always be
+    // able to show today's day as a chip here, however far the journey's
+    // gone without the toggle being used yet.
     final effectiveDayCount = (userState.ovulationDay != null
-            ? userState.ovulationDay! - 1
-            : dayCount)
+            ? userState.ovulationDay! + 3
+            : math.max(dayCount, currentDay))
         .clamp(1, 33);
 
     // Always offered until marked, regardless of when the journey started -
