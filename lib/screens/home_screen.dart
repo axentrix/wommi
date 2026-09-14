@@ -89,13 +89,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       // Avoid flashing broken "Day 0" content while the redirect above
       // (scheduled after the first frame) takes effect.
       return Scaffold(
-        backgroundColor: WommiColors.bg,
+        backgroundColor: WommiColors.riveBg,
         body: const Center(child: CircularProgressIndicator()),
       );
     }
 
     return Scaffold(
-      backgroundColor: WommiColors.bg,
+      backgroundColor: WommiColors.riveBg,
       body: SafeArea(
         child: Column(
           children: [
@@ -267,7 +267,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
           radius: 1.2,
           colors: [
             WommiColors.lilac.withOpacity(0.3),
-            WommiColors.bg,
+            WommiColors.riveBg,
           ],
         ),
       ),

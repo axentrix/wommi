@@ -7,6 +7,10 @@ class WommiColors {
   static const bgSoft = Color(0xFFF6F5FB);
   static const lilac = Color(0xFFEFEAFA);
 
+  // Matches the Rive journey map's own artboard background, so the home
+  // screen doesn't show a seam where the map's canvas meets the page.
+  static const riveBg = Color(0xFFD1F3F5);
+
   // Text colors
   static const ink = Color(0xFF1C1330);
   static const inkDim = Color(0xFF7A7189);

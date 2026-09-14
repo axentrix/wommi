@@ -141,11 +141,21 @@ class _JourneyMapWidgetState extends ConsumerState<JourneyMapWidget>
     if (!clicked) return;
     _stepClickedProperty?.value = false;
     final step = _clickedStepProperty?.value.round();
-    // Individual step markers always open their own day's popup, even for a
-    // day that _isComboDay would treat as part of the combo grid when
-    // that's the character's *current* day - only tapping the character
-    // itself (see _onWommiClicked) opens the combo.
-    if (step != null) _openDay(context, step);
+    if (step == null) return;
+    final userState = ref.read(userStateProvider);
+    // The very first step in the Rive scene is the collective ovary/
+    // follicular bundle standing in for every day before ovulation (days
+    // 1..ovaryDayCount) - it represents a range, not one specific day, so
+    // tapping it directly opens the same combo grid as tapping the
+    // character while it's parked there (see _onWommiClicked), regardless
+    // of which single day value the Rive scene happens to report for it.
+    // Any other step is a real, individually-plotted tube/uterus day, so
+    // it always opens its own popup directly.
+    if (step <= _ovaryDayCount(userState)) {
+      _showOvaryPhase(context, _ovaryDayCount(userState));
+    } else {
+      _openDay(context, step);
+    }
   }
 
   /// Whether [day] should open the combo "grid of days" popup (see
