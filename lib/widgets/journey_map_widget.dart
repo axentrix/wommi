@@ -162,22 +162,37 @@ class _JourneyMapWidgetState extends ConsumerState<JourneyMapWidget>
   /// OvaryPhaseDialog) instead of its own single-day popup, when tapping the
   /// character on the map (_onWommiClicked). True for any day before
   /// ovulation is marked - timing is unknown until then, same as the ovary
-  /// node's own days - and for the ovulation day itself plus its first 3
+  /// node's own days - and for the ovulation day itself plus its next 2
   /// days after, since the tube's short trip through those days is still
-  /// too uncertain to treat one-at-a-time.
+  /// too uncertain to treat one-at-a-time. Once the character is further
+  /// along than that, tapping her opens the single popup for whatever day
+  /// she's currently on.
   bool _isComboDay(UserState userState, int day) {
     final ovulationDay = userState.ovulationDay;
     if (ovulationDay == null) return true;
-    return day >= ovulationDay && day <= ovulationDay + 3;
+    return day >= ovulationDay && day <= ovulationDay + 2;
   }
 
   Widget _buildLoadedMap(UserState userState, rive.RiveLoaded state) {
     _syncMapViewModel(userState);
-    return rive.RiveWidget(
-      controller: state.controller,
-      fit: rive.Fit.contain,
+    return AnimatedScale(
+      scale: _mapZoomedIn ? _mapZoomInScale : 1.0,
+      duration: const Duration(milliseconds: 250),
+      curve: Curves.easeInOut,
+      child: rive.RiveWidget(
+        controller: state.controller,
+        fit: rive.Fit.contain,
+      ),
     );
   }
+
+  // A simple manual zoom toggle for the Rive canvas itself, independent of
+  // the ovary bundle's own zoom-and-dialog flow above - just a flat 25%
+  // magnification centered on the canvas, toggled by _buildZoomToggleButton.
+  static const double _mapZoomInScale = 1.25;
+  bool _mapZoomedIn = false;
+
+  void _toggleMapZoom() => setState(() => _mapZoomedIn = !_mapZoomedIn);
 
   // Whether the map is currently zoomed into the ovary bundle - the only
   // marker that still zooms (individual days open DailyGameScreen instead).
@@ -369,6 +384,7 @@ class _JourneyMapWidgetState extends ConsumerState<JourneyMapWidget>
                 uterusEndDay,
                 uterusAnchor,
               )),
+              _buildZoomToggleButton(),
               if (_zoomed) ...[
                 _buildBackButton(),
                 _buildReopenChip(),
@@ -481,6 +497,36 @@ class _JourneyMapWidgetState extends ConsumerState<JourneyMapWidget>
             ],
           ),
           child: Icon(Icons.arrow_back, size: 18, color: WommiColors.ink),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildZoomToggleButton() {
+    return Positioned(
+      top: 10,
+      right: 10,
+      child: GestureDetector(
+        onTap: _toggleMapZoom,
+        child: Container(
+          width: 34,
+          height: 34,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: Colors.white.withOpacity(0.92),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.18),
+                blurRadius: 6,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Icon(
+            _mapZoomedIn ? Icons.zoom_out : Icons.zoom_in,
+            size: 18,
+            color: WommiColors.ink,
+          ),
         ),
       ),
     );

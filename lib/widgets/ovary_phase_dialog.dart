@@ -31,17 +31,17 @@ class OvaryPhaseDialog extends ConsumerWidget {
     final currentDay = userState.currentDay;
     // Reacts live to the toggle below instead of the count this dialog was
     // opened with, so marking ovulation immediately reshapes the grid to
-    // match, no reopen needed. Once marked, the grid still grows 3 days past
+    // match, no reopen needed. Once marked, the grid still grows 2 days past
     // it - the tube's timing is short and uncertain enough early on that
     // JourneyMapWidget keeps opening this same combo grid (instead of an
-    // individual day's popup) for the ovulation day itself and the 3 days
+    // individual day's popup) for the ovulation day itself and the 2 days
     // after it; see JourneyMapWidget._isComboDay/_onWommiClicked. Before
     // ovulation is marked at all, it grows with currentDay instead of
     // stopping at the default 14 - tapping the character should always be
     // able to show today's day as a chip here, however far the journey's
     // gone without the toggle being used yet.
     final effectiveDayCount = (userState.ovulationDay != null
-            ? userState.ovulationDay! + 3
+            ? userState.ovulationDay! + 2
             : math.max(dayCount, currentDay))
         .clamp(1, 33);
 
