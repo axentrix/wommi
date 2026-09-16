@@ -120,9 +120,24 @@ class _JourneyMapWidgetState extends ConsumerState<JourneyMapWidget>
     _stepClickedProperty?.addListener(_onStepClicked);
   }
 
+  // Only ever writes a property when the value has actually changed. This
+  // widget rebuilds on *any* UserState change (gems, streak, completed
+  // days...), not just currentDay/ovulationDay, and _buildLoadedMap calls
+  // this on every one of those rebuilds - an unconditional write here was
+  // re-setting cycleDay/ovulationDay to their own unchanged value on every
+  // unrelated rebuild, which the "step" artboard's state machine picked up
+  // as a fresh input-changed event each time, causing it to flicker/re-fire
+  // continuously even though nothing about the day had changed.
   void _syncMapViewModel(UserState userState) {
-    _cycleDayProperty?.value = userState.currentDay.toDouble();
-    _ovulationDayProperty?.value = (userState.ovulationDay ?? 0).toDouble();
+    final cycleDay = userState.currentDay.toDouble();
+    if (_cycleDayProperty != null && _cycleDayProperty!.value != cycleDay) {
+      _cycleDayProperty!.value = cycleDay;
+    }
+    final ovulationDay = (userState.ovulationDay ?? 0).toDouble();
+    if (_ovulationDayProperty != null &&
+        _ovulationDayProperty!.value != ovulationDay) {
+      _ovulationDayProperty!.value = ovulationDay;
+    }
   }
 
   void _onWommiClicked(bool clicked) {
@@ -175,24 +190,70 @@ class _JourneyMapWidgetState extends ConsumerState<JourneyMapWidget>
 
   Widget _buildLoadedMap(UserState userState, rive.RiveLoaded state) {
     _syncMapViewModel(userState);
-    return AnimatedScale(
-      scale: _mapZoomedIn ? _mapZoomInScale : 1.0,
-      duration: const Duration(milliseconds: 250),
-      curve: Curves.easeInOut,
-      child: rive.RiveWidget(
-        controller: state.controller,
-        fit: rive.Fit.contain,
-      ),
+    return rive.RiveWidget(
+      controller: state.controller,
+      fit: rive.Fit.contain,
     );
   }
 
-  // A simple manual zoom toggle for the Rive canvas itself, independent of
-  // the ovary bundle's own zoom-and-dialog flow above - just a flat 25%
-  // magnification centered on the canvas, toggled by _buildZoomToggleButton.
-  static const double _mapZoomInScale = 1.25;
+  // A manual zoom toggle for the Rive canvas itself, independent of the
+  // ovary bundle's own zoom-and-dialog flow above - magnifies around
+  // wherever the character currently is (see _currentDayFraction) instead
+  // of the canvas's plain center, so she ends up more centered in view
+  // rather than zoomed-in-place whichever edge she happens to be near.
+  // Toggled by _buildZoomToggleButton, animated in _buildZoomedRive.
+  static const double _mapZoomInScale = 1.35;
   bool _mapZoomedIn = false;
 
   void _toggleMapZoom() => setState(() => _mapZoomedIn = !_mapZoomedIn);
+
+  /// The fractional (0..1) position of whichever day the character is
+  /// currently on - the ovary bundle, a real tube slot, or somewhere along
+  /// the uterus curve - used as the zoom's focal point.
+  Offset _currentDayFraction(
+    int currentDay,
+    int ovaryDayCount,
+    int tubeDayCount,
+    List<Offset> tubeFractions,
+    int uterusStartDay,
+    int uterusEndDay,
+    Offset uterusAnchor,
+  ) {
+    if (currentDay <= ovaryDayCount) return _tubePoints.first;
+    final tubeIndex = currentDay - ovaryDayCount - 1;
+    if (tubeIndex < tubeDayCount) return tubeFractions[tubeIndex];
+    return _getFractionForDay(
+        currentDay, uterusStartDay, uterusEndDay, uterusAnchor);
+  }
+
+  /// Wraps [child] (the Rive canvas) with the animated zoom-toggle
+  /// transform: scales up to [_mapZoomInScale] around [focalFraction]
+  /// (a 0..1 point within [size]) while also sliding that point toward the
+  /// canvas's center, so the zoomed-in character ends up more in the
+  /// middle of the view instead of pinned wherever she was before
+  /// zooming. Identity (no scale, no shift) when not zoomed.
+  Widget _buildZoomedRive(Widget child, Size size, Offset focalFraction) {
+    return TweenAnimationBuilder<double>(
+      tween: Tween(end: _mapZoomedIn ? 1.0 : 0.0),
+      duration: const Duration(milliseconds: 250),
+      curve: Curves.easeInOut,
+      builder: (context, t, child) {
+        final scale = 1.0 + (_mapZoomInScale - 1.0) * t;
+        final focalPx = Offset(
+          focalFraction.dx * size.width,
+          focalFraction.dy * size.height,
+        );
+        final center = Offset(size.width / 2, size.height / 2);
+        final displayedFocal = Offset.lerp(focalPx, center, t)!;
+        final translation = displayedFocal - focalPx * scale;
+        final matrix = Matrix4.identity()
+          ..translate(translation.dx, translation.dy)
+          ..scale(scale);
+        return Transform(transform: matrix, child: child);
+      },
+      child: child,
+    );
+  }
 
   // Whether the map is currently zoomed into the ovary bundle - the only
   // marker that still zooms (individual days open DailyGameScreen instead).
@@ -409,19 +470,32 @@ class _JourneyMapWidgetState extends ConsumerState<JourneyMapWidget>
     return LayoutBuilder(
                 builder: (context, constraints) {
                   final size = Size(constraints.maxWidth, constraints.maxHeight);
+                  final zoomFocalFraction = _currentDayFraction(
+                    currentDay,
+                    ovaryDayCount,
+                    tubeDayCount,
+                    tubeFractions,
+                    uterusStartDay,
+                    uterusEndDay,
+                    uterusAnchor,
+                  );
                   final mapStack = Stack(
                     children: [
                       Positioned.fill(
-                        child: rive.RiveWidgetBuilder(
-                          fileLoader: _mapFileLoader,
-                          dataBind: rive.DataBind.auto(),
-                          onLoaded: _onMapVmLoaded,
-                          builder: (context, state) => switch (state) {
-                            rive.RiveLoaded() =>
-                              _buildLoadedMap(userState, state),
-                            rive.RiveLoading() => const SizedBox.shrink(),
-                            rive.RiveFailed() => const SizedBox.shrink(),
-                          },
+                        child: _buildZoomedRive(
+                          rive.RiveWidgetBuilder(
+                            fileLoader: _mapFileLoader,
+                            dataBind: rive.DataBind.auto(),
+                            onLoaded: _onMapVmLoaded,
+                            builder: (context, state) => switch (state) {
+                              rive.RiveLoaded() =>
+                                _buildLoadedMap(userState, state),
+                              rive.RiveLoading() => const SizedBox.shrink(),
+                              rive.RiveFailed() => const SizedBox.shrink(),
+                            },
+                          ),
+                          size,
+                          zoomFocalFraction,
                         ),
                       ),
                       if (_showDrawnOverlay) ...[

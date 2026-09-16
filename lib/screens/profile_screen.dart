@@ -218,6 +218,65 @@ class ProfileScreen extends ConsumerWidget {
             ),
             if (userState.tracksMenstrualCycle) ...[
               const SizedBox(height: 12),
+              // Ovulation toggle - same idea as the one inside
+              // CycleDayInfoDialog/OvaryPhaseDialog (mark it as having
+              // happened on the current day, or undo it), just reachable
+              // from the profile instead of a day's own popup.
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  border: Border.all(
+                    color: WommiColors.line,
+                    width: 1.5,
+                  ),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Ovulation started',
+                            style: GoogleFonts.unbounded(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: WommiColors.ink,
+                            ),
+                          ),
+                          const SizedBox(height: 3),
+                          Text(
+                            userState.ovulationDay != null
+                                ? 'Marked on day ${userState.ovulationDay}. Tap to undo.'
+                                : 'Got a positive test or other sign today? Let us know.',
+                            style: GoogleFonts.inter(
+                              fontSize: 11,
+                              color: WommiColors.inkDim,
+                              height: 1.3,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Switch(
+                      value: userState.ovulationDay != null,
+                      activeColor: WommiColors.gold,
+                      onChanged: (value) {
+                        final newDay = value ? userState.currentDay : null;
+                        ref
+                            .read(userStateProvider.notifier)
+                            .markOvulationDay(newDay);
+                        ref.read(repositoryProvider).setOvulationDay(newDay);
+                      },
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
               _SettingCard(
                 title: 'Method of Conception',
                 subtitle: onboardingData.tryingMethods.isNotEmpty
