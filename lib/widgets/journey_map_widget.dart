@@ -29,7 +29,7 @@ class JourneyMapWidget extends ConsumerStatefulWidget {
 }
 
 class _JourneyMapWidgetState extends ConsumerState<JourneyMapWidget>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   // Matches the cropped background image's own pixel dimensions, so the
   // day path lines up with it at any screen size.
   static const double _bgWidth = 762;
@@ -201,11 +201,55 @@ class _JourneyMapWidgetState extends ConsumerState<JourneyMapWidget>
   // wherever the character currently is (see _currentDayFraction) instead
   // of the canvas's plain center, so she ends up more centered in view
   // rather than zoomed-in-place whichever edge she happens to be near.
-  // Toggled by _buildZoomToggleButton, animated in _buildZoomedRive.
+  // Toggled by _buildZoomToggleButton, animated via _mapTransformController
+  // in _buildInteractiveRive - InteractiveViewer (rather than a plain
+  // Transform) also gets panning in every direction "for free" once
+  // zoomed in, since there's then more of the canvas than fits in view.
   static const double _mapZoomInScale = 1.35;
   bool _mapZoomedIn = false;
+  final TransformationController _mapTransformController =
+      TransformationController();
+  late final AnimationController _mapZoomAnimController;
+  Matrix4 _mapZoomStartMatrix = Matrix4.identity();
+  Matrix4 _mapZoomEndMatrix = Matrix4.identity();
 
-  void _toggleMapZoom() => setState(() => _mapZoomedIn = !_mapZoomedIn);
+  // Captured on every build from the innermost LayoutBuilder (the only
+  // place the canvas's actual rendered size is known) so _toggleMapZoom -
+  // triggered from outside that scope, by the button in the outer Stack -
+  // can still compute where to center the zoom.
+  Size? _lastMapSize;
+  Offset _lastZoomFocalFraction = const Offset(0.5, 0.16);
+
+  void _toggleMapZoom() {
+    final size = _lastMapSize;
+    if (size == null) return;
+    setState(() => _mapZoomedIn = !_mapZoomedIn);
+    final target = _mapZoomedIn
+        ? _zoomedMapMatrix(size, _lastZoomFocalFraction)
+        : Matrix4.identity();
+    _mapZoomStartMatrix = _mapTransformController.value;
+    _mapZoomEndMatrix = target;
+    _mapZoomAnimController
+      ..reset()
+      ..forward();
+  }
+
+  /// The transform that scales up by [_mapZoomInScale] around
+  /// [focalFraction] (a 0..1 point within [size]) while also sliding that
+  /// point toward the canvas's center, so the zoomed-in character ends up
+  /// more in the middle of the view instead of pinned wherever she was
+  /// before zooming.
+  Matrix4 _zoomedMapMatrix(Size size, Offset focalFraction) {
+    final focalPx = Offset(
+      focalFraction.dx * size.width,
+      focalFraction.dy * size.height,
+    );
+    final center = Offset(size.width / 2, size.height / 2);
+    final translation = center - focalPx * _mapZoomInScale;
+    return Matrix4.identity()
+      ..translate(translation.dx, translation.dy)
+      ..scale(_mapZoomInScale);
+  }
 
   /// The fractional (0..1) position of whichever day the character is
   /// currently on - the ovary bundle, a real tube slot, or somewhere along
@@ -226,31 +270,21 @@ class _JourneyMapWidgetState extends ConsumerState<JourneyMapWidget>
         currentDay, uterusStartDay, uterusEndDay, uterusAnchor);
   }
 
-  /// Wraps [child] (the Rive canvas) with the animated zoom-toggle
-  /// transform: scales up to [_mapZoomInScale] around [focalFraction]
-  /// (a 0..1 point within [size]) while also sliding that point toward the
-  /// canvas's center, so the zoomed-in character ends up more in the
-  /// middle of the view instead of pinned wherever she was before
-  /// zooming. Identity (no scale, no shift) when not zoomed.
-  Widget _buildZoomedRive(Widget child, Size size, Offset focalFraction) {
-    return TweenAnimationBuilder<double>(
-      tween: Tween(end: _mapZoomedIn ? 1.0 : 0.0),
-      duration: const Duration(milliseconds: 250),
-      curve: Curves.easeInOut,
-      builder: (context, t, child) {
-        final scale = 1.0 + (_mapZoomInScale - 1.0) * t;
-        final focalPx = Offset(
-          focalFraction.dx * size.width,
-          focalFraction.dy * size.height,
-        );
-        final center = Offset(size.width / 2, size.height / 2);
-        final displayedFocal = Offset.lerp(focalPx, center, t)!;
-        final translation = displayedFocal - focalPx * scale;
-        final matrix = Matrix4.identity()
-          ..translate(translation.dx, translation.dy)
-          ..scale(scale);
-        return Transform(transform: matrix, child: child);
-      },
+  /// Wraps [child] (the Rive canvas) in an InteractiveViewer driven by
+  /// [_mapTransformController] - panning is always enabled, but only does
+  /// anything once zoomed in (at 1:1 scale the canvas exactly fills the
+  /// viewport, so there's nowhere to drag it to). Pinch-to-zoom is off:
+  /// the zoom level itself stays under _buildZoomToggleButton's control,
+  /// this only adds the ability to look around once zoomed.
+  Widget _buildInteractiveRive(Widget child, Size size, Offset focalFraction) {
+    _lastMapSize = size;
+    _lastZoomFocalFraction = focalFraction;
+    return InteractiveViewer(
+      transformationController: _mapTransformController,
+      panEnabled: true,
+      scaleEnabled: false,
+      minScale: 1.0,
+      maxScale: _mapZoomInScale,
       child: child,
     );
   }
@@ -275,11 +309,23 @@ class _JourneyMapWidgetState extends ConsumerState<JourneyMapWidget>
       curve: Curves.easeInOutCubic,
       reverseCurve: Curves.easeInOutCubic,
     );
+    _mapZoomAnimController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 250),
+    )..addListener(() {
+        final t = Curves.easeInOut.transform(_mapZoomAnimController.value);
+        _mapTransformController.value = Matrix4Tween(
+          begin: _mapZoomStartMatrix,
+          end: _mapZoomEndMatrix,
+        ).transform(t);
+      });
   }
 
   @override
   void dispose() {
     _zoomController.dispose();
+    _mapZoomAnimController.dispose();
+    _mapTransformController.dispose();
     _cycleDayProperty?.dispose();
     _ovulationDayProperty?.dispose();
     _wommiClickedProperty?.removeListener(_onWommiClicked);
@@ -505,7 +551,7 @@ class _JourneyMapWidgetState extends ConsumerState<JourneyMapWidget>
                   final mapStack = Stack(
                     children: [
                       Positioned.fill(
-                        child: _buildZoomedRive(
+                        child: _buildInteractiveRive(
                           rive.RiveWidgetBuilder(
                             fileLoader: _mapFileLoader,
                             dataBind: rive.DataBind.auto(),
