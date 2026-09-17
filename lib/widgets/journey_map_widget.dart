@@ -86,6 +86,16 @@ class _JourneyMapWidgetState extends ConsumerState<JourneyMapWidget>
   // owned by this widget for its whole lifetime.
   rive.ViewModelInstanceNumber? _cycleDayProperty;
   rive.ViewModelInstanceNumber? _ovulationDayProperty;
+  rive.ViewModelInstanceBoolean? _isOvulationProperty;
+
+  // Sent as ovulationDay whenever it isn't marked yet, instead of 0 - the
+  // Rive scene's own logic compares cycleDay against ovulationDay to decide
+  // whether the character has left the combo/ovary step, and 0 meant any
+  // cycleDay at all (even day 15+, well before ovulation is ever marked)
+  // read as "past ovulation", walking her onto individual tube steps on her
+  // own. A day far outside any real cycle keeps that comparison false until
+  // isOvulation is actually true.
+  static const double _noOvulationSentinel = 9999;
 
   // Click flags the Rive scene sets when the Wommi character or a step is
   // tapped inside the artboard itself - set back to false as soon as we've
@@ -100,10 +110,13 @@ class _JourneyMapWidgetState extends ConsumerState<JourneyMapWidget>
     if (vmi == null) return;
     _cycleDayProperty = vmi.number('cycleDay');
     _ovulationDayProperty = vmi.number('ovulationDay');
-    if (_cycleDayProperty == null || _ovulationDayProperty == null) {
+    _isOvulationProperty = vmi.boolean('isOvulation');
+    if (_cycleDayProperty == null ||
+        _ovulationDayProperty == null ||
+        _isOvulationProperty == null) {
       debugPrint(
-          '[JourneyMap] WommiVM is missing cycleDay and/or ovulationDay '
-          'number properties.');
+          '[JourneyMap] WommiVM is missing cycleDay, ovulationDay and/or '
+          'isOvulation properties.');
     }
     _syncMapViewModel(ref.read(userStateProvider));
 
@@ -133,10 +146,15 @@ class _JourneyMapWidgetState extends ConsumerState<JourneyMapWidget>
     if (_cycleDayProperty != null && _cycleDayProperty!.value != cycleDay) {
       _cycleDayProperty!.value = cycleDay;
     }
-    final ovulationDay = (userState.ovulationDay ?? 0).toDouble();
+    final marked = userState.ovulationDay != null;
+    final ovulationDay =
+        marked ? userState.ovulationDay!.toDouble() : _noOvulationSentinel;
     if (_ovulationDayProperty != null &&
         _ovulationDayProperty!.value != ovulationDay) {
       _ovulationDayProperty!.value = ovulationDay;
+    }
+    if (_isOvulationProperty != null && _isOvulationProperty!.value != marked) {
+      _isOvulationProperty!.value = marked;
     }
   }
 
@@ -328,6 +346,7 @@ class _JourneyMapWidgetState extends ConsumerState<JourneyMapWidget>
     _mapTransformController.dispose();
     _cycleDayProperty?.dispose();
     _ovulationDayProperty?.dispose();
+    _isOvulationProperty?.dispose();
     _wommiClickedProperty?.removeListener(_onWommiClicked);
     _stepClickedProperty?.removeListener(_onStepClicked);
     _wommiClickedProperty?.dispose();
