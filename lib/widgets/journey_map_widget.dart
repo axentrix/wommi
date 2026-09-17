@@ -29,7 +29,7 @@ class JourneyMapWidget extends ConsumerStatefulWidget {
 }
 
 class _JourneyMapWidgetState extends ConsumerState<JourneyMapWidget>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   // Matches the cropped background image's own pixel dimensions, so the
   // day path lines up with it at any screen size.
   static const double _bgWidth = 762;
@@ -86,6 +86,16 @@ class _JourneyMapWidgetState extends ConsumerState<JourneyMapWidget>
   // owned by this widget for its whole lifetime.
   rive.ViewModelInstanceNumber? _cycleDayProperty;
   rive.ViewModelInstanceNumber? _ovulationDayProperty;
+  rive.ViewModelInstanceBoolean? _isOvulationProperty;
+
+  // Sent as ovulationDay whenever it isn't marked yet, instead of 0 - the
+  // Rive scene's own logic compares cycleDay against ovulationDay to decide
+  // whether the character has left the combo/ovary step, and 0 meant any
+  // cycleDay at all (even day 15+, well before ovulation is ever marked)
+  // read as "past ovulation", walking her onto individual tube steps on her
+  // own. A day far outside any real cycle keeps that comparison false until
+  // isOvulation is actually true.
+  static const double _noOvulationSentinel = 9999;
 
   // Click flags the Rive scene sets when the Wommi character or a step is
   // tapped inside the artboard itself - set back to false as soon as we've
@@ -100,10 +110,13 @@ class _JourneyMapWidgetState extends ConsumerState<JourneyMapWidget>
     if (vmi == null) return;
     _cycleDayProperty = vmi.number('cycleDay');
     _ovulationDayProperty = vmi.number('ovulationDay');
-    if (_cycleDayProperty == null || _ovulationDayProperty == null) {
+    _isOvulationProperty = vmi.boolean('isOvulation');
+    if (_cycleDayProperty == null ||
+        _ovulationDayProperty == null ||
+        _isOvulationProperty == null) {
       debugPrint(
-          '[JourneyMap] WommiVM is missing cycleDay and/or ovulationDay '
-          'number properties.');
+          '[JourneyMap] WommiVM is missing cycleDay, ovulationDay and/or '
+          'isOvulation properties.');
     }
     _syncMapViewModel(ref.read(userStateProvider));
 
@@ -133,10 +146,15 @@ class _JourneyMapWidgetState extends ConsumerState<JourneyMapWidget>
     if (_cycleDayProperty != null && _cycleDayProperty!.value != cycleDay) {
       _cycleDayProperty!.value = cycleDay;
     }
-    final ovulationDay = (userState.ovulationDay ?? 0).toDouble();
+    final marked = userState.ovulationDay != null;
+    final ovulationDay =
+        marked ? userState.ovulationDay!.toDouble() : _noOvulationSentinel;
     if (_ovulationDayProperty != null &&
         _ovulationDayProperty!.value != ovulationDay) {
       _ovulationDayProperty!.value = ovulationDay;
+    }
+    if (_isOvulationProperty != null && _isOvulationProperty!.value != marked) {
+      _isOvulationProperty!.value = marked;
     }
   }
 
@@ -201,11 +219,55 @@ class _JourneyMapWidgetState extends ConsumerState<JourneyMapWidget>
   // wherever the character currently is (see _currentDayFraction) instead
   // of the canvas's plain center, so she ends up more centered in view
   // rather than zoomed-in-place whichever edge she happens to be near.
-  // Toggled by _buildZoomToggleButton, animated in _buildZoomedRive.
+  // Toggled by _buildZoomToggleButton, animated via _mapTransformController
+  // in _buildInteractiveRive - InteractiveViewer (rather than a plain
+  // Transform) also gets panning in every direction "for free" once
+  // zoomed in, since there's then more of the canvas than fits in view.
   static const double _mapZoomInScale = 1.35;
   bool _mapZoomedIn = false;
+  final TransformationController _mapTransformController =
+      TransformationController();
+  late final AnimationController _mapZoomAnimController;
+  Matrix4 _mapZoomStartMatrix = Matrix4.identity();
+  Matrix4 _mapZoomEndMatrix = Matrix4.identity();
 
-  void _toggleMapZoom() => setState(() => _mapZoomedIn = !_mapZoomedIn);
+  // Captured on every build from the innermost LayoutBuilder (the only
+  // place the canvas's actual rendered size is known) so _toggleMapZoom -
+  // triggered from outside that scope, by the button in the outer Stack -
+  // can still compute where to center the zoom.
+  Size? _lastMapSize;
+  Offset _lastZoomFocalFraction = const Offset(0.5, 0.16);
+
+  void _toggleMapZoom() {
+    final size = _lastMapSize;
+    if (size == null) return;
+    setState(() => _mapZoomedIn = !_mapZoomedIn);
+    final target = _mapZoomedIn
+        ? _zoomedMapMatrix(size, _lastZoomFocalFraction)
+        : Matrix4.identity();
+    _mapZoomStartMatrix = _mapTransformController.value;
+    _mapZoomEndMatrix = target;
+    _mapZoomAnimController
+      ..reset()
+      ..forward();
+  }
+
+  /// The transform that scales up by [_mapZoomInScale] around
+  /// [focalFraction] (a 0..1 point within [size]) while also sliding that
+  /// point toward the canvas's center, so the zoomed-in character ends up
+  /// more in the middle of the view instead of pinned wherever she was
+  /// before zooming.
+  Matrix4 _zoomedMapMatrix(Size size, Offset focalFraction) {
+    final focalPx = Offset(
+      focalFraction.dx * size.width,
+      focalFraction.dy * size.height,
+    );
+    final center = Offset(size.width / 2, size.height / 2);
+    final translation = center - focalPx * _mapZoomInScale;
+    return Matrix4.identity()
+      ..translate(translation.dx, translation.dy)
+      ..scale(_mapZoomInScale);
+  }
 
   /// The fractional (0..1) position of whichever day the character is
   /// currently on - the ovary bundle, a real tube slot, or somewhere along
@@ -226,31 +288,21 @@ class _JourneyMapWidgetState extends ConsumerState<JourneyMapWidget>
         currentDay, uterusStartDay, uterusEndDay, uterusAnchor);
   }
 
-  /// Wraps [child] (the Rive canvas) with the animated zoom-toggle
-  /// transform: scales up to [_mapZoomInScale] around [focalFraction]
-  /// (a 0..1 point within [size]) while also sliding that point toward the
-  /// canvas's center, so the zoomed-in character ends up more in the
-  /// middle of the view instead of pinned wherever she was before
-  /// zooming. Identity (no scale, no shift) when not zoomed.
-  Widget _buildZoomedRive(Widget child, Size size, Offset focalFraction) {
-    return TweenAnimationBuilder<double>(
-      tween: Tween(end: _mapZoomedIn ? 1.0 : 0.0),
-      duration: const Duration(milliseconds: 250),
-      curve: Curves.easeInOut,
-      builder: (context, t, child) {
-        final scale = 1.0 + (_mapZoomInScale - 1.0) * t;
-        final focalPx = Offset(
-          focalFraction.dx * size.width,
-          focalFraction.dy * size.height,
-        );
-        final center = Offset(size.width / 2, size.height / 2);
-        final displayedFocal = Offset.lerp(focalPx, center, t)!;
-        final translation = displayedFocal - focalPx * scale;
-        final matrix = Matrix4.identity()
-          ..translate(translation.dx, translation.dy)
-          ..scale(scale);
-        return Transform(transform: matrix, child: child);
-      },
+  /// Wraps [child] (the Rive canvas) in an InteractiveViewer driven by
+  /// [_mapTransformController] - panning is always enabled, but only does
+  /// anything once zoomed in (at 1:1 scale the canvas exactly fills the
+  /// viewport, so there's nowhere to drag it to). Pinch-to-zoom is off:
+  /// the zoom level itself stays under _buildZoomToggleButton's control,
+  /// this only adds the ability to look around once zoomed.
+  Widget _buildInteractiveRive(Widget child, Size size, Offset focalFraction) {
+    _lastMapSize = size;
+    _lastZoomFocalFraction = focalFraction;
+    return InteractiveViewer(
+      transformationController: _mapTransformController,
+      panEnabled: true,
+      scaleEnabled: false,
+      minScale: 1.0,
+      maxScale: _mapZoomInScale,
       child: child,
     );
   }
@@ -275,13 +327,26 @@ class _JourneyMapWidgetState extends ConsumerState<JourneyMapWidget>
       curve: Curves.easeInOutCubic,
       reverseCurve: Curves.easeInOutCubic,
     );
+    _mapZoomAnimController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 250),
+    )..addListener(() {
+        final t = Curves.easeInOut.transform(_mapZoomAnimController.value);
+        _mapTransformController.value = Matrix4Tween(
+          begin: _mapZoomStartMatrix,
+          end: _mapZoomEndMatrix,
+        ).transform(t);
+      });
   }
 
   @override
   void dispose() {
     _zoomController.dispose();
+    _mapZoomAnimController.dispose();
+    _mapTransformController.dispose();
     _cycleDayProperty?.dispose();
     _ovulationDayProperty?.dispose();
+    _isOvulationProperty?.dispose();
     _wommiClickedProperty?.removeListener(_onWommiClicked);
     _stepClickedProperty?.removeListener(_onStepClicked);
     _wommiClickedProperty?.dispose();
@@ -429,31 +494,54 @@ class _JourneyMapWidgetState extends ConsumerState<JourneyMapWidget>
     final uterusAnchor =
         tubeDayCount > 0 ? tubeFractions[tubeDayCount - 1] : _tubePoints.last;
 
-    return SingleChildScrollView(
-      child: AspectRatio(
-        aspectRatio: _bgWidth / _bgHeight,
-        child: ClipRect(
-          child: Stack(
-            children: [
-              Positioned.fill(child: _buildZoomableMap(
-                userState,
-                currentDay,
-                ovaryDayCount,
-                tubeDayCount,
-                tubeFractions,
-                uterusStartDay,
-                uterusEndDay,
-                uterusAnchor,
-              )),
-              _buildZoomToggleButton(),
-              if (_zoomed) ...[
-                _buildBackButton(),
-                _buildReopenChip(),
-              ],
-            ],
+    // LayoutBuilder (not AspectRatio) so the map can never render taller
+    // than the space it's actually given: AspectRatio alone derives height
+    // purely from the available width, with no upper bound, which let the
+    // map occasionally exceed its Expanded region's real height and
+    // overflow the page - the browser then scrolls the whole canvas,
+    // hiding the header above the fold on reload even though the map and
+    // bottom nav still look fine. Picking whichever of width/height is
+    // tighter guarantees that can't happen, while still filling the full
+    // available width when height isn't the binding constraint (the usual
+    // case on a phone-portrait screen) - see also home_screen.dart's
+    // Expanded wrapping this widget.
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final ratio = _bgWidth / _bgHeight;
+        var width = constraints.maxWidth;
+        var height = width / ratio;
+        if (constraints.hasBoundedHeight && height > constraints.maxHeight) {
+          height = constraints.maxHeight;
+          width = height * ratio;
+        }
+        return Center(
+          child: SizedBox(
+            width: width,
+            height: height,
+            child: ClipRect(
+              child: Stack(
+                children: [
+                  Positioned.fill(child: _buildZoomableMap(
+                    userState,
+                    currentDay,
+                    ovaryDayCount,
+                    tubeDayCount,
+                    tubeFractions,
+                    uterusStartDay,
+                    uterusEndDay,
+                    uterusAnchor,
+                  )),
+                  _buildZoomToggleButton(),
+                  if (_zoomed) ...[
+                    _buildBackButton(),
+                    _buildReopenChip(),
+                  ],
+                ],
+              ),
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 
@@ -482,7 +570,7 @@ class _JourneyMapWidgetState extends ConsumerState<JourneyMapWidget>
                   final mapStack = Stack(
                     children: [
                       Positioned.fill(
-                        child: _buildZoomedRive(
+                        child: _buildInteractiveRive(
                           rive.RiveWidgetBuilder(
                             fileLoader: _mapFileLoader,
                             dataBind: rive.DataBind.auto(),

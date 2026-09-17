@@ -3,11 +3,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../theme.dart';
 import '../models/charm_rarity.dart';
+import '../models/onboarding_state.dart';
+import '../models/user_state.dart';
 import '../providers/user_state_provider.dart';
 import '../providers/repository_provider.dart';
 import '../widgets/bottom_navigation_bar.dart';
 import '../widgets/journey_map_widget.dart';
 import '../widgets/gem_balance_popup.dart';
+import '../widgets/ovulation_check_dialog.dart';
 import 'challenges_screen.dart';
 import 'achievements_screen.dart';
 import 'profile_screen.dart';
@@ -48,8 +51,52 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       if (!userState.hasProfile) {
         print('[Home] No profile yet - redirecting to profile step');
         Navigator.of(context).pushReplacementNamed('/onboarding-profile');
+        return;
       }
+
+      _checkOvulationStatus(userState);
     });
+  }
+
+  /// Once-per-launch ovulation check-in. A man or undefined-gender journey
+  /// isn't expected to mark ovulation itself, so once day 14 (the default
+  /// ovary-phase boundary - see JourneyMapWidget.defaultOvaryDayCount)
+  /// arrives without it, just default it there instead of nagging for input
+  /// that was never going to come. A woman or "other" journey is expected
+  /// to mark it, so instead of guessing, this asks - but only once day 18
+  /// arrives, well past the point a real ovulation would typically have
+  /// happened, so it isn't asked prematurely.
+  void _checkOvulationStatus(UserState userState) {
+    if (userState.ovulationDay != null) return;
+
+    final gender = userState.genderIdentity;
+    final defaultsSilently = gender == GenderIdentity.man || gender == null;
+
+    if (defaultsSilently) {
+      if (userState.currentDay >= 14) {
+        ref.read(userStateProvider.notifier).markOvulationDay(14);
+        ref.read(repositoryProvider).setOvulationDay(14);
+      }
+      return;
+    }
+
+    if (userState.currentDay < 18) return;
+    showDialog(
+      context: context,
+      builder: (context) => OvulationCheckDialog(
+        currentDay: userState.currentDay,
+        onStillWaiting: () => Navigator.pop(context),
+        onItStarted: () {
+          Navigator.pop(context);
+          ref
+              .read(userStateProvider.notifier)
+              .markOvulationDay(userState.currentDay);
+          ref
+              .read(repositoryProvider)
+              .setOvulationDay(userState.currentDay);
+        },
+      ),
+    );
   }
 
   @override
