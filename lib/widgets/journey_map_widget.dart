@@ -88,14 +88,11 @@ class _JourneyMapWidgetState extends ConsumerState<JourneyMapWidget>
   rive.ViewModelInstanceNumber? _ovulationDayProperty;
   rive.ViewModelInstanceBoolean? _isOvulationProperty;
 
-  // Sent as ovulationDay whenever it isn't marked yet, instead of 0 - the
-  // Rive scene's own logic compares cycleDay against ovulationDay to decide
-  // whether the character has left the combo/ovary step, and 0 meant any
-  // cycleDay at all (even day 15+, well before ovulation is ever marked)
-  // read as "past ovulation", walking her onto individual tube steps on her
-  // own. A day far outside any real cycle keeps that comparison false until
-  // isOvulation is actually true.
-  static const double _noOvulationSentinel = 9999;
+  // Highest step number the Rive scene should ever legitimately report via
+  // clickedStep - a sanity ceiling on what _onStepClicked will act on. Well
+  // above ovaryDayCount + tubeStepSlots + maxUterusDayCount's largest
+  // realistic combination.
+  static const int _maxPlausibleStep = 60;
 
   // Click flags the Rive scene sets when the Wommi character or a step is
   // tapped inside the artboard itself - set back to false as soon as we've
@@ -146,10 +143,22 @@ class _JourneyMapWidgetState extends ConsumerState<JourneyMapWidget>
     if (_cycleDayProperty != null && _cycleDayProperty!.value != cycleDay) {
       _cycleDayProperty!.value = cycleDay;
     }
+    // Sent as ovulationDay whenever it isn't marked yet, instead of a fixed
+    // placeholder like 0 or some huge sentinel - the Rive scene's own logic
+    // both compares cycleDay against ovulationDay to decide whether the
+    // character has left the combo/ovary step, AND appears to use
+    // ovulationDay in its own arithmetic to label individual tube/uterus
+    // steps (clickedStep) - a fixed far-out-of-range sentinel like 9999
+    // corrupted THAT math into equally far-out-of-range day numbers (e.g.
+    // "Day 10010") once a step was tapped. currentDay keeps
+    // cycleDay > ovulationDay false (same effect the old sentinel was for)
+    // while staying a plausible day number for whatever else the scene
+    // does with it - isOvulation is still the authoritative "is this
+    // real" signal.
     final ovulationDayValue = userState.effectiveOvulationDay;
     final marked = ovulationDayValue != null;
     final ovulationDay =
-        marked ? ovulationDayValue.toDouble() : _noOvulationSentinel;
+        marked ? ovulationDayValue.toDouble() : userState.currentDay.toDouble();
     if (_ovulationDayProperty != null &&
         _ovulationDayProperty!.value != ovulationDay) {
       _ovulationDayProperty!.value = ovulationDay;
@@ -175,7 +184,11 @@ class _JourneyMapWidgetState extends ConsumerState<JourneyMapWidget>
     if (!clicked) return;
     _stepClickedProperty?.value = false;
     final step = _clickedStepProperty?.value.round();
-    if (step == null) return;
+    // Guards against whatever the Rive scene's own internal arithmetic
+    // might occasionally produce (e.g. an out-of-range ovulationDay value
+    // feeding into its own step-labeling math) - a step number this far
+    // outside any real day range isn't a real day to open a popup for.
+    if (step == null || step < 1 || step > _maxPlausibleStep) return;
     final userState = ref.read(userStateProvider);
     // The very first step in the Rive scene is the collective ovary/
     // follicular bundle standing in for every day before ovulation (days

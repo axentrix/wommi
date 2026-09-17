@@ -103574,7 +103574,7 @@ if(n!=null&&n.gjo()!==o){n=p.Q
 n.sjo(o)
 n.b.un()}s=a.gxg()
 r=s!=null
-q=r?s:9999
+q=r?s:o
 n=p.as
 if(n!=null&&n.gjo()!==q){n=p.as
 n.sjo(q)
@@ -103599,7 +103599,7 @@ s=o.ay
 if(s!=null){s.sjo(!1)
 s.b.un()}s=o.ch
 r=s==null?null:B.d.aD(s.gjo())
-if(r==null)return
+if(r==null||r<1||r>60)return
 q=o.gcF().aq(0,$.c_(),t.E)
 s=o.AU(q)
 p=o.c
