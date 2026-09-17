@@ -209,9 +209,12 @@ class _JourneyMapWidgetState extends ConsumerState<JourneyMapWidget>
 
   Widget _buildLoadedMap(UserState userState, rive.RiveLoaded state) {
     _syncMapViewModel(userState);
+    // Cover (not contain) so the canvas fills its box completely - see
+    // build()'s comment on why that box is no longer aspect-locked to the
+    // artwork. Contain would letterbox with empty bars instead of cropping.
     return rive.RiveWidget(
       controller: state.controller,
-      fit: rive.Fit.contain,
+      fit: rive.Fit.cover,
     );
   }
 
@@ -495,54 +498,36 @@ class _JourneyMapWidgetState extends ConsumerState<JourneyMapWidget>
     final uterusAnchor =
         tubeDayCount > 0 ? tubeFractions[tubeDayCount - 1] : _tubePoints.last;
 
-    // LayoutBuilder (not AspectRatio) so the map can never render taller
-    // than the space it's actually given: AspectRatio alone derives height
-    // purely from the available width, with no upper bound, which let the
-    // map occasionally exceed its Expanded region's real height and
-    // overflow the page - the browser then scrolls the whole canvas,
-    // hiding the header above the fold on reload even though the map and
-    // bottom nav still look fine. Picking whichever of width/height is
-    // tighter guarantees that can't happen, while still filling the full
-    // available width when height isn't the binding constraint (the usual
-    // case on a phone-portrait screen) - see also home_screen.dart's
-    // Expanded wrapping this widget.
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final ratio = _bgWidth / _bgHeight;
-        var width = constraints.maxWidth;
-        var height = width / ratio;
-        if (constraints.hasBoundedHeight && height > constraints.maxHeight) {
-          height = constraints.maxHeight;
-          width = height * ratio;
-        }
-        return Center(
-          child: SizedBox(
-            width: width,
-            height: height,
-            child: ClipRect(
-              child: Stack(
-                children: [
-                  Positioned.fill(child: _buildZoomableMap(
-                    userState,
-                    currentDay,
-                    ovaryDayCount,
-                    tubeDayCount,
-                    tubeFractions,
-                    uterusStartDay,
-                    uterusEndDay,
-                    uterusAnchor,
-                  )),
-                  _buildZoomToggleButton(),
-                  if (_zoomed) ...[
-                    _buildBackButton(),
-                    _buildReopenChip(),
-                  ],
-                ],
-              ),
-            ),
-          ),
-        );
-      },
+    // Fills the entire Expanded region it's given edge to edge, in both
+    // dimensions - no aspect-locked SizedBox around it. That can never
+    // overflow (it only ever takes the exact size its parent hands it,
+    // never derives one that might exceed it), and it means the canvas no
+    // longer letterboxes with empty background bars above/below when its
+    // own aspect ratio doesn't match the available space, the way pinning
+    // it to the background art's 762:849 ratio did. RiveWidget's own
+    // Fit.cover (see _buildLoadedMap) fills this box completely by
+    // cropping the sides instead of leaving them empty - safe now that the
+    // artwork is vector-based rather than a raster image.
+    return ClipRect(
+      child: Stack(
+        children: [
+          Positioned.fill(child: _buildZoomableMap(
+            userState,
+            currentDay,
+            ovaryDayCount,
+            tubeDayCount,
+            tubeFractions,
+            uterusStartDay,
+            uterusEndDay,
+            uterusAnchor,
+          )),
+          _buildZoomToggleButton(),
+          if (_zoomed) ...[
+            _buildBackButton(),
+            _buildReopenChip(),
+          ],
+        ],
+      ),
     );
   }
 

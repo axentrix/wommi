@@ -145,7 +145,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     }
 
     return Scaffold(
-      backgroundColor: WommiColors.riveBg,
+      // The header has no background color of its own - it's meant to show
+      // whatever's behind it, which is this. On Home that's the Rive map's
+      // own background (riveBg) so the two blend with no seam; every other
+      // tab is plain white instead, since none of them sit on that canvas.
+      backgroundColor: _currentIndex == 0 ? WommiColors.riveBg : WommiColors.bg,
       body: SafeArea(
         child: Column(
           children: [
