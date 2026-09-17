@@ -40,6 +40,36 @@
     See: https://drift.simonbinder.eu/web/
   -->
   <script src="sql-wasm.js"></script>
+
+  <!--
+    Mobile Safari has been reported to size the page against a transient/
+    stale viewport height right after a reload triggered from the URL bar UI
+    - its chrome (address bar, etc.) hasn't finished settling into its real
+    on-screen size yet at that instant. Flutter's web engine measures the
+    window once at startup to size its canvas, and if that first
+    measurement is off, nothing corrects it afterward since the *actual*
+    viewport never fires a real resize once its chrome does settle - the
+    symptom is the header rendering outside the visible viewport (not
+    reachable by scrolling) on every reload, consistently. Nudging a few
+    synthetic resize events shortly after load forces Flutter's own resize
+    handling to re-measure against the settled viewport; harmless/a no-op
+    if the first measurement was already correct.
+  -->
+  <script>
+    (function () {
+      function nudgeResize() {
+        window.dispatchEvent(new Event('resize'));
+      }
+      window.addEventListener('load', function () {
+        [100, 400, 900].forEach(function (delay) {
+          setTimeout(nudgeResize, delay);
+        });
+      });
+      if (window.visualViewport) {
+        window.visualViewport.addEventListener('resize', nudgeResize);
+      }
+    })();
+  </script>
 </head>
 <body>
   <!--
