@@ -146,9 +146,10 @@ class _JourneyMapWidgetState extends ConsumerState<JourneyMapWidget>
     if (_cycleDayProperty != null && _cycleDayProperty!.value != cycleDay) {
       _cycleDayProperty!.value = cycleDay;
     }
-    final marked = userState.ovulationDay != null;
+    final ovulationDayValue = userState.effectiveOvulationDay;
+    final marked = ovulationDayValue != null;
     final ovulationDay =
-        marked ? userState.ovulationDay!.toDouble() : _noOvulationSentinel;
+        marked ? ovulationDayValue.toDouble() : _noOvulationSentinel;
     if (_ovulationDayProperty != null &&
         _ovulationDayProperty!.value != ovulationDay) {
       _ovulationDayProperty!.value = ovulationDay;
@@ -201,7 +202,7 @@ class _JourneyMapWidgetState extends ConsumerState<JourneyMapWidget>
   /// along than that, tapping her opens the single popup for whatever day
   /// she's currently on.
   bool _isComboDay(UserState userState, int day) {
-    final ovulationDay = userState.ovulationDay;
+    final ovulationDay = userState.effectiveOvulationDay;
     if (ovulationDay == null) return true;
     return day >= ovulationDay && day <= ovulationDay + 2;
   }
@@ -393,7 +394,7 @@ class _JourneyMapWidgetState extends ConsumerState<JourneyMapWidget>
   // toggle is always available (see CycleDayInfoDialog) as the way to
   // close it off, on any day, regardless of when the journey started.
   int _ovaryDayCount(UserState userState) {
-    final ovulationDay = userState.ovulationDay;
+    final ovulationDay = userState.effectiveOvulationDay;
     final base = ovulationDay != null ? ovulationDay - 1 : defaultOvaryDayCount;
     return base.clamp(1, 33);
   }
@@ -423,7 +424,7 @@ class _JourneyMapWidgetState extends ConsumerState<JourneyMapWidget>
   static int _tubeDayCount(UserState userState, int ovaryDayCount) {
     final capacity =
         math.min(tubeStepSlots, 35 - ovaryDayCount).clamp(0, tubeStepSlots);
-    if (userState.ovulationDay != null) return capacity;
+    if (userState.effectiveOvulationDay != null) return capacity;
 
     final daysPastOvary = userState.currentDay - ovaryDayCount;
     if (daysPastOvary <= 0) return 0;

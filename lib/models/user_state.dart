@@ -58,6 +58,18 @@ class UserState {
 
   bool get hasProfile => name != null && email != null;
 
+  /// [ovulationDay] as marked, unless it's ahead of [currentDay] - a
+  /// future-dated mark can't be real yet (see markOvulationDay's callers,
+  /// which only ever mark the day it's toggled on), so anything that reacts
+  /// to "has ovulation been marked" treats it exactly like unmarked until
+  /// currentDay actually catches up to it, rather than treating the
+  /// journey as already past a day it hasn't reached.
+  int? get effectiveOvulationDay {
+    final day = ovulationDay;
+    if (day == null || day > currentDay) return null;
+    return day;
+  }
+
   /// Whether cycle/ovulation tracking applies to this journey at all -
   /// false for a man or someone who identifies otherwise, whose journey
   /// just tracks a day count with none of that.
