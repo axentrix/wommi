@@ -429,31 +429,54 @@ class _JourneyMapWidgetState extends ConsumerState<JourneyMapWidget>
     final uterusAnchor =
         tubeDayCount > 0 ? tubeFractions[tubeDayCount - 1] : _tubePoints.last;
 
-    return SingleChildScrollView(
-      child: AspectRatio(
-        aspectRatio: _bgWidth / _bgHeight,
-        child: ClipRect(
-          child: Stack(
-            children: [
-              Positioned.fill(child: _buildZoomableMap(
-                userState,
-                currentDay,
-                ovaryDayCount,
-                tubeDayCount,
-                tubeFractions,
-                uterusStartDay,
-                uterusEndDay,
-                uterusAnchor,
-              )),
-              _buildZoomToggleButton(),
-              if (_zoomed) ...[
-                _buildBackButton(),
-                _buildReopenChip(),
-              ],
-            ],
+    // LayoutBuilder (not AspectRatio) so the map can never render taller
+    // than the space it's actually given: AspectRatio alone derives height
+    // purely from the available width, with no upper bound, which let the
+    // map occasionally exceed its Expanded region's real height and
+    // overflow the page - the browser then scrolls the whole canvas,
+    // hiding the header above the fold on reload even though the map and
+    // bottom nav still look fine. Picking whichever of width/height is
+    // tighter guarantees that can't happen, while still filling the full
+    // available width when height isn't the binding constraint (the usual
+    // case on a phone-portrait screen) - see also home_screen.dart's
+    // Expanded wrapping this widget.
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final ratio = _bgWidth / _bgHeight;
+        var width = constraints.maxWidth;
+        var height = width / ratio;
+        if (constraints.hasBoundedHeight && height > constraints.maxHeight) {
+          height = constraints.maxHeight;
+          width = height * ratio;
+        }
+        return Center(
+          child: SizedBox(
+            width: width,
+            height: height,
+            child: ClipRect(
+              child: Stack(
+                children: [
+                  Positioned.fill(child: _buildZoomableMap(
+                    userState,
+                    currentDay,
+                    ovaryDayCount,
+                    tubeDayCount,
+                    tubeFractions,
+                    uterusStartDay,
+                    uterusEndDay,
+                    uterusAnchor,
+                  )),
+                  _buildZoomToggleButton(),
+                  if (_zoomed) ...[
+                    _buildBackButton(),
+                    _buildReopenChip(),
+                  ],
+                ],
+              ),
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 
