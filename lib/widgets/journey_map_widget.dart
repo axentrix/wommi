@@ -88,14 +88,11 @@ class _JourneyMapWidgetState extends ConsumerState<JourneyMapWidget>
   rive.ViewModelInstanceNumber? _ovulationDayProperty;
   rive.ViewModelInstanceBoolean? _isOvulationProperty;
 
-  // Sent as ovulationDay whenever it isn't marked yet, instead of 0 - the
-  // Rive scene's own logic compares cycleDay against ovulationDay to decide
-  // whether the character has left the combo/ovary step, and 0 meant any
-  // cycleDay at all (even day 15+, well before ovulation is ever marked)
-  // read as "past ovulation", walking her onto individual tube steps on her
-  // own. A day far outside any real cycle keeps that comparison false until
-  // isOvulation is actually true.
-  static const double _noOvulationSentinel = 9999;
+  // Highest step number the Rive scene should ever legitimately report via
+  // clickedStep - a sanity ceiling on what _onStepClicked will act on. Well
+  // above ovaryDayCount + tubeStepSlots + maxUterusDayCount's largest
+  // realistic combination.
+  static const int _maxPlausibleStep = 60;
 
   // Click flags the Rive scene sets when the Wommi character or a step is
   // tapped inside the artboard itself - set back to false as soon as we've
@@ -146,9 +143,22 @@ class _JourneyMapWidgetState extends ConsumerState<JourneyMapWidget>
     if (_cycleDayProperty != null && _cycleDayProperty!.value != cycleDay) {
       _cycleDayProperty!.value = cycleDay;
     }
-    final marked = userState.ovulationDay != null;
+    // Sent as ovulationDay whenever it isn't marked yet, instead of a fixed
+    // placeholder like 0 or some huge sentinel - the Rive scene's own logic
+    // both compares cycleDay against ovulationDay to decide whether the
+    // character has left the combo/ovary step, AND appears to use
+    // ovulationDay in its own arithmetic to label individual tube/uterus
+    // steps (clickedStep) - a fixed far-out-of-range sentinel like 9999
+    // corrupted THAT math into equally far-out-of-range day numbers (e.g.
+    // "Day 10010") once a step was tapped. currentDay keeps
+    // cycleDay > ovulationDay false (same effect the old sentinel was for)
+    // while staying a plausible day number for whatever else the scene
+    // does with it - isOvulation is still the authoritative "is this
+    // real" signal.
+    final ovulationDayValue = userState.effectiveOvulationDay;
+    final marked = ovulationDayValue != null;
     final ovulationDay =
-        marked ? userState.ovulationDay!.toDouble() : _noOvulationSentinel;
+        marked ? ovulationDayValue.toDouble() : userState.currentDay.toDouble();
     if (_ovulationDayProperty != null &&
         _ovulationDayProperty!.value != ovulationDay) {
       _ovulationDayProperty!.value = ovulationDay;
@@ -174,7 +184,11 @@ class _JourneyMapWidgetState extends ConsumerState<JourneyMapWidget>
     if (!clicked) return;
     _stepClickedProperty?.value = false;
     final step = _clickedStepProperty?.value.round();
-    if (step == null) return;
+    // Guards against whatever the Rive scene's own internal arithmetic
+    // might occasionally produce (e.g. an out-of-range ovulationDay value
+    // feeding into its own step-labeling math) - a step number this far
+    // outside any real day range isn't a real day to open a popup for.
+    if (step == null || step < 1 || step > _maxPlausibleStep) return;
     final userState = ref.read(userStateProvider);
     // The very first step in the Rive scene is the collective ovary/
     // follicular bundle standing in for every day before ovulation (days
@@ -201,16 +215,19 @@ class _JourneyMapWidgetState extends ConsumerState<JourneyMapWidget>
   /// along than that, tapping her opens the single popup for whatever day
   /// she's currently on.
   bool _isComboDay(UserState userState, int day) {
-    final ovulationDay = userState.ovulationDay;
+    final ovulationDay = userState.effectiveOvulationDay;
     if (ovulationDay == null) return true;
     return day >= ovulationDay && day <= ovulationDay + 2;
   }
 
   Widget _buildLoadedMap(UserState userState, rive.RiveLoaded state) {
     _syncMapViewModel(userState);
+    // Cover (not contain) so the canvas fills its box completely - see
+    // build()'s comment on why that box is no longer aspect-locked to the
+    // artwork. Contain would letterbox with empty bars instead of cropping.
     return rive.RiveWidget(
       controller: state.controller,
-      fit: rive.Fit.contain,
+      fit: rive.Fit.cover,
     );
   }
 
@@ -393,7 +410,7 @@ class _JourneyMapWidgetState extends ConsumerState<JourneyMapWidget>
   // toggle is always available (see CycleDayInfoDialog) as the way to
   // close it off, on any day, regardless of when the journey started.
   int _ovaryDayCount(UserState userState) {
-    final ovulationDay = userState.ovulationDay;
+    final ovulationDay = userState.effectiveOvulationDay;
     final base = ovulationDay != null ? ovulationDay - 1 : defaultOvaryDayCount;
     return base.clamp(1, 33);
   }
@@ -423,7 +440,7 @@ class _JourneyMapWidgetState extends ConsumerState<JourneyMapWidget>
   static int _tubeDayCount(UserState userState, int ovaryDayCount) {
     final capacity =
         math.min(tubeStepSlots, 35 - ovaryDayCount).clamp(0, tubeStepSlots);
-    if (userState.ovulationDay != null) return capacity;
+    if (userState.effectiveOvulationDay != null) return capacity;
 
     final daysPastOvary = userState.currentDay - ovaryDayCount;
     if (daysPastOvary <= 0) return 0;
@@ -494,54 +511,36 @@ class _JourneyMapWidgetState extends ConsumerState<JourneyMapWidget>
     final uterusAnchor =
         tubeDayCount > 0 ? tubeFractions[tubeDayCount - 1] : _tubePoints.last;
 
-    // LayoutBuilder (not AspectRatio) so the map can never render taller
-    // than the space it's actually given: AspectRatio alone derives height
-    // purely from the available width, with no upper bound, which let the
-    // map occasionally exceed its Expanded region's real height and
-    // overflow the page - the browser then scrolls the whole canvas,
-    // hiding the header above the fold on reload even though the map and
-    // bottom nav still look fine. Picking whichever of width/height is
-    // tighter guarantees that can't happen, while still filling the full
-    // available width when height isn't the binding constraint (the usual
-    // case on a phone-portrait screen) - see also home_screen.dart's
-    // Expanded wrapping this widget.
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final ratio = _bgWidth / _bgHeight;
-        var width = constraints.maxWidth;
-        var height = width / ratio;
-        if (constraints.hasBoundedHeight && height > constraints.maxHeight) {
-          height = constraints.maxHeight;
-          width = height * ratio;
-        }
-        return Center(
-          child: SizedBox(
-            width: width,
-            height: height,
-            child: ClipRect(
-              child: Stack(
-                children: [
-                  Positioned.fill(child: _buildZoomableMap(
-                    userState,
-                    currentDay,
-                    ovaryDayCount,
-                    tubeDayCount,
-                    tubeFractions,
-                    uterusStartDay,
-                    uterusEndDay,
-                    uterusAnchor,
-                  )),
-                  _buildZoomToggleButton(),
-                  if (_zoomed) ...[
-                    _buildBackButton(),
-                    _buildReopenChip(),
-                  ],
-                ],
-              ),
-            ),
-          ),
-        );
-      },
+    // Fills the entire Expanded region it's given edge to edge, in both
+    // dimensions - no aspect-locked SizedBox around it. That can never
+    // overflow (it only ever takes the exact size its parent hands it,
+    // never derives one that might exceed it), and it means the canvas no
+    // longer letterboxes with empty background bars above/below when its
+    // own aspect ratio doesn't match the available space, the way pinning
+    // it to the background art's 762:849 ratio did. RiveWidget's own
+    // Fit.cover (see _buildLoadedMap) fills this box completely by
+    // cropping the sides instead of leaving them empty - safe now that the
+    // artwork is vector-based rather than a raster image.
+    return ClipRect(
+      child: Stack(
+        children: [
+          Positioned.fill(child: _buildZoomableMap(
+            userState,
+            currentDay,
+            ovaryDayCount,
+            tubeDayCount,
+            tubeFractions,
+            uterusStartDay,
+            uterusEndDay,
+            uterusAnchor,
+          )),
+          _buildZoomToggleButton(),
+          if (_zoomed) ...[
+            _buildBackButton(),
+            _buildReopenChip(),
+          ],
+        ],
+      ),
     );
   }
 

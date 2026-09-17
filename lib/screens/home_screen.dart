@@ -67,7 +67,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   /// arrives, well past the point a real ovulation would typically have
   /// happened, so it isn't asked prematurely.
   void _checkOvulationStatus(UserState userState) {
-    if (userState.ovulationDay != null) return;
+    // A future-dated mark (ahead of currentDay) isn't real yet - treated as
+    // unmarked here too, so a bad value from somewhere else still gets
+    // caught by this same check-in instead of silently blocking it forever.
+    if (userState.effectiveOvulationDay != null) return;
 
     final gender = userState.genderIdentity;
     final defaultsSilently = gender == GenderIdentity.man || gender == null;
@@ -142,7 +145,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     }
 
     return Scaffold(
-      backgroundColor: WommiColors.riveBg,
+      // The header has no background color of its own - it's meant to show
+      // whatever's behind it, which is this. On Home that's the Rive map's
+      // own background (riveBg) so the two blend with no seam; every other
+      // tab is plain white instead, since none of them sit on that canvas.
+      backgroundColor: _currentIndex == 0 ? WommiColors.riveBg : WommiColors.bg,
       body: SafeArea(
         child: Column(
           children: [
