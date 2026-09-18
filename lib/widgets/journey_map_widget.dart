@@ -86,7 +86,7 @@ class _JourneyMapWidgetState extends ConsumerState<JourneyMapWidget>
   // owned by this widget for its whole lifetime.
   rive.ViewModelInstanceNumber? _cycleDayProperty;
   rive.ViewModelInstanceNumber? _ovulationDayProperty;
-  rive.ViewModelInstanceBoolean? _isOvulationProperty;
+  rive.ViewModelInstanceBoolean? _ovulationStartedProperty;
 
   // Highest step number the Rive scene should ever legitimately report via
   // clickedStep - a sanity ceiling on what _onStepClicked will act on. Well
@@ -107,13 +107,13 @@ class _JourneyMapWidgetState extends ConsumerState<JourneyMapWidget>
     if (vmi == null) return;
     _cycleDayProperty = vmi.number('cycleDay');
     _ovulationDayProperty = vmi.number('ovulationDay');
-    _isOvulationProperty = vmi.boolean('isOvulation');
+    _ovulationStartedProperty = vmi.boolean('ovulationStarted');
     if (_cycleDayProperty == null ||
         _ovulationDayProperty == null ||
-        _isOvulationProperty == null) {
+        _ovulationStartedProperty == null) {
       debugPrint(
           '[JourneyMap] WommiVM is missing cycleDay, ovulationDay and/or '
-          'isOvulation properties.');
+          'ovulationStarted properties.');
     }
     _syncMapViewModel(ref.read(userStateProvider));
 
@@ -143,28 +143,23 @@ class _JourneyMapWidgetState extends ConsumerState<JourneyMapWidget>
     if (_cycleDayProperty != null && _cycleDayProperty!.value != cycleDay) {
       _cycleDayProperty!.value = cycleDay;
     }
-    // Sent as ovulationDay whenever it isn't marked yet, instead of a fixed
-    // placeholder like 0 or some huge sentinel - the Rive scene's own logic
-    // both compares cycleDay against ovulationDay to decide whether the
-    // character has left the combo/ovary step, AND appears to use
-    // ovulationDay in its own arithmetic to label individual tube/uterus
-    // steps (clickedStep) - a fixed far-out-of-range sentinel like 9999
-    // corrupted THAT math into equally far-out-of-range day numbers (e.g.
-    // "Day 10010") once a step was tapped. currentDay keeps
-    // cycleDay > ovulationDay false (same effect the old sentinel was for)
-    // while staying a plausible day number for whatever else the scene
-    // does with it - isOvulation is still the authoritative "is this
-    // real" signal.
+    // ovulationStarted is the authoritative "is this real" signal for the
+    // Rive scene's own branching - the updated wommi.riv export is meant to
+    // ignore ovulationDay's value entirely while it's false, so this just
+    // sends the plain default of 0 until the user actually marks the day
+    // ovulation started (at which point it becomes that real day, via
+    // effectiveOvulationDay - see UserState for why a future-dated mark
+    // doesn't count as real yet either).
     final ovulationDayValue = userState.effectiveOvulationDay;
-    final marked = ovulationDayValue != null;
-    final ovulationDay =
-        marked ? ovulationDayValue.toDouble() : userState.currentDay.toDouble();
+    final started = ovulationDayValue != null;
+    final ovulationDay = (ovulationDayValue ?? 0).toDouble();
     if (_ovulationDayProperty != null &&
         _ovulationDayProperty!.value != ovulationDay) {
       _ovulationDayProperty!.value = ovulationDay;
     }
-    if (_isOvulationProperty != null && _isOvulationProperty!.value != marked) {
-      _isOvulationProperty!.value = marked;
+    if (_ovulationStartedProperty != null &&
+        _ovulationStartedProperty!.value != started) {
+      _ovulationStartedProperty!.value = started;
     }
   }
 
@@ -363,7 +358,7 @@ class _JourneyMapWidgetState extends ConsumerState<JourneyMapWidget>
     _mapTransformController.dispose();
     _cycleDayProperty?.dispose();
     _ovulationDayProperty?.dispose();
-    _isOvulationProperty?.dispose();
+    _ovulationStartedProperty?.dispose();
     _wommiClickedProperty?.removeListener(_onWommiClicked);
     _stepClickedProperty?.removeListener(_onStepClicked);
     _wommiClickedProperty?.dispose();

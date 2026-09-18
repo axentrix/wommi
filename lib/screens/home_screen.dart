@@ -58,14 +58,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     });
   }
 
-  /// Once-per-launch ovulation check-in. A man or undefined-gender journey
-  /// isn't expected to mark ovulation itself, so once day 14 (the default
-  /// ovary-phase boundary - see JourneyMapWidget.defaultOvaryDayCount)
+  /// Once-per-launch ovulation check-in. A man or "other" journey doesn't
+  /// track its own menstrual cycle at all (see UserState.tracksMenstrualCycle)
+  /// and isn't expected to mark ovulation itself, so once day 14 (the
+  /// default ovary-phase boundary - see JourneyMapWidget.defaultOvaryDayCount)
   /// arrives without it, just default it there instead of nagging for input
-  /// that was never going to come. A woman or "other" journey is expected
-  /// to mark it, so instead of guessing, this asks - but only once day 18
-  /// arrives, well past the point a real ovulation would typically have
-  /// happened, so it isn't asked prematurely.
+  /// that was never going to come - the toggle to change it to a different
+  /// day (or undo it) is still available everywhere it always was, this
+  /// just picks a starting value instead of leaving it unmarked forever. A
+  /// woman or undefined-gender journey is expected to mark it, so instead
+  /// of guessing, this asks - but only once day 18 arrives, well past the
+  /// point a real ovulation would typically have happened, so it isn't
+  /// asked prematurely.
   void _checkOvulationStatus(UserState userState) {
     // A future-dated mark (ahead of currentDay) isn't real yet - treated as
     // unmarked here too, so a bad value from somewhere else still gets
@@ -73,7 +77,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     if (userState.effectiveOvulationDay != null) return;
 
     final gender = userState.genderIdentity;
-    final defaultsSilently = gender == GenderIdentity.man || gender == null;
+    final defaultsSilently =
+        gender == GenderIdentity.man || gender == GenderIdentity.other;
 
     if (defaultsSilently) {
       if (userState.currentDay >= 14) {
