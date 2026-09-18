@@ -216,13 +216,17 @@ class ProfileScreen extends ConsumerWidget {
                   : 'Currently on day ${userState.currentDay}',
               onTap: () => _showEditCycleDay(context),
             ),
-            if (userState.tracksMenstrualCycle) ...[
-              const SizedBox(height: 12),
-              // Ovulation toggle - same idea as the one inside
-              // CycleDayInfoDialog/OvaryPhaseDialog (mark it as having
-              // happened on the current day, or undo it), just reachable
-              // from the profile instead of a day's own popup.
-              Container(
+            const SizedBox(height: 12),
+            // Ovulation toggle - same idea as the one inside
+            // CycleDayInfoDialog/OvaryPhaseDialog (mark it as having
+            // happened on the current day, or undo it), just reachable
+            // from the profile instead of a day's own popup. Always
+            // available regardless of tracksMenstrualCycle - a man or
+            // "other" journey gets ovulation defaulted to day 14
+            // automatically (see HomeScreen._checkOvulationStatus), but
+            // this is still how they'd change that to a different day, or
+            // undo it.
+            Container(
                 padding:
                     const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                 decoration: BoxDecoration(
@@ -276,6 +280,7 @@ class ProfileScreen extends ConsumerWidget {
                   ],
                 ),
               ),
+            if (userState.tracksMenstrualCycle) ...[
               const SizedBox(height: 12),
               _SettingCard(
                 title: 'Method of Conception',

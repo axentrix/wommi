@@ -57,10 +57,11 @@ class CycleDayInfoDialog extends ConsumerWidget {
     // started on any cycle day, so there's no "too late to ask" cutoff;
     // this toggle is the only way to close off the ovary phase (see
     // JourneyMapWidget._ovaryDayCount), so it must never become unreachable.
-    // None of this applies to a journey that isn't tracking a menstrual
-    // cycle in the first place (see UserState.tracksMenstrualCycle).
-    final showOvulationToggle = userState.tracksMenstrualCycle &&
-        !isFuture &&
+    // Offered regardless of gender - a man or "other" journey gets this
+    // defaulted to day 14 automatically once it arrives (see
+    // HomeScreen._checkOvulationStatus), but that's just a starting value,
+    // not a reason to hide the way to change it.
+    final showOvulationToggle = !isFuture &&
         (userState.ovulationDay == null || userState.ovulationDay == day);
     final ovulationMarkedHere = userState.ovulationDay == day;
     final showJourneyEndToggles = userState.tracksMenstrualCycle &&

@@ -45,14 +45,16 @@ class OvaryPhaseDialog extends ConsumerWidget {
             : math.max(dayCount, currentDay))
         .clamp(1, 33);
 
-    // Always offered until marked, regardless of when the journey started -
-    // this toggle is the only way to close off the ovary phase, so it must
-    // never become unreachable (see JourneyMapWidget._ovaryDayCount). Not
-    // offered at all for a journey that isn't tracking a menstrual cycle
-    // (see UserState.tracksMenstrualCycle) - it just keeps growing instead.
+    // Always offered until marked, regardless of when the journey started or
+    // what gender the journey is - this toggle is the only way to close off
+    // the ovary phase, so it must never become unreachable (see
+    // JourneyMapWidget._ovaryDayCount). A man or "other" journey gets this
+    // defaulted to day 14 automatically once it arrives (see
+    // HomeScreen._checkOvulationStatus), but that's just a starting value -
+    // this is still how they'd change it to a different day, or undo it.
     final ovulationMarkedToday = userState.ovulationDay == currentDay;
-    final showOvulationToggle = userState.tracksMenstrualCycle &&
-        (userState.ovulationDay == null || ovulationMarkedToday);
+    final showOvulationToggle =
+        userState.ovulationDay == null || ovulationMarkedToday;
 
     final content = Column(
       mainAxisSize: MainAxisSize.min,
