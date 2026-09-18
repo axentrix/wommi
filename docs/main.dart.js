@@ -103573,8 +103573,9 @@ XQ(a){var s,r,q,p=this,o=a.b,n=p.Q
 if(n!=null&&n.gjo()!==o){n=p.Q
 n.sjo(o)
 n.b.un()}s=a.gxg()
-r=s!=null
-q=r?s:14
+n=s==null
+r=!n
+q=n?0:s
 n=p.as
 if(n!=null&&n.gjo()!==q){n=p.as
 n.sjo(q)

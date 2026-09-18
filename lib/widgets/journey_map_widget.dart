@@ -143,22 +143,16 @@ class _JourneyMapWidgetState extends ConsumerState<JourneyMapWidget>
     if (_cycleDayProperty != null && _cycleDayProperty!.value != cycleDay) {
       _cycleDayProperty!.value = cycleDay;
     }
-    // Sent as ovulationDay whenever it isn't marked yet, instead of 0, a
-    // huge sentinel, or currentDay - all three turned out to feed the Rive
-    // scene's own step-labeling arithmetic (not just its cycleDay-vs-
-    // ovulationDay comparison) into wrong/nonsensical results (days 15+
-    // reading as already ovulated with 0; "Day 10010" popups with 9999;
-    // ~22 total days with currentDay itself). defaultOvaryDayCount is
-    // exactly what the ovary/combo bundle (days 1..14) already assumes as
-    // its own default boundary while unmarked, so it's the one value that
-    // keeps every day's math internally consistent instead of drifting
-    // with currentDay or exploding out of range. ovulationStarted is the
-    // authoritative "is this real" signal for the scene's own branching -
-    // ovulationDay's value shouldn't matter at all when it's false.
+    // ovulationStarted is the authoritative "is this real" signal for the
+    // Rive scene's own branching - the updated wommi.riv export is meant to
+    // ignore ovulationDay's value entirely while it's false, so this just
+    // sends the plain default of 0 until the user actually marks the day
+    // ovulation started (at which point it becomes that real day, via
+    // effectiveOvulationDay - see UserState for why a future-dated mark
+    // doesn't count as real yet either).
     final ovulationDayValue = userState.effectiveOvulationDay;
     final started = ovulationDayValue != null;
-    final ovulationDay = (started ? ovulationDayValue : defaultOvaryDayCount)
-        .toDouble();
+    final ovulationDay = (ovulationDayValue ?? 0).toDouble();
     if (_ovulationDayProperty != null &&
         _ovulationDayProperty!.value != ovulationDay) {
       _ovulationDayProperty!.value = ovulationDay;
