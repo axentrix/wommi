@@ -103556,9 +103556,9 @@ alZ(a){var s,r=this,q=a.c
 if(q==null)return
 r.Q=q.NJ(0,"cycleDay")
 r.as=q.NJ(0,"ovulationDay")
-s=q.KR("isOvulation")
+s=q.KR("ovulationStarted")
 r.at=s
-if(r.Q==null||r.as==null||s==null)A.a7i().$1("[JourneyMap] WommiVM is missing cycleDay, ovulationDay and/or isOvulation properties.")
+if(r.Q==null||r.as==null||s==null)A.a7i().$1("[JourneyMap] WommiVM is missing cycleDay, ovulationDay and/or ovulationStarted properties.")
 r.XQ(r.gcF().aq(0,$.c_(),t.E))
 r.ax=q.KR("wommiClicked")
 r.ay=q.KR("stepClicked")
@@ -103574,7 +103574,7 @@ if(n!=null&&n.gjo()!==o){n=p.Q
 n.sjo(o)
 n.b.un()}s=a.gxg()
 r=s!=null
-q=r?s:o
+q=r?s:14
 n=p.as
 if(n!=null&&n.gjo()!==q){n=p.as
 n.sjo(q)
