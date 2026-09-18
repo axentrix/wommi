@@ -268,14 +268,22 @@ class _JourneyMapWidgetState extends ConsumerState<JourneyMapWidget>
   /// [focalFraction] (a 0..1 point within [size]) while also sliding that
   /// point toward the canvas's center, so the zoomed-in character ends up
   /// more in the middle of the view instead of pinned wherever she was
-  /// before zooming.
+  /// before zooming. Clamped so the scaled canvas always fully covers
+  /// [size] - centering a focal point near an edge (like the ovary bundle,
+  /// close to the map's left side) can otherwise ask for a translation that
+  /// pulls the canvas's far edge in past the viewport's own edge, leaving a
+  /// gap of bare background showing on the opposite side instead of map.
   Matrix4 _zoomedMapMatrix(Size size, Offset focalFraction) {
     final focalPx = Offset(
       focalFraction.dx * size.width,
       focalFraction.dy * size.height,
     );
     final center = Offset(size.width / 2, size.height / 2);
-    final translation = center - focalPx * _mapZoomInScale;
+    final rawTranslation = center - focalPx * _mapZoomInScale;
+    final translation = Offset(
+      rawTranslation.dx.clamp(size.width * (1 - _mapZoomInScale), 0.0),
+      rawTranslation.dy.clamp(size.height * (1 - _mapZoomInScale), 0.0),
+    );
     return Matrix4.identity()
       ..translate(translation.dx, translation.dy)
       ..scale(_mapZoomInScale);
