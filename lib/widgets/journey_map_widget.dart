@@ -845,19 +845,35 @@ class _JourneyMapWidgetState extends ConsumerState<JourneyMapWidget>
     );
   }
 
+  // Guards against opening a second sheet on top of one that's already
+  // showing - tapping the character while she's sitting right at/on the
+  // ovary bundle's own position can fire both wommiClicked and stepClicked
+  // from the Rive scene for the same single tap, each independently trying
+  // to open the combo grid, which stacked two identical sheets on top of
+  // each other. Reset once the open sheet's Future completes (dismissed by
+  // any means - "Not now", tap-outside, swipe-down, or Navigator.pop from
+  // one of its own buttons).
+  bool _mapSheetOpen = false;
+
   /// Popups opened from a map step (the ovary node or an individual day
   /// marker) come up as a bottom sheet rather than a centered Dialog, so the
   /// map stays visible behind them instead of being covered.
   Future<T?> _showMapSheet<T>(
     BuildContext context,
     WidgetBuilder builder,
-  ) {
-    return showModalBottomSheet<T>(
-      context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder: builder,
-    );
+  ) async {
+    if (_mapSheetOpen) return null;
+    _mapSheetOpen = true;
+    try {
+      return await showModalBottomSheet<T>(
+        context: context,
+        backgroundColor: Colors.transparent,
+        isScrollControlled: true,
+        builder: builder,
+      );
+    } finally {
+      _mapSheetOpen = false;
+    }
   }
 
   /// Opens [day]'s info popup on top of the map - for a future day it's
