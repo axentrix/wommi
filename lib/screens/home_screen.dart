@@ -149,28 +149,37 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       );
     }
 
+    final header = _buildHeader(
+      userState.currentDay,
+      userState.gemBalance,
+      userState.streakDays,
+      userState.tracksMenstrualCycle,
+    );
+
     return Scaffold(
-      // The header has no background color of its own - it's meant to show
-      // whatever's behind it, which is this. On Home that's the Rive map's
-      // own background (riveBg) so the two blend with no seam; every other
-      // tab is plain white instead, since none of them sit on that canvas.
+      // Only matters where something doesn't fully cover it - on Home the
+      // map (see below) fills the whole SafeArea itself, on every other tab
+      // this is what actually shows through the header's own transparent
+      // background.
       backgroundColor: _currentIndex == 0 ? WommiColors.riveBg : WommiColors.bg,
       body: SafeArea(
-        child: Column(
-          children: [
-            // Header
-            _buildHeader(
-              userState.currentDay,
-              userState.gemBalance,
-              userState.streakDays,
-              userState.tracksMenstrualCycle,
-            ),
-            // Main content area
-            Expanded(
-              child: _buildContent(),
-            ),
-          ],
-        ),
+        child: _currentIndex == 0
+            // On Home the header floats over the map instead of sitting in
+            // its own space above it - it has no background color of its
+            // own, so the map's artwork shows through behind it instead of
+            // a flat color seam where the two used to meet.
+            ? Stack(
+                children: [
+                  Positioned.fill(child: _buildContent()),
+                  Positioned(top: 0, left: 0, right: 0, child: header),
+                ],
+              )
+            : Column(
+                children: [
+                  header,
+                  Expanded(child: _buildContent()),
+                ],
+              ),
       ),
       bottomNavigationBar: WommiBottomNavigationBar(
         currentIndex: _currentIndex,
