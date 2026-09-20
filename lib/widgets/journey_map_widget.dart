@@ -217,12 +217,18 @@ class _JourneyMapWidgetState extends ConsumerState<JourneyMapWidget>
 
   Widget _buildLoadedMap(UserState userState, rive.RiveLoaded state) {
     _syncMapViewModel(userState);
-    // Cover (not contain) so the canvas fills its box completely - see
-    // build()'s comment on why that box is no longer aspect-locked to the
-    // artwork. Contain would letterbox with empty bars instead of cropping.
+    // Contain (not cover) so the whole artboard is visible on launch, not
+    // cropped at the sides - the box (see build()'s comment) is no longer
+    // aspect-locked to the artwork, and since the box is now taller than
+    // the artwork's own aspect ratio (it extends up behind the header),
+    // Cover would need to crop increasingly more off the sides to fill it.
+    // Contain instead leaves empty bars above/below - rendered transparent,
+    // so the surrounding gradient shows through them with no hard seam.
+    // The manual zoom toggle still magnifies and pans this same view for a
+    // closer look, same as before.
     return rive.RiveWidget(
       controller: state.controller,
-      fit: rive.Fit.cover,
+      fit: rive.Fit.contain,
     );
   }
 
