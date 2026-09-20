@@ -9,14 +9,12 @@ import '../models/charm_rarity.dart';
 /// placeholder for a day/kind that's still possible to collect.
 class _AlbumSlot {
   final String name;
-  final String dayLabel;
   final String icon;
   final CharmRarity? rarity;
   final bool earned;
 
   const _AlbumSlot({
     required this.name,
-    required this.dayLabel,
     required this.icon,
     required this.rarity,
     required this.earned,
@@ -58,10 +56,10 @@ class CharmAlbumGrid extends StatelessWidget {
         : CharmCatalog.gameCharmCount;
     for (var day = 1; day <= lastDay; day++) {
       for (final kind in const [
-        ('daily_charm', 'Rituals', '🌸'),
-        ('game_charm', 'Game', '🎮'),
+        ('daily_charm', '🌸'),
+        ('game_charm', '🎮'),
       ]) {
-        final (charmName, kindLabel, icon) = kind;
+        final (charmName, icon) = kind;
         final key = '$day-$charmName';
         final row = byKey[key];
         consumedKeys.add(key);
@@ -71,7 +69,6 @@ class CharmAlbumGrid extends StatelessWidget {
         if (name == null) continue;
         slots.add(_AlbumSlot(
           name: name,
-          dayLabel: 'Day $day · $kindLabel',
           icon: icon,
           rarity: row != null ? CharmRarity.fromName(row.rarity) : null,
           earned: row != null,
@@ -86,7 +83,6 @@ class CharmAlbumGrid extends StatelessWidget {
       if (consumedKeys.contains(key)) continue;
       slots.add(_AlbumSlot(
         name: CharmCatalog.specialCharmName(c.charmName),
-        dayLabel: 'Day ${c.cycleDay} · Bonus',
         icon: '👑',
         rarity: CharmRarity.fromName(c.rarity),
         earned: true,
@@ -120,9 +116,9 @@ class CharmAlbumGrid extends StatelessWidget {
           itemCount: slots.length,
           gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: 3,
-            mainAxisSpacing: 14,
+            mainAxisSpacing: 8,
             crossAxisSpacing: 10,
-            childAspectRatio: 0.72,
+            childAspectRatio: 0.92,
           ),
           itemBuilder: (context, i) => _AlbumCell(slot: slots[i]),
         ),
@@ -144,7 +140,7 @@ class _AlbumCell extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         _CharmCircle(rarity: slot.rarity, icon: slot.icon, earned: slot.earned),
-        const SizedBox(height: 8),
+        const SizedBox(height: 6),
         Text(
           slot.earned ? slot.name : '???',
           textAlign: TextAlign.center,
@@ -155,14 +151,6 @@ class _AlbumCell extends StatelessWidget {
             fontWeight: FontWeight.w700,
             color: slot.earned ? WommiColors.ink : WommiColors.inkDim,
             height: 1.2,
-          ),
-        ),
-        const SizedBox(height: 2),
-        Text(
-          slot.dayLabel,
-          style: GoogleFonts.inter(
-            fontSize: 8.5,
-            color: WommiColors.inkDim,
           ),
         ),
         const SizedBox(height: 4),
