@@ -92,7 +92,6 @@ class _AchievementsScreenState extends ConsumerState<AchievementsScreen> {
                   if (_currentCharmRows != null) ...[
                     const SizedBox(height: 20),
                     CharmAlbumGrid(
-                      currentDay: userState.currentDay,
                       charms: _currentCharmRows!,
                     ),
                   ],
