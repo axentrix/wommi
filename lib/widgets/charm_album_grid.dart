@@ -35,12 +35,10 @@ class _AlbumSlot {
 /// pregnancy charm) aren't part of that count - anything else earned is
 /// just appended at the end, since there's no "potential" slot for it.
 class CharmAlbumGrid extends StatelessWidget {
-  final int currentDay;
   final List<CharmsEarnedData> charms;
 
   const CharmAlbumGrid({
     super.key,
-    required this.currentDay,
     required this.charms,
   });
 
@@ -50,13 +48,14 @@ class CharmAlbumGrid extends StatelessWidget {
     };
     final consumedKeys = <String>{};
 
+    // Always the full catalog (every day's ritual + game charm), not just
+    // up to currentDay - the album's total is meant to reflect every charm
+    // that can ever be collected, so it stays fixed across the whole
+    // journey instead of growing as more days are reached.
     final slots = <_AlbumSlot>[];
-    final lastDay = currentDay.clamp(
-      0,
-      CharmCatalog.ritualCharmCount > CharmCatalog.gameCharmCount
-          ? CharmCatalog.ritualCharmCount
-          : CharmCatalog.gameCharmCount,
-    );
+    final lastDay = CharmCatalog.ritualCharmCount > CharmCatalog.gameCharmCount
+        ? CharmCatalog.ritualCharmCount
+        : CharmCatalog.gameCharmCount;
     for (var day = 1; day <= lastDay; day++) {
       for (final kind in const [
         ('daily_charm', 'Rituals', '🌸'),
