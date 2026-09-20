@@ -847,6 +847,12 @@ class _JourneyMapWidgetState extends ConsumerState<JourneyMapWidget>
         asBottomSheet: true,
         onDayTap: (day) {
           Navigator.pop(context);
+          // showModalBottomSheet's Future only resolves once the pop
+          // animation finishes, so _mapSheetOpen (see below) would still
+          // read true here and block the day's own popup from opening at
+          // all - clear it immediately since we're deliberately replacing
+          // this sheet with another one, not stacking on top of it.
+          _mapSheetOpen = false;
           _openDay(context, day);
         },
       ),
