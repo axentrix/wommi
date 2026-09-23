@@ -15,10 +15,10 @@ enum DailyGame {
   final String emoji;
 }
 
-/// Which game a given cycle day opens - a simple fixed rotation through all
-/// 5, so the same day always reopens the same game rather than reshuffling
-/// on every visit.
+/// Which game a given cycle day opens. Temporarily always the Lucky Wheel -
+/// the other 4 aren't ready to ship yet - rather than the eventual fixed
+/// rotation through all 5 (so the same day always reopens the same game
+/// rather than reshuffling on every visit).
 DailyGame dailyGameForDay(int day) {
-  final values = DailyGame.values;
-  return values[(day - 1) % values.length];
+  return DailyGame.luckyWheel;
 }

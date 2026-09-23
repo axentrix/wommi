@@ -144,7 +144,7 @@ class UserStateNotifier extends StateNotifier<UserState> {
     state = state.copyWith(currentDay: nextDay);
   }
 
-  void completeCurrentJourney({int startDay = 1}) {
+  void completeCurrentJourney({int startDay = 1, int? cycleProfileId}) {
     // Save current journey to history
     final completedJourney = Journey(
       journeyNumber: state.currentJourneyNumber,
@@ -152,6 +152,7 @@ class UserStateNotifier extends StateNotifier<UserState> {
       startDate: state.lastOpenedDate ?? DateTime.now(),
       endDate: DateTime.now(),
       isActive: false,
+      cycleProfileId: cycleProfileId,
     );
 
     final updatedHistory = [...state.journeyHistory, completedJourney];

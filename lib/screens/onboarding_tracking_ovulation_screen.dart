@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../theme.dart';
 import '../providers/onboarding_provider.dart';
 import '../widgets/chip_button.dart';
@@ -73,8 +74,7 @@ class OnboardingTrackingOvulationScreen extends ConsumerWidget {
                     // Title
                     Text(
                       'Are you tracking\novulation?',
-                      style: TextStyle(
-                        fontFamily: 'Unbounded',
+                      style: GoogleFonts.unbounded(
                         fontWeight: FontWeight.w800,
                         fontSize: 24,
                         height: 1.25,
@@ -145,8 +145,7 @@ class OnboardingTrackingOvulationScreen extends ConsumerWidget {
                   ),
                   child: Text(
                     'Continue',
-                    style: TextStyle(
-                      fontFamily: 'Unbounded',
+                    style: GoogleFonts.unbounded(
                       fontWeight: FontWeight.w700,
                       fontSize: 13.5,
                     ),

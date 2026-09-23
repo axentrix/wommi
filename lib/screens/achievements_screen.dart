@@ -20,16 +20,42 @@ class AchievementsScreen extends ConsumerStatefulWidget {
 
 class _AchievementsScreenState extends ConsumerState<AchievementsScreen> {
   List<CharmsEarnedData>? _currentCharmRows;
+  // The separate, lifetime Rewarded Charms album (mini-game wins) - null
+  // until loaded, empty once loaded with nothing won yet.
+  List<CharmsEarnedData>? _rewardedCharmRows;
+  // Keyed by Journey.cycleProfileId, one entry per past journey that has
+  // one (see Journey.cycleProfileId for why some don't).
+  Map<int, List<CharmsEarnedData>> _pastJourneyCharmRows = {};
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      final rows = await ref.read(repositoryProvider).getAllCharms();
-      if (!mounted) return;
-      setState(() {
-        _currentCharmRows = rows;
-      });
+    WidgetsBinding.instance.addPostFrameCallback((_) => _loadCharms());
+  }
+
+  Future<void> _loadCharms() async {
+    final repository = ref.read(repositoryProvider);
+    final pastIds = ref
+        .read(userStateProvider)
+        .journeyHistory
+        .map((j) => j.cycleProfileId)
+        .whereType<int>()
+        .toSet()
+        .toList();
+
+    final results = await Future.wait([
+      repository.getAllCharms(),
+      repository.getAllGameCharms(),
+      ...pastIds.map((id) => repository.getCharmsForCycleProfile(id)),
+    ]);
+    if (!mounted) return;
+
+    setState(() {
+      _currentCharmRows = results[0];
+      _rewardedCharmRows = results[1];
+      _pastJourneyCharmRows = {
+        for (var i = 0; i < pastIds.length; i++) pastIds[i]: results[i + 2],
+      };
     });
   }
 
@@ -76,11 +102,17 @@ class _AchievementsScreenState extends ConsumerState<AchievementsScreen> {
             ),
           ),
           const SizedBox(height: 18),
-          // Journey cards
           Expanded(
             child: ListView(
               padding: const EdgeInsets.fromLTRB(22, 0, 22, 16),
               children: [
+                // Rewarded Charms - one lifetime collection of mini-game
+                // wins, shown once up top rather than per-journey (see
+                // RewardedCharmsGrid).
+                if (_rewardedCharmRows != null) ...[
+                  RewardedCharmsGrid(charms: _rewardedCharmRows!),
+                  const SizedBox(height: 24),
+                ],
                 // Current journey card (in progress)
                 if (hasCurrentJourney) ...[
                   _CurrentJourneyCard(
@@ -97,13 +129,26 @@ class _AchievementsScreenState extends ConsumerState<AchievementsScreen> {
                   ],
                   const SizedBox(height: 12),
                 ],
-                // Past journey cards
+                // Past journey cards, each with its own charm album below
+                // it when one is available (see Journey.cycleProfileId).
                 ...pastJourneys.reversed.map((journey) {
+                  final charms = journey.cycleProfileId != null
+                      ? _pastJourneyCharmRows[journey.cycleProfileId]
+                      : null;
                   return Padding(
-                    padding: const EdgeInsets.only(bottom: 12),
-                    child: _PastJourneyCard(journey: journey),
+                    padding: const EdgeInsets.only(bottom: 20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _PastJourneyCard(journey: journey),
+                        if (charms != null && charms.isNotEmpty) ...[
+                          const SizedBox(height: 16),
+                          CharmAlbumGrid(charms: charms),
+                        ],
+                      ],
+                    ),
                   );
-                }).toList(),
+                }),
                 // Empty state if no journeys
                 if (!hasCurrentJourney && pastJourneys.isEmpty)
                   Center(

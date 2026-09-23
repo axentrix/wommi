@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../theme.dart';
 import '../models/onboarding_state.dart';
 import '../providers/onboarding_provider.dart';
@@ -89,8 +90,7 @@ class OnboardingStep3Screen extends ConsumerWidget {
                     // Title
                     Text(
                       'How are you trying\nto conceive?',
-                      style: TextStyle(
-                        fontFamily: 'Unbounded',
+                      style: GoogleFonts.unbounded(
                         fontWeight: FontWeight.w800,
                         fontSize: 24,
                         height: 1.25,
@@ -154,8 +154,7 @@ class OnboardingStep3Screen extends ConsumerWidget {
                   ),
                   child: Text(
                     'Continue',
-                    style: TextStyle(
-                      fontFamily: 'Unbounded',
+                    style: GoogleFonts.unbounded(
                       fontWeight: FontWeight.w700,
                       fontSize: 13.5,
                     ),

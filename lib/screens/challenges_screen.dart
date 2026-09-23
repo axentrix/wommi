@@ -9,6 +9,8 @@ import '../providers/user_state_provider.dart';
 import '../providers/repository_provider.dart';
 import '../widgets/win_state_dialog.dart';
 import '../widgets/challenge_completion_dialog.dart';
+import '../widgets/play_daily_game_prompt_dialog.dart';
+import 'daily_game_screen.dart';
 
 class ChallengesScreen extends ConsumerStatefulWidget {
   /// When null, this shows *today's* challenges as the Challenges tab.
@@ -118,7 +120,29 @@ class _ChallengesScreenState extends ConsumerState<ChallengesScreen> {
         rarity: _lastAwardedRarity,
         onContinue: () {
           Navigator.of(context).pop();
+          _maybePromptDailyGame();
         },
+      ),
+    );
+  }
+
+  /// Follows the rituals' charm popup with an offer to play the day's
+  /// separate mini-game - stands in for the "Play daily game" button
+  /// temporarily removed from CycleDayInfoDialog (see that file), without
+  /// touching the game itself or its own charm. Skipped if this day's
+  /// single attempt is already used up (see UserState.dailyGamePlayedDays).
+  void _maybePromptDailyGame() {
+    final day = _resolveDay();
+    if (ref.read(userStateProvider).dailyGamePlayedDays.contains(day)) return;
+
+    showDialog(
+      context: context,
+      builder: (context) => PlayDailyGamePromptDialog(
+        onPlay: () {
+          Navigator.of(context).pop();
+          Navigator.of(context).push(dailyGameRoute(day));
+        },
+        onNotNow: () => Navigator.of(context).pop(),
       ),
     );
   }

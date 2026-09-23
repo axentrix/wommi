@@ -21,17 +21,21 @@ class _AlbumSlot {
   });
 }
 
-/// A sticker-album view of every charm the current journey has (or could
-/// still) collect: one grid cell per day's ritual charm and per day's game
-/// charm, up to a full default journey (see CharmCatalog) - each one has
-/// its own fixed name, not just "Day N". Earned slots show their actual
-/// name and rarity (as stars); the rest show as blank, greyed-out "?"
-/// cards with the name still hidden, so the grid also doubles as a
-/// completion checklist and a bit of a collectible mystery.
+/// A sticker-album view of every charm a journey has (or could still)
+/// collect from its daily rituals, up to a full default journey (see
+/// CharmCatalog) - each day has its own fixed charm name, not just "Day N".
+/// Earned slots show their actual name and rarity (as stars); the rest show
+/// as blank, greyed-out "?" cards with the name still hidden, so the grid
+/// also doubles as a completion checklist and a bit of a collectible
+/// mystery.
 ///
-/// Charms that don't fit the day/kind pattern (e.g. the once-per-journey
-/// pregnancy charm) aren't part of that count - anything else earned is
-/// just appended at the end, since there's no "potential" slot for it.
+/// Mini-game charms are deliberately excluded here even if present in
+/// [charms] - those live in the separate, lifetime RewardedCharmsGrid
+/// instead (see that class), since they aren't tied to a fixed per-journey
+/// slot the way ritual charms are. The once-per-journey pregnancy charm
+/// (or anything else outside the day/ritual pattern) isn't part of that
+/// fixed count either - it's just appended at the end, since there's no
+/// "potential" slot for it.
 class CharmAlbumGrid extends StatelessWidget {
   final List<CharmsEarnedData> charms;
 
@@ -41,46 +45,35 @@ class CharmAlbumGrid extends StatelessWidget {
   });
 
   List<_AlbumSlot> _buildSlots() {
-    final byKey = <String, CharmsEarnedData>{
-      for (final c in charms) '${c.cycleDay}-${c.charmName}': c,
+    final byDay = <int, CharmsEarnedData>{
+      for (final c in charms)
+        if (c.charmName == 'daily_charm') c.cycleDay: c,
     };
-    final consumedKeys = <String>{};
 
-    // Always the full catalog (every day's ritual + game charm), not just
-    // up to currentDay - the album's total is meant to reflect every charm
-    // that can ever be collected, so it stays fixed across the whole
-    // journey instead of growing as more days are reached.
+    // Always the full catalog, not just up to currentDay - the album's
+    // total is meant to reflect every ritual charm that can ever be
+    // collected, so it stays fixed across the whole journey instead of
+    // growing as more days are reached.
     final slots = <_AlbumSlot>[];
-    final lastDay = CharmCatalog.ritualCharmCount > CharmCatalog.gameCharmCount
-        ? CharmCatalog.ritualCharmCount
-        : CharmCatalog.gameCharmCount;
-    for (var day = 1; day <= lastDay; day++) {
-      for (final kind in const [
-        ('daily_charm', '🌸'),
-        ('game_charm', '🎮'),
-      ]) {
-        final (charmName, icon) = kind;
-        final key = '$day-$charmName';
-        final row = byKey[key];
-        consumedKeys.add(key);
-        final name = charmName == 'daily_charm'
-            ? CharmCatalog.ritualCharmName(day)
-            : CharmCatalog.gameCharmName(day);
-        if (name == null) continue;
-        slots.add(_AlbumSlot(
-          name: name,
-          icon: icon,
-          rarity: row != null ? CharmRarity.fromName(row.rarity) : null,
-          earned: row != null,
-        ));
-      }
+    for (var day = 1; day <= CharmCatalog.ritualCharmCount; day++) {
+      final name = CharmCatalog.ritualCharmName(day);
+      if (name == null) continue;
+      final row = byDay[day];
+      slots.add(_AlbumSlot(
+        name: name,
+        icon: '🌸',
+        rarity: row != null ? CharmRarity.fromName(row.rarity) : null,
+        earned: row != null,
+      ));
     }
 
-    // Anything earned outside the day/kind pattern above (e.g.
+    // Anything earned outside the daily-ritual pattern above (e.g.
     // 'pregnancy_charm') - always shown, since it was actually collected.
+    // 'game_charm' is excluded here too (see class doc).
     for (final c in charms) {
-      final key = '${c.cycleDay}-${c.charmName}';
-      if (consumedKeys.contains(key)) continue;
+      if (c.charmName == 'daily_charm' || c.charmName == 'game_charm') {
+        continue;
+      }
       slots.add(_AlbumSlot(
         name: CharmCatalog.specialCharmName(c.charmName),
         icon: '👑',
@@ -102,6 +95,87 @@ class CharmAlbumGrid extends StatelessWidget {
       children: [
         Text(
           'CHARM ALBUM',
+          style: GoogleFonts.spaceMono(
+            fontSize: 10.5,
+            letterSpacing: 1.68,
+            color: WommiColors.rose,
+            fontWeight: FontWeight.w400,
+          ),
+        ),
+        const SizedBox(height: 10),
+        GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: slots.length,
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 3,
+            mainAxisSpacing: 8,
+            crossAxisSpacing: 10,
+            childAspectRatio: 0.92,
+          ),
+          itemBuilder: (context, i) => _AlbumCell(slot: slots[i]),
+        ),
+      ],
+    );
+  }
+}
+
+/// The separate, lifetime album of mini-game charms - one running
+/// collection across every journey ever played, not reset when a journey
+/// ends and not scoped to any single one (unlike CharmAlbumGrid). Unlike
+/// that album, there are no placeholder slots: a mini-game win isn't tied
+/// to a fixed day/kind schedule the way a ritual charm is, so this only
+/// ever shows what's actually been won, growing one cell at a time.
+class RewardedCharmsGrid extends StatelessWidget {
+  final List<CharmsEarnedData> charms;
+
+  const RewardedCharmsGrid({
+    super.key,
+    required this.charms,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (charms.isEmpty) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'REWARDED CHARMS',
+            style: GoogleFonts.spaceMono(
+              fontSize: 10.5,
+              letterSpacing: 1.68,
+              color: WommiColors.rose,
+              fontWeight: FontWeight.w400,
+            ),
+          ),
+          const SizedBox(height: 10),
+          Text(
+            'Win a daily mini-game to start collecting these.',
+            style: GoogleFonts.inter(
+              fontSize: 12.5,
+              color: WommiColors.inkDim,
+              height: 1.4,
+            ),
+          ),
+        ],
+      );
+    }
+
+    final slots = charms
+        .map((c) => _AlbumSlot(
+              name: CharmCatalog.gameCharmName(c.cycleDay) ?? 'Mystery Charm',
+              icon: '🎮',
+              rarity: CharmRarity.fromName(c.rarity),
+              earned: true,
+            ))
+        .toList();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'REWARDED CHARMS',
           style: GoogleFonts.spaceMono(
             fontSize: 10.5,
             letterSpacing: 1.68,

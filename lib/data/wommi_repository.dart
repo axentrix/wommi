@@ -143,6 +143,22 @@ class WommiRepository {
     return _db.getCharmsForCycle(cycleProfileId);
   }
 
+  /// A specific (typically past) journey's charms, by the cycleProfileId
+  /// stored on its JourneyRecord - unlike getAllCharms(), which is always
+  /// scoped to the *current* journey.
+  Future<List<CharmsEarnedData>> getCharmsForCycleProfile(
+    int cycleProfileId,
+  ) {
+    return _db.getCharmsForCycle(cycleProfileId);
+  }
+
+  /// Every mini-game charm ever won, across every journey - the Rewarded
+  /// Charms album is one running lifetime collection, not scoped per
+  /// journey like the ritual album.
+  Future<List<CharmsEarnedData>> getAllGameCharms() {
+    return _db.getCharmsByName('game_charm');
+  }
+
   /// The streak - distinct real calendar days with at least one charm
   /// earned this journey, not the raw charm count. Catching up on several
   /// past days from the journey map in one sitting still only counts as
@@ -207,6 +223,7 @@ class WommiRepository {
     required int gemsCollected,
     required DateTime startDate,
     required DateTime endDate,
+    int? cycleProfileId,
   }) async {
     await _db.saveJourneyRecord(
       userProfileId: userProfileId,
@@ -214,6 +231,7 @@ class WommiRepository {
       gemsCollected: gemsCollected,
       startDate: startDate,
       endDate: endDate,
+      cycleProfileId: cycleProfileId,
     );
   }
 
@@ -221,10 +239,16 @@ class WommiRepository {
     return _db.getJourneyRecordsForUser(userProfileId);
   }
 
-  /// Clear all ritual completions and charms when starting a new journey
+  /// Clears in-progress ritual-toggle state when starting a new journey -
+  /// harmless to wipe since it only tracks *which* rituals are done on
+  /// *which* day within a journey, meaningless once day numbering restarts.
+  /// Charms are deliberately NOT cleared here anymore: they're already
+  /// scoped by cycleProfileId, and the new journey gets a fresh profile id,
+  /// so the ending journey's charms just stay in place under its own id
+  /// instead of being deleted - that's what lets its charm album still be
+  /// shown later (see JourneyRecords.cycleProfileId).
   Future<void> clearJourneyProgress() async {
     await _db.clearAllRitualCompletions();
-    await _db.clearAllCharms();
   }
 
   /// Wipes every table, regardless of profile. Testing only.

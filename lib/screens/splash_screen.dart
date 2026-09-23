@@ -131,6 +131,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                   startDate: r.startDate,
                   endDate: r.endDate,
                   isActive: false,
+                  cycleProfileId: r.cycleProfileId,
                 ))
             .toList(),
       );

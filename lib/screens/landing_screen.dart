@@ -116,6 +116,14 @@ class LandingScreen extends ConsumerWidget {
                             onConfirm: (startDay) async {
                               final userState = ref.read(userStateProvider);
                               final profileId = userState.profileId;
+                              // Captured before saveCycleProfileForNewJourney
+                              // replaces it - lets the ending journey's charm
+                              // album still be found later (see
+                              // JourneyRecords.cycleProfileId).
+                              final endingCycleProfileId = (await ref
+                                      .read(repositoryProvider)
+                                      .getCurrentCycleProfile())
+                                  ?.id;
 
                               // Save the current journey regardless of gem
                               // count. This button only appears when
@@ -131,6 +139,7 @@ class LandingScreen extends ConsumerWidget {
                                       gemsCollected: userState.gemBalance,
                                       startDate: userState.lastOpenedDate ?? DateTime.now(),
                                       endDate: DateTime.now(),
+                                      cycleProfileId: endingCycleProfileId,
                                     );
                               }
 
@@ -145,9 +154,10 @@ class LandingScreen extends ConsumerWidget {
                                         .subtract(Duration(days: startDay - 1)),
                                     startingCycleDay: startDay,
                                   );
-                              ref
-                                  .read(userStateProvider.notifier)
-                                  .completeCurrentJourney(startDay: startDay);
+                              ref.read(userStateProvider.notifier).completeCurrentJourney(
+                                    startDay: startDay,
+                                    cycleProfileId: endingCycleProfileId,
+                                  );
 
                               if (!context.mounted) return;
                               Navigator.of(context)

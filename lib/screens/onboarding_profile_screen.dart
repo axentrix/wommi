@@ -170,6 +170,7 @@ class _OnboardingProfileScreenState
                           startDate: r.startDate,
                           endDate: r.endDate,
                           isActive: false,
+                          cycleProfileId: r.cycleProfileId,
                         ))
                     .toList(),
               );
@@ -442,8 +443,7 @@ class _OnboardingProfileScreenState
       children: [
         Text(
           'What\'s your name?',
-          style: TextStyle(
-            fontFamily: 'Unbounded',
+          style: GoogleFonts.unbounded(
             fontWeight: FontWeight.w800,
             fontSize: 24,
             height: 1.25,
@@ -480,8 +480,7 @@ class _OnboardingProfileScreenState
       children: [
         Text(
           'What\'s your email?',
-          style: TextStyle(
-            fontFamily: 'Unbounded',
+          style: GoogleFonts.unbounded(
             fontWeight: FontWeight.w800,
             fontSize: 24,
             height: 1.25,
@@ -526,8 +525,7 @@ class _OnboardingProfileScreenState
       children: [
         Text(
           'Enter verification code',
-          style: TextStyle(
-            fontFamily: 'Unbounded',
+          style: GoogleFonts.unbounded(
             fontWeight: FontWeight.w800,
             fontSize: 24,
             height: 1.25,

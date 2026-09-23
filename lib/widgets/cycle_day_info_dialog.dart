@@ -20,6 +20,11 @@ class CycleDayInfoDialog extends ConsumerWidget {
   final bool isCurrent;
   final bool isFuture;
   final VoidCallback onOpenMissions;
+  // Temporarily unused - the "Play daily game" button that called this was
+  // removed from _buildActionButtons in favor of ChallengesScreen prompting
+  // to play right after the rituals' charm popup closes (see
+  // PlayDailyGamePromptDialog). Kept wired through so restoring the button
+  // is a small, self-contained change.
   final VoidCallback onPlayGame;
   // Map-step popups open this as a bottom sheet (via showModalBottomSheet)
   // instead of a centered Dialog, so they don't cover the map underneath -
@@ -423,35 +428,12 @@ class CycleDayInfoDialog extends ConsumerWidget {
             ),
           ),
         ),
-        const SizedBox(height: 10),
-        SizedBox(
-          width: double.infinity,
-          child: OutlinedButton(
-            // Greyed out (but still tappable) once played, just as a
-            // heads-up that there's nothing new to win - onPlayGame still
-            // opens the game screen, which shows its own locked state.
-            onPressed: onPlayGame,
-            style: OutlinedButton.styleFrom(
-              foregroundColor: gameAlreadyPlayed ? WommiColors.inkDim : color,
-              padding: const EdgeInsets.symmetric(vertical: 14),
-              side: BorderSide(
-                color: gameAlreadyPlayed ? WommiColors.line : color,
-                width: 1.5,
-              ),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(100),
-              ),
-            ),
-            child: Text(
-              gameAlreadyPlayed ? 'Game already played today' : 'Play daily game',
-              style: GoogleFonts.unbounded(
-                fontSize: 12,
-                fontWeight: FontWeight.w700,
-                color: gameAlreadyPlayed ? WommiColors.inkDim : color,
-              ),
-            ),
-          ),
-        ),
+        // The "Play daily game" button used to go here - temporarily
+        // removed (see CycleDayInfoDialog.onPlayGame doc) in favor of
+        // ChallengesScreen prompting to play right after the rituals'
+        // charm popup closes instead. onPlayGame/gameAlreadyPlayed are
+        // kept on this widget so restoring the button is a small,
+        // self-contained change.
         const SizedBox(height: 8),
         TextButton(
           onPressed: () => Navigator.pop(context),

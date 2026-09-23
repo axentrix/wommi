@@ -116,6 +116,11 @@ void _showStartNewJourneyDayDialog(BuildContext context, WidgetRef ref) {
       onConfirm: (startDay) async {
         final userState = ref.read(userStateProvider);
         final profileId = userState.profileId;
+        // Captured before saveCycleProfileForNewJourney replaces it -
+        // this is what lets the ending journey's charm album still be
+        // found later (see JourneyRecords.cycleProfileId).
+        final endingCycleProfileId =
+            (await ref.read(repositoryProvider).getCurrentCycleProfile())?.id;
 
         if (profileId != null) {
           await ref.read(repositoryProvider).saveJourneyRecord(
@@ -124,6 +129,7 @@ void _showStartNewJourneyDayDialog(BuildContext context, WidgetRef ref) {
                 gemsCollected: userState.gemBalance,
                 startDate: userState.lastOpenedDate ?? DateTime.now(),
                 endDate: DateTime.now(),
+                cycleProfileId: endingCycleProfileId,
               );
           await backupJourneyData(ref, profileId);
         }
@@ -135,9 +141,10 @@ void _showStartNewJourneyDayDialog(BuildContext context, WidgetRef ref) {
               startDate: DateTime.now().subtract(Duration(days: startDay - 1)),
               startingCycleDay: startDay,
             );
-        ref
-            .read(userStateProvider.notifier)
-            .completeCurrentJourney(startDay: startDay);
+        ref.read(userStateProvider.notifier).completeCurrentJourney(
+              startDay: startDay,
+              cycleProfileId: endingCycleProfileId,
+            );
 
         if (!context.mounted) return;
         Navigator.pop(context);

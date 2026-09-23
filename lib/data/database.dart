@@ -71,6 +71,13 @@ class JourneyRecords extends Table {
   DateTimeColumn get startDate => dateTime()();
   DateTimeColumn get endDate => dateTime()();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+  // The CycleProfiles row this journey earned its charms under, so its
+  // charm album can still be queried (via CharmsEarned.cycleProfileId)
+  // after the journey is over. Null for journeys completed before this
+  // column existed - those have no way to recover which charms were
+  // theirs, since CharmsEarned rows weren't preserved past journey end
+  // either (see WommiRepository.clearJourneyProgress).
+  IntColumn get cycleProfileId => integer().nullable()();
 }
 
 @DriftDatabase(
@@ -86,7 +93,7 @@ class WommiDatabase extends _$WommiDatabase {
   WommiDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 7;
+  int get schemaVersion => 8;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -126,6 +133,9 @@ class WommiDatabase extends _$WommiDatabase {
           }
           if (from < 7) {
             await m.addColumn(cycleProfiles, cycleProfiles.genderIdentity);
+          }
+          if (from < 8) {
+            await m.addColumn(journeyRecords, journeyRecords.cycleProfileId);
           }
         },
       );
@@ -226,6 +236,15 @@ class WommiDatabase extends _$WommiDatabase {
   Future<List<CharmsEarnedData>> getCharmsForCycle(int? cycleProfileId) async {
     return await (select(charmsEarned)
           ..where((t) => t.cycleProfileId.equalsNullable(cycleProfileId)))
+        .get();
+  }
+
+  /// Every charm of [charmName] ever earned, across every cycle profile -
+  /// used for the Rewarded Charms album (mini-game wins), which is one
+  /// running lifetime collection rather than scoped to a single journey.
+  Future<List<CharmsEarnedData>> getCharmsByName(String charmName) async {
+    return await (select(charmsEarned)
+          ..where((t) => t.charmName.equals(charmName)))
         .get();
   }
 
@@ -364,6 +383,7 @@ class WommiDatabase extends _$WommiDatabase {
     required int gemsCollected,
     required DateTime startDate,
     required DateTime endDate,
+    int? cycleProfileId,
   }) async {
     return await into(journeyRecords).insert(
       JourneyRecordsCompanion.insert(
@@ -372,6 +392,7 @@ class WommiDatabase extends _$WommiDatabase {
         gemsCollected: gemsCollected,
         startDate: startDate,
         endDate: endDate,
+        cycleProfileId: Value(cycleProfileId),
       ),
     );
   }

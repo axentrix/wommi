@@ -1730,6 +1730,17 @@ class $JourneyRecordsTable extends JourneyRecords
     requiredDuringInsert: false,
     defaultValue: currentDateAndTime,
   );
+  static const VerificationMeta _cycleProfileIdMeta = const VerificationMeta(
+    'cycleProfileId',
+  );
+  @override
+  late final GeneratedColumn<int> cycleProfileId = GeneratedColumn<int>(
+    'cycle_profile_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -1739,6 +1750,7 @@ class $JourneyRecordsTable extends JourneyRecords
     startDate,
     endDate,
     createdAt,
+    cycleProfileId,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -1810,6 +1822,15 @@ class $JourneyRecordsTable extends JourneyRecords
         createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
       );
     }
+    if (data.containsKey('cycle_profile_id')) {
+      context.handle(
+        _cycleProfileIdMeta,
+        cycleProfileId.isAcceptableOrUnknown(
+          data['cycle_profile_id']!,
+          _cycleProfileIdMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -1847,6 +1868,10 @@ class $JourneyRecordsTable extends JourneyRecords
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
       )!,
+      cycleProfileId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}cycle_profile_id'],
+      ),
     );
   }
 
@@ -1864,6 +1889,7 @@ class JourneyRecord extends DataClass implements Insertable<JourneyRecord> {
   final DateTime startDate;
   final DateTime endDate;
   final DateTime createdAt;
+  final int? cycleProfileId;
   const JourneyRecord({
     required this.id,
     required this.userProfileId,
@@ -1872,6 +1898,7 @@ class JourneyRecord extends DataClass implements Insertable<JourneyRecord> {
     required this.startDate,
     required this.endDate,
     required this.createdAt,
+    this.cycleProfileId,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -1883,6 +1910,9 @@ class JourneyRecord extends DataClass implements Insertable<JourneyRecord> {
     map['start_date'] = Variable<DateTime>(startDate);
     map['end_date'] = Variable<DateTime>(endDate);
     map['created_at'] = Variable<DateTime>(createdAt);
+    if (!nullToAbsent || cycleProfileId != null) {
+      map['cycle_profile_id'] = Variable<int>(cycleProfileId);
+    }
     return map;
   }
 
@@ -1895,6 +1925,9 @@ class JourneyRecord extends DataClass implements Insertable<JourneyRecord> {
       startDate: Value(startDate),
       endDate: Value(endDate),
       createdAt: Value(createdAt),
+      cycleProfileId: cycleProfileId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(cycleProfileId),
     );
   }
 
@@ -1911,6 +1944,7 @@ class JourneyRecord extends DataClass implements Insertable<JourneyRecord> {
       startDate: serializer.fromJson<DateTime>(json['startDate']),
       endDate: serializer.fromJson<DateTime>(json['endDate']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      cycleProfileId: serializer.fromJson<int?>(json['cycleProfileId']),
     );
   }
   @override
@@ -1924,6 +1958,7 @@ class JourneyRecord extends DataClass implements Insertable<JourneyRecord> {
       'startDate': serializer.toJson<DateTime>(startDate),
       'endDate': serializer.toJson<DateTime>(endDate),
       'createdAt': serializer.toJson<DateTime>(createdAt),
+      'cycleProfileId': serializer.toJson<int?>(cycleProfileId),
     };
   }
 
@@ -1935,6 +1970,7 @@ class JourneyRecord extends DataClass implements Insertable<JourneyRecord> {
     DateTime? startDate,
     DateTime? endDate,
     DateTime? createdAt,
+    Value<int?> cycleProfileId = const Value.absent(),
   }) => JourneyRecord(
     id: id ?? this.id,
     userProfileId: userProfileId ?? this.userProfileId,
@@ -1943,6 +1979,9 @@ class JourneyRecord extends DataClass implements Insertable<JourneyRecord> {
     startDate: startDate ?? this.startDate,
     endDate: endDate ?? this.endDate,
     createdAt: createdAt ?? this.createdAt,
+    cycleProfileId: cycleProfileId.present
+        ? cycleProfileId.value
+        : this.cycleProfileId,
   );
   JourneyRecord copyWithCompanion(JourneyRecordsCompanion data) {
     return JourneyRecord(
@@ -1959,6 +1998,9 @@ class JourneyRecord extends DataClass implements Insertable<JourneyRecord> {
       startDate: data.startDate.present ? data.startDate.value : this.startDate,
       endDate: data.endDate.present ? data.endDate.value : this.endDate,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      cycleProfileId: data.cycleProfileId.present
+          ? data.cycleProfileId.value
+          : this.cycleProfileId,
     );
   }
 
@@ -1971,7 +2013,8 @@ class JourneyRecord extends DataClass implements Insertable<JourneyRecord> {
           ..write('gemsCollected: $gemsCollected, ')
           ..write('startDate: $startDate, ')
           ..write('endDate: $endDate, ')
-          ..write('createdAt: $createdAt')
+          ..write('createdAt: $createdAt, ')
+          ..write('cycleProfileId: $cycleProfileId')
           ..write(')'))
         .toString();
   }
@@ -1985,6 +2028,7 @@ class JourneyRecord extends DataClass implements Insertable<JourneyRecord> {
     startDate,
     endDate,
     createdAt,
+    cycleProfileId,
   );
   @override
   bool operator ==(Object other) =>
@@ -1996,7 +2040,8 @@ class JourneyRecord extends DataClass implements Insertable<JourneyRecord> {
           other.gemsCollected == this.gemsCollected &&
           other.startDate == this.startDate &&
           other.endDate == this.endDate &&
-          other.createdAt == this.createdAt);
+          other.createdAt == this.createdAt &&
+          other.cycleProfileId == this.cycleProfileId);
 }
 
 class JourneyRecordsCompanion extends UpdateCompanion<JourneyRecord> {
@@ -2007,6 +2052,7 @@ class JourneyRecordsCompanion extends UpdateCompanion<JourneyRecord> {
   final Value<DateTime> startDate;
   final Value<DateTime> endDate;
   final Value<DateTime> createdAt;
+  final Value<int?> cycleProfileId;
   const JourneyRecordsCompanion({
     this.id = const Value.absent(),
     this.userProfileId = const Value.absent(),
@@ -2015,6 +2061,7 @@ class JourneyRecordsCompanion extends UpdateCompanion<JourneyRecord> {
     this.startDate = const Value.absent(),
     this.endDate = const Value.absent(),
     this.createdAt = const Value.absent(),
+    this.cycleProfileId = const Value.absent(),
   });
   JourneyRecordsCompanion.insert({
     this.id = const Value.absent(),
@@ -2024,6 +2071,7 @@ class JourneyRecordsCompanion extends UpdateCompanion<JourneyRecord> {
     required DateTime startDate,
     required DateTime endDate,
     this.createdAt = const Value.absent(),
+    this.cycleProfileId = const Value.absent(),
   }) : userProfileId = Value(userProfileId),
        journeyNumber = Value(journeyNumber),
        gemsCollected = Value(gemsCollected),
@@ -2037,6 +2085,7 @@ class JourneyRecordsCompanion extends UpdateCompanion<JourneyRecord> {
     Expression<DateTime>? startDate,
     Expression<DateTime>? endDate,
     Expression<DateTime>? createdAt,
+    Expression<int>? cycleProfileId,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -2046,6 +2095,7 @@ class JourneyRecordsCompanion extends UpdateCompanion<JourneyRecord> {
       if (startDate != null) 'start_date': startDate,
       if (endDate != null) 'end_date': endDate,
       if (createdAt != null) 'created_at': createdAt,
+      if (cycleProfileId != null) 'cycle_profile_id': cycleProfileId,
     });
   }
 
@@ -2057,6 +2107,7 @@ class JourneyRecordsCompanion extends UpdateCompanion<JourneyRecord> {
     Value<DateTime>? startDate,
     Value<DateTime>? endDate,
     Value<DateTime>? createdAt,
+    Value<int?>? cycleProfileId,
   }) {
     return JourneyRecordsCompanion(
       id: id ?? this.id,
@@ -2066,6 +2117,7 @@ class JourneyRecordsCompanion extends UpdateCompanion<JourneyRecord> {
       startDate: startDate ?? this.startDate,
       endDate: endDate ?? this.endDate,
       createdAt: createdAt ?? this.createdAt,
+      cycleProfileId: cycleProfileId ?? this.cycleProfileId,
     );
   }
 
@@ -2093,6 +2145,9 @@ class JourneyRecordsCompanion extends UpdateCompanion<JourneyRecord> {
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
+    if (cycleProfileId.present) {
+      map['cycle_profile_id'] = Variable<int>(cycleProfileId.value);
+    }
     return map;
   }
 
@@ -2105,7 +2160,8 @@ class JourneyRecordsCompanion extends UpdateCompanion<JourneyRecord> {
           ..write('gemsCollected: $gemsCollected, ')
           ..write('startDate: $startDate, ')
           ..write('endDate: $endDate, ')
-          ..write('createdAt: $createdAt')
+          ..write('createdAt: $createdAt, ')
+          ..write('cycleProfileId: $cycleProfileId')
           ..write(')'))
         .toString();
   }
