@@ -54,7 +54,7 @@ class LandingScreen extends ConsumerWidget {
                 Text(
                   'Your fertility companion',
                   textAlign: TextAlign.center,
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.mulish(
                     fontSize: 16,
                     color: WommiColors.inkDim,
                     height: 1.5,
@@ -220,7 +220,7 @@ class LandingScreen extends ConsumerWidget {
                   ),
                   child: Text(
                     'Reset all data (testing)',
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.mulish(
                       fontSize: 12,
                       decoration: TextDecoration.underline,
                       decorationColor: WommiColors.inkDim,
@@ -252,7 +252,7 @@ class LandingScreen extends ConsumerWidget {
           'This wipes every profile, journey, and ritual/charm record in '
           'the local database, plus the remembered email on this device. '
           'For testing only - this cannot be undone.',
-          style: GoogleFonts.inter(
+          style: GoogleFonts.mulish(
             fontSize: 14,
             color: WommiColors.ink,
             height: 1.5,

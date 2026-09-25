@@ -44,7 +44,7 @@ class EditConceptionMethodDialog extends ConsumerWidget {
                   const SizedBox(height: 8),
                   Text(
                     'How are you trying to conceive?',
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.mulish(
                       fontSize: 13,
                       color: WommiColors.inkDim,
                       height: 1.5,

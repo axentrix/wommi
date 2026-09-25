@@ -90,7 +90,7 @@ class OvaryPhaseDialog extends ConsumerWidget {
                     userState.tracksMenstrualCycle
                         ? 'Ovulation timing varies cycle to cycle, so these early days are grouped together on the map. Tap any day below to see what\'s going on and do its rituals.'
                         : 'These early days are grouped together on the map. Tap any day below to see what\'s going on and do its rituals.',
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.mulish(
                       fontSize: 12.5,
                       color: WommiColors.inkDim,
                       height: 1.5,
@@ -130,7 +130,7 @@ class OvaryPhaseDialog extends ConsumerWidget {
                               ovulationMarkedToday
                                   ? 'Marked on day $currentDay. From here the journey continues into the fallopian tube. Tap to undo.'
                                   : 'Got a positive test or other sign today? From here the journey continues into the fallopian tube.',
-                              style: GoogleFonts.inter(
+                              style: GoogleFonts.mulish(
                                 fontSize: 10.5,
                                 color: WommiColors.inkDim,
                                 height: 1.35,

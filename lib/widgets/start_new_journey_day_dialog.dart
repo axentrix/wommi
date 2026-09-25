@@ -48,7 +48,7 @@ class _StartNewJourneyDayDialogState extends State<StartNewJourneyDayDialog> {
                   Text(
                     'From which day do you want to start?',
                     textAlign: TextAlign.center,
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.mulish(
                       fontSize: 13,
                       color: WommiColors.inkDim,
                       height: 1.5,
@@ -64,7 +64,7 @@ class _StartNewJourneyDayDialogState extends State<StartNewJourneyDayDialog> {
                   const SizedBox(height: 8),
                   Text(
                     'DAY OF CYCLE',
-                    style: GoogleFonts.spaceMono(
+                    style: GoogleFonts.mulish(
                       fontSize: 11,
                       letterSpacing: 1.1,
                       color: WommiColors.inkDim,

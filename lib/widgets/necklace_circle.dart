@@ -68,7 +68,7 @@ class NecklaceCircle extends StatelessWidget {
                 ),
                 Text(
                   count == 1 ? 'gem' : 'gems',
-                  style: GoogleFonts.spaceMono(
+                  style: GoogleFonts.mulish(
                     fontSize: labelFontSize,
                     color: WommiColors.inkDim,
                     letterSpacing: 0.3,

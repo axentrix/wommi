@@ -4,12 +4,13 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import '../theme.dart';
 import '../data/database.dart';
+import '../models/charm_catalog.dart';
+import '../models/charm_image_catalog.dart';
 import '../models/charm_rarity.dart';
 import '../providers/user_state_provider.dart';
 import '../providers/repository_provider.dart';
-import '../models/journey.dart';
-import '../widgets/charm_album_grid.dart';
-import '../widgets/necklace_circle.dart';
+import '../widgets/necklace_wheel.dart';
+import 'journey_collection_screen.dart';
 
 class AchievementsScreen extends ConsumerStatefulWidget {
   const AchievementsScreen({super.key});
@@ -59,131 +60,176 @@ class _AchievementsScreenState extends ConsumerState<AchievementsScreen> {
     });
   }
 
+  /// The current journey's charms, in the order they were earned - the
+  /// necklace wheel's fixed bottom-center-then-alternate layout (see
+  /// NecklaceWheel) is driven by this order, not by day number or rarity.
+  List<NecklaceWheelCharm> _necklaceCharms() {
+    final rows = [...?_currentCharmRows]
+      ..sort((a, b) => a.earnedAt.compareTo(b.earnedAt));
+
+    return rows.map((c) {
+      switch (c.charmName) {
+        case 'daily_charm':
+          return NecklaceWheelCharm(
+            imagePath: CharmImageCatalog.journeyCharmImage(
+              CharmRarity.fromName(c.rarity),
+              c.cycleDay,
+            ),
+            fallbackEmoji: '🌸',
+          );
+        case 'game_charm':
+          return NecklaceWheelCharm(
+            imagePath: CharmImageCatalog.rewardCharmImage(c.cycleDay),
+            fallbackEmoji: '🎮',
+          );
+        default:
+          return const NecklaceWheelCharm(fallbackEmoji: '👑');
+      }
+    }).toList();
+  }
+
   @override
   Widget build(BuildContext context) {
     final userState = ref.watch(userStateProvider);
     final hasCurrentJourney = userState.currentDay > 0;
     final pastJourneys = userState.journeyHistory;
-    // Null (not just empty) until the async fetch in initState resolves -
-    // NecklaceCircle relies on that to fall back to gemsCollected instead
-    // of flashing "0 gems" while loading (see NecklaceCircle._count).
-    final currentCharms =
-        _currentCharmRows?.map((c) => CharmRarity.fromName(c.rarity)).toList();
 
     return Container(
-      color: WommiColors.bg,
+      color: WommiColors.riveBg,
       child: Column(
         children: [
-          // Header
-          Padding(
-            padding: const EdgeInsets.fromLTRB(22, 20, 22, 4),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'YOUR JOURNEYS',
-                  style: GoogleFonts.spaceMono(
-                    fontSize: 10.5,
-                    letterSpacing: 1.68,
-                    color: WommiColors.rose,
-                    fontWeight: FontWeight.w400,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  'Achievements',
-                  style: GoogleFonts.unbounded(
-                    fontSize: 22,
-                    fontWeight: FontWeight.w800,
-                    color: WommiColors.ink,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 18),
+          if (hasCurrentJourney)
+            NecklaceWheel(charms: _necklaceCharms()),
           Expanded(
-            child: ListView(
-              padding: const EdgeInsets.fromLTRB(22, 0, 22, 16),
-              children: [
-                // Rewarded Charms - one lifetime collection of mini-game
-                // wins, shown once up top rather than per-journey (see
-                // RewardedCharmsGrid).
-                if (_rewardedCharmRows != null) ...[
-                  RewardedCharmsGrid(charms: _rewardedCharmRows!),
-                  const SizedBox(height: 24),
-                ],
-                // Current journey card (in progress)
-                if (hasCurrentJourney) ...[
-                  _CurrentJourneyCard(
-                    journeyNumber: userState.currentJourneyNumber,
-                    gemsCollected: userState.gemBalance,
-                    currentDay: userState.currentDay,
-                    charms: currentCharms,
-                  ),
-                  if (_currentCharmRows != null) ...[
-                    const SizedBox(height: 20),
-                    CharmAlbumGrid(
-                      charms: _currentCharmRows!,
-                    ),
-                  ],
-                  const SizedBox(height: 12),
-                ],
-                // Past journey cards, each with its own charm album below
-                // it when one is available (see Journey.cycleProfileId).
-                ...pastJourneys.reversed.map((journey) {
-                  final charms = journey.cycleProfileId != null
-                      ? _pastJourneyCharmRows[journey.cycleProfileId]
-                      : null;
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 20),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _PastJourneyCard(journey: journey),
-                        if (charms != null && charms.isNotEmpty) ...[
-                          const SizedBox(height: 16),
-                          CharmAlbumGrid(charms: charms),
-                        ],
-                      ],
-                    ),
-                  );
-                }),
-                // Empty state if no journeys
-                if (!hasCurrentJourney && pastJourneys.isEmpty)
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+              child: ListView(
+                children: [
                   Center(
                     child: Padding(
-                      padding: const EdgeInsets.all(48.0),
-                      child: Column(
-                        children: [
-                          Text(
-                            '🌸',
-                            style: TextStyle(fontSize: 64),
-                          ),
-                          const SizedBox(height: 16),
-                          Text(
-                            'No journeys yet',
-                            style: GoogleFonts.unbounded(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w700,
-                              color: WommiColors.ink,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            'Start your first journey to begin collecting charms',
-                            textAlign: TextAlign.center,
-                            style: GoogleFonts.inter(
-                              fontSize: 13,
-                              color: WommiColors.inkDim,
-                              height: 1.5,
-                            ),
-                          ),
-                        ],
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      child: Text(
+                        'Achievements',
+                        style: GoogleFonts.unbounded(
+                          fontSize: 24,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                        ),
                       ),
                     ),
                   ),
-              ],
+                  const SizedBox(height: 8),
+                  // Bonus Gems - the lifetime Rewarded Charms collection.
+                  if (_rewardedCharmRows != null) ...[
+                    _AchievementCard(
+                      title: 'Bonus Gems',
+                      isBonus: true,
+                      badgeValue: '${_rewardedCharmRows!.length}',
+                      badgeLabel:
+                          _rewardedCharmRows!.length == 1 ? 'Gem' : 'Gems',
+                      onTap: () => Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (context) => JourneyCollectionScreen(
+                            title: 'Bonus Gems',
+                            charms: _rewardedCharmRows!,
+                            isRewarded: true,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                  ],
+                  // Current journey (in progress).
+                  if (hasCurrentJourney) ...[
+                    Builder(builder: (context) {
+                      final ritualCount = _currentCharmRows
+                              ?.where((c) => c.charmName == 'daily_charm')
+                              .length ??
+                          0;
+                      return _AchievementCard(
+                        title: 'Journey ${userState.currentJourneyNumber}',
+                        statusText: 'In Progress',
+                        statusColor: WommiColors.achievementPink,
+                        badgeColor: WommiColors.achievementPink,
+                        badgeValue:
+                            '$ritualCount/${CharmCatalog.ritualCharmCount}',
+                        badgeLabel: ritualCount == 1 ? 'Gem' : 'Gems',
+                        onTap: () => Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (context) => JourneyCollectionScreen(
+                              title: 'Journey ${userState.currentJourneyNumber}',
+                              charms: _currentCharmRows ?? const [],
+                            ),
+                          ),
+                        ),
+                      );
+                    }),
+                    const SizedBox(height: 8),
+                  ],
+                  // Past journeys, most recent first.
+                  ...pastJourneys.reversed.map((journey) {
+                    final charms = journey.cycleProfileId != null
+                        ? _pastJourneyCharmRows[journey.cycleProfileId]
+                        : null;
+                    final ritualCount = charms
+                            ?.where((c) => c.charmName == 'daily_charm')
+                            .length ??
+                        journey.gemsCollected;
+                    final dateFormatter = DateFormat('MMM d, yyyy');
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: _AchievementCard(
+                        title: 'Journey ${journey.journeyNumber}',
+                        statusText: 'Completed on '
+                            '${dateFormatter.format(journey.endDate ?? journey.startDate)}',
+                        statusColor: WommiColors.achievementGrey,
+                        badgeColor: WommiColors.achievementPurple,
+                        badgeValue: '$ritualCount',
+                        badgeLabel: ritualCount == 1 ? 'Gem' : 'Gems',
+                        onTap: () => Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (context) => JourneyCollectionScreen(
+                              title: 'Journey ${journey.journeyNumber}',
+                              charms: charms ?? const [],
+                            ),
+                          ),
+                        ),
+                      ),
+                    );
+                  }),
+                  if (!hasCurrentJourney && pastJourneys.isEmpty)
+                    Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(48.0),
+                        child: Column(
+                          children: [
+                            const Text('🌸', style: TextStyle(fontSize: 64)),
+                            const SizedBox(height: 16),
+                            Text(
+                              'No journeys yet',
+                              style: GoogleFonts.unbounded(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w700,
+                                color: Colors.white,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'Start your first journey to begin collecting charms',
+                              textAlign: TextAlign.center,
+                              style: GoogleFonts.mulish(
+                                fontSize: 13,
+                                color: Colors.white70,
+                                height: 1.5,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                ],
+              ),
             ),
           ),
         ],
@@ -192,186 +238,114 @@ class _AchievementsScreenState extends ConsumerState<AchievementsScreen> {
   }
 }
 
-class _CurrentJourneyCard extends StatelessWidget {
-  final int journeyNumber;
-  final int gemsCollected;
-  final int currentDay;
-  final List<CharmRarity>? charms;
+/// One journey/bonus summary row (see the Figma achievements design): a
+/// title + status line on the left, a round "badge" with the gem count on
+/// the right, and a chevron. The Bonus Gems card inverts the palette (solid
+/// pink card, white badge) instead of a white card with a colored badge.
+class _AchievementCard extends StatelessWidget {
+  final String title;
+  final String? statusText;
+  final Color? statusColor;
+  final bool isBonus;
+  final Color badgeColor;
+  final String badgeValue;
+  final String badgeLabel;
+  final VoidCallback onTap;
 
-  const _CurrentJourneyCard({
-    required this.journeyNumber,
-    required this.gemsCollected,
-    required this.currentDay,
-    this.charms,
+  const _AchievementCard({
+    required this.title,
+    this.statusText,
+    this.statusColor,
+    this.isBonus = false,
+    this.badgeColor = WommiColors.achievementPink,
+    required this.badgeValue,
+    required this.badgeLabel,
+    required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            WommiColors.cyan.withOpacity(0.1),
-            WommiColors.lilac.withOpacity(0.08),
+    final titleColor = isBonus ? Colors.white : WommiColors.missionTitleDark;
+    final chevronColor = isBonus ? Colors.white : WommiColors.inkDim;
+
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: isBonus ? WommiColors.achievementPink : Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: WommiColors.ink.withValues(alpha: 0.06),
+              blurRadius: 8,
+              offset: const Offset(0, 6),
+            ),
           ],
         ),
-        border: Border.all(
-          color: WommiColors.cyan,
-          width: 2,
-        ),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Column(
-        children: [
-          // Necklace circle
-          NecklaceCircle(
-            diameter: 100,
-            gemsCollected: gemsCollected,
-            charms: charms,
-            borderColor: WommiColors.cyan,
-            borderWidth: 3,
-            color: Colors.white,
-            countFontSize: 32,
-            labelFontSize: 9,
-          ),
-          const SizedBox(height: 16),
-          // Title
-          Text(
-            'Journey $journeyNumber',
-            style: GoogleFonts.unbounded(
-              fontSize: 16,
-              fontWeight: FontWeight.w700,
-              color: WommiColors.ink,
-            ),
-          ),
-          const SizedBox(height: 4),
-          // Status badge
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-            decoration: BoxDecoration(
-              color: WommiColors.cyan.withOpacity(0.15),
-              border: Border.all(
-                color: WommiColors.cyan,
-                width: 1.5,
-              ),
-              borderRadius: BorderRadius.circular(100),
-            ),
-            child: Text(
-              'IN PROGRESS • Day $currentDay',
-              style: GoogleFonts.spaceMono(
-                fontSize: 10,
-                color: WommiColors.cyanDark,
-                fontWeight: FontWeight.w600,
-                letterSpacing: 0.5,
-              ),
-            ),
-          ),
-          const SizedBox(height: 12),
-          // Prompt
-          Text(
-            'Collect the charms for your necklace',
-            textAlign: TextAlign.center,
-            style: GoogleFonts.inter(
-              fontSize: 13,
-              color: WommiColors.inkDim,
-              height: 1.5,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _PastJourneyCard extends StatelessWidget {
-  final Journey journey;
-
-  const _PastJourneyCard({required this.journey});
-
-  @override
-  Widget build(BuildContext context) {
-    final dateFormatter = DateFormat('MMM d, yyyy');
-    final duration = journey.endDate != null
-        ? journey.endDate!.difference(journey.startDate).inDays
-        : 0;
-
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border.all(
-          color: WommiColors.line,
-          width: 1.5,
-        ),
-        borderRadius: BorderRadius.circular(18),
-        boxShadow: [
-          BoxShadow(
-            color: WommiColors.ink.withOpacity(0.04),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          // Necklace circle (smaller)
-          NecklaceCircle(
-            diameter: 70,
-            gemsCollected: journey.gemsCollected,
-            borderColor: WommiColors.gold,
-            gradient: RadialGradient(
-              colors: [
-                Colors.white,
-                WommiColors.goldSoft.withOpacity(0.3),
-              ],
-            ),
-          ),
-          const SizedBox(width: 14),
-          // Journey info
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Journey ${journey.journeyNumber}',
-                  style: GoogleFonts.unbounded(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700,
-                    color: WommiColors.ink,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'Completed ${dateFormatter.format(journey.endDate ?? journey.startDate)}',
-                  style: GoogleFonts.inter(
-                    fontSize: 11.5,
-                    color: WommiColors.inkDim,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                  decoration: BoxDecoration(
-                    color: WommiColors.goldSoft.withOpacity(0.4),
-                    borderRadius: BorderRadius.circular(100),
-                  ),
-                  child: Text(
-                    '$duration ${duration == 1 ? 'day' : 'days'}',
-                    style: GoogleFonts.spaceMono(
-                      fontSize: 9,
-                      color: Color(0xFFB9822E),
-                      fontWeight: FontWeight.w500,
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    title,
+                    style: GoogleFonts.unbounded(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w800,
+                      color: titleColor,
                     ),
                   ),
-                ),
-              ],
+                  if (statusText != null) ...[
+                    const SizedBox(height: 6),
+                    Text(
+                      statusText!,
+                      style: GoogleFonts.mulish(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                        color: statusColor,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
             ),
-          ),
-        ],
+            const SizedBox(width: 8),
+            Container(
+              width: 60,
+              height: 60,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: isBonus ? Colors.white : badgeColor,
+              ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    badgeValue,
+                    style: GoogleFonts.unbounded(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: isBonus ? WommiColors.achievementPink : Colors.white,
+                    ),
+                  ),
+                  Text(
+                    badgeLabel,
+                    style: GoogleFonts.mulish(
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.w700,
+                      color: isBonus ? WommiColors.achievementPink : Colors.white,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            Icon(Icons.chevron_right, size: 16, color: chevronColor),
+          ],
+        ),
       ),
     );
   }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../theme.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class ChoiceButton extends StatelessWidget {
   final String text;
@@ -45,8 +46,7 @@ class ChoiceButton extends StatelessWidget {
             Expanded(
               child: Text(
                 text,
-                style: TextStyle(
-                  fontFamily: 'Inter',
+                style: GoogleFonts.mulish(
                   fontSize: 14,
                   fontWeight: FontWeight.w500,
                   color: WommiColors.ink,

@@ -346,7 +346,7 @@ class _OnboardingProfileScreenState
                     // Eyebrow
                     Text(
                       'ONE LAST THING',
-                      style: GoogleFonts.spaceMono(
+                      style: GoogleFonts.mulish(
                         fontSize: 10.5,
                         letterSpacing: 1.89,
                         color: WommiColors.rose,
@@ -453,8 +453,7 @@ class _OnboardingProfileScreenState
         const SizedBox(height: 10),
         Text(
           'So Wommi knows what to call you.',
-          style: TextStyle(
-            fontFamily: 'Inter',
+          style: GoogleFonts.mulish(
             fontSize: 13.5,
             height: 1.55,
             color: WommiColors.inkDim,
@@ -465,7 +464,7 @@ class _OnboardingProfileScreenState
           controller: _nameController,
           autofocus: true,
           textCapitalization: TextCapitalization.words,
-          style: GoogleFonts.inter(fontSize: 15, color: WommiColors.ink),
+          style: GoogleFonts.mulish(fontSize: 15, color: WommiColors.ink),
           decoration: _fieldDecoration(hintText: 'Enter your name'),
           onSubmitted: (_) => _handleContinue(),
         ),
@@ -490,8 +489,7 @@ class _OnboardingProfileScreenState
         const SizedBox(height: 10),
         Text(
           'We\'ll send a 6-digit code to verify it\'s you.',
-          style: TextStyle(
-            fontFamily: 'Inter',
+          style: GoogleFonts.mulish(
             fontSize: 13.5,
             height: 1.55,
             color: WommiColors.inkDim,
@@ -507,7 +505,7 @@ class _OnboardingProfileScreenState
               setState(() => _emailError = null);
             }
           },
-          style: GoogleFonts.inter(fontSize: 15, color: WommiColors.ink),
+          style: GoogleFonts.mulish(fontSize: 15, color: WommiColors.ink),
           decoration: _fieldDecoration(
             hintText: 'Enter your email',
             errorText: _emailError,
@@ -535,8 +533,7 @@ class _OnboardingProfileScreenState
         const SizedBox(height: 10),
         Text(
           'We sent a 6-digit code to ${_emailController.text.trim()}',
-          style: TextStyle(
-            fontFamily: 'Inter',
+          style: GoogleFonts.mulish(
             fontSize: 13.5,
             height: 1.55,
             color: WommiColors.inkDim,
@@ -558,7 +555,7 @@ class _OnboardingProfileScreenState
                 Expanded(
                   child: Text(
                     'Test Mode: Your code is $_verificationCode',
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.mulish(
                       fontSize: 11,
                       color: WommiColors.ink,
                       fontWeight: FontWeight.w600,
@@ -580,7 +577,7 @@ class _OnboardingProfileScreenState
               setState(() => _codeError = null);
             }
           },
-          style: GoogleFonts.spaceMono(
+          style: GoogleFonts.mulish(
             fontSize: 20,
             fontWeight: FontWeight.w700,
             color: WommiColors.ink,
@@ -592,7 +589,7 @@ class _OnboardingProfileScreenState
             errorText: _codeError,
             counterText: '',
           ).copyWith(
-            hintStyle: GoogleFonts.spaceMono(
+            hintStyle: GoogleFonts.mulish(
               fontSize: 20,
               fontWeight: FontWeight.w400,
               color: WommiColors.inkDim.withOpacity(0.3),
@@ -612,7 +609,7 @@ class _OnboardingProfileScreenState
   }) {
     return InputDecoration(
       hintText: hintText,
-      hintStyle: GoogleFonts.inter(fontSize: 15, color: WommiColors.inkDim),
+      hintStyle: GoogleFonts.mulish(fontSize: 15, color: WommiColors.inkDim),
       errorText: errorText,
       counterText: counterText,
       filled: true,

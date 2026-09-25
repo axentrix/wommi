@@ -90,7 +90,7 @@ class ChallengeCompletionDialog extends StatelessWidget {
                   Text(
                     challengeTitle,
                     textAlign: TextAlign.center,
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.mulish(
                       fontSize: 14,
                       color: WommiColors.inkDim,
                       height: 1.5,
@@ -100,7 +100,7 @@ class ChallengeCompletionDialog extends StatelessWidget {
                   // Progress
                   Text(
                     '$completedCount of $totalCount rituals complete',
-                    style: GoogleFonts.spaceMono(
+                    style: GoogleFonts.mulish(
                       fontSize: 12,
                       color: WommiColors.cyanDark,
                       fontWeight: FontWeight.w600,

@@ -49,7 +49,7 @@ class ContinueJourneyQuestionDialog extends StatelessWidget {
                   Text(
                     'You can keep tracking your cycle or complete this journey now.',
                     textAlign: TextAlign.center,
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.mulish(
                       fontSize: 14,
                       color: WommiColors.inkDim,
                       height: 1.5,

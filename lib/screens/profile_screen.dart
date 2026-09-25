@@ -70,7 +70,7 @@ class ProfileScreen extends ConsumerWidget {
             // Email
             Text(
               userState.email ?? '',
-              style: GoogleFonts.inter(
+              style: GoogleFonts.mulish(
                 fontSize: 14,
                 color: WommiColors.inkDim,
               ),
@@ -256,7 +256,7 @@ class ProfileScreen extends ConsumerWidget {
                             userState.ovulationDay != null
                                 ? 'Marked on day ${userState.ovulationDay}. Tap to undo.'
                                 : 'Got a positive test or other sign today? Let us know.',
-                            style: GoogleFonts.inter(
+                            style: GoogleFonts.mulish(
                               fontSize: 11,
                               color: WommiColors.inkDim,
                               height: 1.3,
@@ -301,7 +301,7 @@ class ProfileScreen extends ConsumerWidget {
                 ),
                 child: Text(
                   'Delete Account',
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.mulish(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
                     decoration: TextDecoration.underline,
@@ -322,7 +322,7 @@ class ProfileScreen extends ConsumerWidget {
       alignment: Alignment.centerLeft,
       child: Text(
         title.toUpperCase(),
-        style: GoogleFonts.spaceMono(
+        style: GoogleFonts.mulish(
           fontSize: 10.5,
           letterSpacing: 1.68,
           color: WommiColors.rose,
@@ -360,7 +360,7 @@ class ProfileScreen extends ConsumerWidget {
         ),
         content: Text(
           'This will permanently delete your account, all journey history, and progress. This action cannot be undone.',
-          style: GoogleFonts.inter(
+          style: GoogleFonts.mulish(
             fontSize: 14,
             color: WommiColors.ink,
             height: 1.5,
@@ -463,7 +463,7 @@ class _StatCard extends StatelessWidget {
           const SizedBox(height: 4),
           Text(
             label,
-            style: GoogleFonts.spaceMono(
+            style: GoogleFonts.mulish(
               fontSize: 10,
               color: WommiColors.inkDim,
               letterSpacing: 0.5,
@@ -518,7 +518,7 @@ class _SettingCard extends StatelessWidget {
                   const SizedBox(height: 4),
                   Text(
                     subtitle,
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.mulish(
                       fontSize: 12,
                       color: WommiColors.inkDim,
                     ),

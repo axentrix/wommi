@@ -62,8 +62,7 @@ class OnboardingDaysPastOvulationScreen extends ConsumerWidget {
                     // Eyebrow
                     Text(
                       'STEP 3 OF 3',
-                      style: TextStyle(
-                        fontFamily: 'Space Mono',
+                      style: GoogleFonts.mulish(
                         fontSize: 10.5,
                         letterSpacing: 1.89,
                         color: WommiColors.rose,
@@ -84,8 +83,7 @@ class OnboardingDaysPastOvulationScreen extends ConsumerWidget {
                     const SizedBox(height: 10),
                     Text(
                       'We\'ll use this to place Wommi on the path accurately.',
-                      style: TextStyle(
-                        fontFamily: 'Inter',
+                      style: GoogleFonts.mulish(
                         fontSize: 13.5,
                         height: 1.55,
                         color: WommiColors.inkDim,
@@ -122,8 +120,7 @@ class OnboardingDaysPastOvulationScreen extends ConsumerWidget {
                             const SizedBox(height: 8),
                             Text(
                               'DAYS PAST OVULATION',
-                              style: TextStyle(
-                                fontFamily: 'Space Mono',
+                              style: GoogleFonts.mulish(
                                 fontSize: 11,
                                 letterSpacing: 1.1,
                                 color: WommiColors.inkDim,

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../theme.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class ChipButton extends StatelessWidget {
   final String text;
@@ -29,8 +30,7 @@ class ChipButton extends StatelessWidget {
         ),
         child: Text(
           text,
-          style: TextStyle(
-            fontFamily: 'Inter',
+          style: GoogleFonts.mulish(
             fontSize: 12,
             fontWeight: FontWeight.w600,
             color: isSelected ? WommiColors.ink : WommiColors.inkDim,

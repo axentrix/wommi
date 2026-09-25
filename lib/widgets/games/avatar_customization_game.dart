@@ -71,7 +71,7 @@ class _AvatarCustomizationGameState extends State<AvatarCustomizationGame> {
               const SizedBox(height: 28),
               Text(
                 'BACKGROUND',
-                style: GoogleFonts.spaceMono(
+                style: GoogleFonts.mulish(
                   fontSize: 10.5,
                   letterSpacing: 1.4,
                   color: WommiColors.inkDim,
@@ -105,7 +105,7 @@ class _AvatarCustomizationGameState extends State<AvatarCustomizationGame> {
               const SizedBox(height: 22),
               Text(
                 'ACCESSORY',
-                style: GoogleFonts.spaceMono(
+                style: GoogleFonts.mulish(
                   fontSize: 10.5,
                   letterSpacing: 1.4,
                   color: WommiColors.inkDim,

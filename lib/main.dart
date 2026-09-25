@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:rive/rive.dart' as rive;
+import 'models/charm_image_catalog.dart';
 import 'theme.dart';
 import 'screens/splash_screen.dart';
 import 'screens/landing_screen.dart';
@@ -18,6 +19,7 @@ import 'screens/home_screen.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await rive.RiveNative.init();
+  await CharmImageCatalog.load();
 
   // Set system UI overlay style
   SystemChrome.setSystemUIOverlayStyle(

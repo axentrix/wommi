@@ -49,7 +49,7 @@ class PregnancyWinDialog extends StatelessWidget {
                   Text(
                     'You completed your journey',
                     textAlign: TextAlign.center,
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.mulish(
                       fontSize: 15,
                       color: WommiColors.inkDim,
                       height: 1.5,
@@ -93,7 +93,7 @@ class PregnancyWinDialog extends StatelessWidget {
                   Text(
                     'Share your necklace with a\nrandom user for good luck?',
                     textAlign: TextAlign.center,
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.mulish(
                       fontSize: 14,
                       color: WommiColors.ink,
                       height: 1.5,

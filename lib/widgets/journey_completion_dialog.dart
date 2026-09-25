@@ -61,7 +61,7 @@ class JourneyCompletionDialog extends StatelessWidget {
                   // Eyebrow
                   Text(
                     'CYCLE COMPLETE',
-                    style: GoogleFonts.spaceMono(
+                    style: GoogleFonts.mulish(
                       fontSize: 10.5,
                       letterSpacing: 2.1,
                       color: WommiColors.rose,
@@ -120,7 +120,7 @@ class JourneyCompletionDialog extends StatelessWidget {
                                     ),
                                     Text(
                                       gemsCollected == 1 ? 'gem' : 'gems',
-                                      style: GoogleFonts.spaceMono(
+                                      style: GoogleFonts.mulish(
                                         fontSize: 10,
                                         color: WommiColors.inkDim,
                                         letterSpacing: 0.5,
@@ -151,7 +151,7 @@ class JourneyCompletionDialog extends StatelessWidget {
                   Text(
                     _randomQuote,
                     textAlign: TextAlign.center,
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.mulish(
                       fontSize: 14,
                       color: WommiColors.inkDim,
                       height: 1.6,

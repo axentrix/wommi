@@ -51,7 +51,7 @@ class OvulationCheckDialog extends StatelessWidget {
               Text(
                 'It\'s day $currentDay and ovulation hasn\'t been marked yet. Let us know if it\'s already happened so the journey stays accurate.',
                 textAlign: TextAlign.center,
-                style: GoogleFonts.inter(
+                style: GoogleFonts.mulish(
                   fontSize: 13,
                   color: WommiColors.inkDim,
                   height: 1.5,

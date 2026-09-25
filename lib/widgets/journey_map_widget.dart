@@ -828,7 +828,7 @@ class _JourneyMapWidgetState extends ConsumerState<JourneyMapWidget>
                 userState.tracksMenstrualCycle
                     ? 'Ovary • tap to open'
                     : 'Early days • tap to open',
-                style: GoogleFonts.spaceMono(
+                style: GoogleFonts.mulish(
                   fontSize: 6.5,
                   fontWeight: FontWeight.w700,
                   color: WommiColors.inkDim,
@@ -1150,7 +1150,7 @@ class _JourneyMapWidgetState extends ConsumerState<JourneyMapWidget>
                 ),
                 child: Text(
                   'YOU',
-                  style: GoogleFonts.spaceMono(
+                  style: GoogleFonts.mulish(
                     fontSize: 7,
                     fontWeight: FontWeight.w700,
                     color: Colors.white,

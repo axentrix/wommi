@@ -128,7 +128,7 @@ class _WinStateDialogState extends State<WinStateDialog>
                   // Eyebrow
                   Text(
                     'DAY ${widget.currentDay} COMPLETE',
-                    style: GoogleFonts.spaceMono(
+                    style: GoogleFonts.mulish(
                       fontSize: 10.5,
                       letterSpacing: 2.1,
                       color: WommiColors.rose,
@@ -220,7 +220,7 @@ class _WinStateDialogState extends State<WinStateDialog>
                   Text(
                     'Every small ritual adds up.\nYour consistency creates magic.',
                     textAlign: TextAlign.center,
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.mulish(
                       fontSize: 13.5,
                       color: Colors.white.withValues(alpha: 0.68),
                       height: 1.6,
@@ -386,7 +386,7 @@ class _WinStateDialogState extends State<WinStateDialog>
       children: [
         Text(
           label,
-          style: GoogleFonts.spaceMono(
+          style: GoogleFonts.mulish(
             fontSize: 11,
             color: Colors.white.withValues(alpha: 0.55),
           ),

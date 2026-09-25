@@ -48,8 +48,7 @@ class OnboardingGenderScreen extends ConsumerWidget {
                     // Eyebrow
                     Text(
                       'GETTING STARTED',
-                      style: TextStyle(
-                        fontFamily: 'Space Mono',
+                      style: GoogleFonts.mulish(
                         fontSize: 10.5,
                         letterSpacing: 1.89,
                         color: WommiColors.rose,
@@ -70,8 +69,7 @@ class OnboardingGenderScreen extends ConsumerWidget {
                     const SizedBox(height: 10),
                     Text(
                       'This decides which questions make sense to ask you next.',
-                      style: TextStyle(
-                        fontFamily: 'Inter',
+                      style: GoogleFonts.mulish(
                         fontSize: 13.5,
                         height: 1.55,
                         color: WommiColors.inkDim,

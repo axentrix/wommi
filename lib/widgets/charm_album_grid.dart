@@ -3,18 +3,26 @@ import 'package:google_fonts/google_fonts.dart';
 import '../theme.dart';
 import '../data/database.dart';
 import '../models/charm_catalog.dart';
+import '../models/charm_image_catalog.dart';
 import '../models/charm_rarity.dart';
 
 /// One slot in the album - either a real earned charm, or a not-yet-earned
 /// placeholder for a day/kind that's still possible to collect.
 class _AlbumSlot {
   final String name;
+  // The real charm artwork (see CharmImageCatalog), if one was available to
+  // assign to this slot. Falls back to [icon] (a plain emoji) when null -
+  // always true for specials like the pregnancy charm, which have no
+  // dedicated art pool, and possible in general if the image pool was
+  // empty for whatever reason.
+  final String? imagePath;
   final String icon;
   final CharmRarity? rarity;
   final bool earned;
 
   const _AlbumSlot({
     required this.name,
+    this.imagePath,
     required this.icon,
     required this.rarity,
     required this.earned,
@@ -59,10 +67,14 @@ class CharmAlbumGrid extends StatelessWidget {
       final name = CharmCatalog.ritualCharmName(day);
       if (name == null) continue;
       final row = byDay[day];
+      final rarity = row != null ? CharmRarity.fromName(row.rarity) : null;
       slots.add(_AlbumSlot(
         name: name,
+        imagePath: rarity != null
+            ? CharmImageCatalog.journeyCharmImage(rarity, day)
+            : CharmImageCatalog.placeholderImage(day),
         icon: '🌸',
-        rarity: row != null ? CharmRarity.fromName(row.rarity) : null,
+        rarity: rarity,
         earned: row != null,
       ));
     }
@@ -95,7 +107,7 @@ class CharmAlbumGrid extends StatelessWidget {
       children: [
         Text(
           'CHARM ALBUM',
-          style: GoogleFonts.spaceMono(
+          style: GoogleFonts.mulish(
             fontSize: 10.5,
             letterSpacing: 1.68,
             color: WommiColors.rose,
@@ -142,7 +154,7 @@ class RewardedCharmsGrid extends StatelessWidget {
         children: [
           Text(
             'REWARDED CHARMS',
-            style: GoogleFonts.spaceMono(
+            style: GoogleFonts.mulish(
               fontSize: 10.5,
               letterSpacing: 1.68,
               color: WommiColors.rose,
@@ -152,7 +164,7 @@ class RewardedCharmsGrid extends StatelessWidget {
           const SizedBox(height: 10),
           Text(
             'Win a daily mini-game to start collecting these.',
-            style: GoogleFonts.inter(
+            style: GoogleFonts.mulish(
               fontSize: 12.5,
               color: WommiColors.inkDim,
               height: 1.4,
@@ -165,6 +177,7 @@ class RewardedCharmsGrid extends StatelessWidget {
     final slots = charms
         .map((c) => _AlbumSlot(
               name: CharmCatalog.gameCharmName(c.cycleDay) ?? 'Mystery Charm',
+              imagePath: CharmImageCatalog.rewardCharmImage(c.cycleDay),
               icon: '🎮',
               rarity: CharmRarity.fromName(c.rarity),
               earned: true,
@@ -176,7 +189,7 @@ class RewardedCharmsGrid extends StatelessWidget {
       children: [
         Text(
           'REWARDED CHARMS',
-          style: GoogleFonts.spaceMono(
+          style: GoogleFonts.mulish(
             fontSize: 10.5,
             letterSpacing: 1.68,
             color: WommiColors.rose,
@@ -213,7 +226,12 @@ class _AlbumCell extends StatelessWidget {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        _CharmCircle(rarity: slot.rarity, icon: slot.icon, earned: slot.earned),
+        _CharmCircle(
+          rarity: slot.rarity,
+          imagePath: slot.imagePath,
+          icon: slot.icon,
+          earned: slot.earned,
+        ),
         const SizedBox(height: 6),
         Text(
           slot.earned ? slot.name : '???',
@@ -234,24 +252,70 @@ class _AlbumCell extends StatelessWidget {
   }
 }
 
+// Standard luminance-preserving grayscale matrix - used to desaturate a
+// not-yet-earned slot's artwork instead of hiding it behind a generic "?"
+// (see _CharmCircle).
+const List<double> _grayscaleMatrix = [
+  0.2126, 0.7152, 0.0722, 0, 0,
+  0.2126, 0.7152, 0.0722, 0, 0,
+  0.2126, 0.7152, 0.0722, 0, 0,
+  0, 0, 0, 1, 0,
+];
+
 /// The charm itself - a rounded circle, styled by rarity the same way a
 /// bead on the profile/achievements necklace is (see NecklaceCircle's
-/// _CharmBead): gold gradient + glow for legendary, lilac-cyan gradient +
-/// glow for rare, plain white/bordered for normal. A not-yet-collected
-/// slot is just a flat grey circle with a "?" - its real rarity isn't
-/// revealed until it's actually earned.
+/// _CharmBead): gold ring + glow for legendary, lilac-cyan ring + glow for
+/// rare, plain white/bordered ring for normal - framing the real charm
+/// artwork (see CharmImageCatalog), filled to the circle. A not-yet-
+/// collected slot shows that same artwork grayed out and dimmed instead of
+/// hidden outright, since its real rarity isn't revealed until it's earned
+/// - falling back to a plain "?" only if no artwork was available at all.
 class _CharmCircle extends StatelessWidget {
   final CharmRarity? rarity;
+  final String? imagePath;
   final String icon;
   final bool earned;
 
   const _CharmCircle({
     required this.rarity,
+    required this.imagePath,
     required this.icon,
     required this.earned,
   });
 
   static const double _size = _AlbumCell._circleSize;
+
+  Widget _art(BuildContext context, {required bool grayscale}) {
+    final path = imagePath;
+    if (path == null) {
+      return Center(
+        child: Text(icon, style: TextStyle(fontSize: _size * 0.36)),
+      );
+    }
+    final devicePixelRatio = MediaQuery.of(context).devicePixelRatio;
+    final image = Image.asset(
+      path,
+      width: _size,
+      height: _size,
+      fit: BoxFit.cover,
+      // The source art (especially the reward charms) is far higher
+      // resolution than a 64-logical-pixel circle needs - decoding at
+      // roughly display size instead of full size keeps memory sane.
+      cacheWidth: (_size * devicePixelRatio).round(),
+      cacheHeight: (_size * devicePixelRatio).round(),
+    );
+    return ClipOval(
+      child: grayscale
+          ? Opacity(
+              opacity: 0.55,
+              child: ColorFiltered(
+                colorFilter: const ColorFilter.matrix(_grayscaleMatrix),
+                child: image,
+              ),
+            )
+          : image,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -264,9 +328,7 @@ class _CharmCircle extends StatelessWidget {
           color: WommiColors.bgSoft,
           border: Border.all(color: WommiColors.line, width: 1.5),
         ),
-        child: Center(
-          child: Text('❓', style: TextStyle(fontSize: _size * 0.36)),
-        ),
+        child: _art(context, grayscale: true),
       );
     }
 
@@ -291,9 +353,7 @@ class _CharmCircle extends StatelessWidget {
               ),
             ],
           ),
-          child: Center(
-            child: Text(icon, style: TextStyle(fontSize: _size * 0.36)),
-          ),
+          child: _art(context, grayscale: false),
         );
       case CharmRarity.rare:
         return Container(
@@ -315,9 +375,7 @@ class _CharmCircle extends StatelessWidget {
               ),
             ],
           ),
-          child: Center(
-            child: Text(icon, style: TextStyle(fontSize: _size * 0.36)),
-          ),
+          child: _art(context, grayscale: false),
         );
       case CharmRarity.normal:
         return Container(
@@ -328,9 +386,7 @@ class _CharmCircle extends StatelessWidget {
             color: Colors.white,
             border: Border.all(color: WommiColors.line, width: 1.5),
           ),
-          child: Center(
-            child: Text(icon, style: TextStyle(fontSize: _size * 0.36)),
-          ),
+          child: _art(context, grayscale: false),
         );
     }
   }

@@ -66,7 +66,7 @@ class _EditCycleDayDialogState extends ConsumerState<EditCycleDayDialog> {
                         ? 'Where are you in your cycle today?'
                         : 'What day are you on?',
                     textAlign: TextAlign.center,
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.mulish(
                       fontSize: 13,
                       color: WommiColors.inkDim,
                       height: 1.5,
@@ -84,7 +84,7 @@ class _EditCycleDayDialogState extends ConsumerState<EditCycleDayDialog> {
                   const SizedBox(height: 8),
                   Text(
                     tracksMenstrualCycle ? 'DAY OF CYCLE' : 'JOURNEY DAY',
-                    style: GoogleFonts.spaceMono(
+                    style: GoogleFonts.mulish(
                       fontSize: 11,
                       letterSpacing: 1.1,
                       color: WommiColors.inkDim,

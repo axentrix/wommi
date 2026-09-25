@@ -55,7 +55,7 @@ class GemBalancePopupContent extends StatelessWidget {
           Text(
             'Collect crystals during your journey to create a necklace of conception charms.',
             textAlign: TextAlign.center,
-            style: GoogleFonts.inter(
+            style: GoogleFonts.mulish(
               fontSize: 12.5,
               color: WommiColors.inkDim,
               height: 1.5,
@@ -114,7 +114,7 @@ class _MiniStat extends StatelessWidget {
           const SizedBox(height: 2),
           Text(
             label,
-            style: GoogleFonts.spaceMono(
+            style: GoogleFonts.mulish(
               fontSize: 8.5,
               letterSpacing: 0.8,
               color: WommiColors.inkDim,

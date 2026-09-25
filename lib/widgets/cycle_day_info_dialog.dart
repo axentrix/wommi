@@ -120,7 +120,7 @@ class CycleDayInfoDialog extends ConsumerWidget {
             // Description
             Text(
               info.description,
-              style: GoogleFonts.inter(
+              style: GoogleFonts.mulish(
                 fontSize: 13,
                 color: WommiColors.ink,
                 height: 1.5,
@@ -160,7 +160,7 @@ class CycleDayInfoDialog extends ConsumerWidget {
                             ovulationMarkedHere
                                 ? 'Marked on day $day. Tap to undo.'
                                 : 'Got a positive test or other sign today? Let us know.',
-                            style: GoogleFonts.inter(
+                            style: GoogleFonts.mulish(
                               fontSize: 10.5,
                               color: WommiColors.inkDim,
                               height: 1.35,
@@ -212,7 +212,7 @@ class CycleDayInfoDialog extends ConsumerWidget {
                   const SizedBox(width: 8),
                   Text(
                     'This day hasn\'t arrived yet',
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.mulish(
                       fontSize: 12,
                       color: WommiColors.inkDim,
                       fontWeight: FontWeight.w600,
@@ -223,7 +223,7 @@ class CycleDayInfoDialog extends ConsumerWidget {
               const SizedBox(height: 12),
               Text(
                 'Come back once you reach day $day to do its rituals and collect a conception charm.',
-                style: GoogleFonts.inter(
+                style: GoogleFonts.mulish(
                   fontSize: 11,
                   color: WommiColors.inkDim,
                   height: 1.4,
@@ -260,7 +260,7 @@ class CycleDayInfoDialog extends ConsumerWidget {
                   const SizedBox(width: 8),
                   Text(
                     'Missions completed!',
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.mulish(
                       fontSize: 12,
                       color: WommiColors.gold,
                       fontWeight: FontWeight.w600,
@@ -271,7 +271,7 @@ class CycleDayInfoDialog extends ConsumerWidget {
               const SizedBox(height: 12),
               Text(
                 'You can revisit this day\'s rituals anytime, but its charm has already been collected.',
-                style: GoogleFonts.inter(
+                style: GoogleFonts.mulish(
                   fontSize: 11,
                   color: WommiColors.inkDim,
                   height: 1.4,
@@ -292,7 +292,7 @@ class CycleDayInfoDialog extends ConsumerWidget {
                     : isCurrent
                         ? 'Ready to complete today\'s rituals?'
                         : 'Would you like to complete this day\'s rituals and collect a conception charm?',
-                style: GoogleFonts.inter(
+                style: GoogleFonts.mulish(
                   fontSize: 12,
                   color: WommiColors.inkDim,
                   height: 1.4,

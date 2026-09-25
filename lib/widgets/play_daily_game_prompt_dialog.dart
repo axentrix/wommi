@@ -68,7 +68,7 @@ class PlayDailyGamePromptDialog extends StatelessWidget {
                   Text(
                     'Spin the ${game.label} for a shot at a second charm today.',
                     textAlign: TextAlign.center,
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.mulish(
                       fontSize: 13.5,
                       color: WommiColors.inkDim,
                       height: 1.5,

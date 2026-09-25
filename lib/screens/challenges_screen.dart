@@ -271,7 +271,7 @@ class _ChallengesScreenState extends ConsumerState<ChallengesScreen> {
               children: [
                 Text(
                   tracksMenstrualCycle ? 'CYCLE DAY $day' : 'JOURNEY DAY $day',
-                  style: GoogleFonts.spaceMono(
+                  style: GoogleFonts.mulish(
                     fontSize: 10.5,
                     letterSpacing: 1.68,
                     color: WommiColors.rose,
@@ -339,7 +339,7 @@ class _ChallengesScreenState extends ConsumerState<ChallengesScreen> {
                         ),
                         Text(
                           isToday ? 'TODAY' : 'DAY $day',
-                          style: GoogleFonts.spaceMono(
+                          style: GoogleFonts.mulish(
                             fontSize: 8,
                             color: WommiColors.inkDim,
                             letterSpacing: 0.4,
@@ -373,7 +373,7 @@ class _ChallengesScreenState extends ConsumerState<ChallengesScreen> {
                       completedCount == totalCount
                           ? 'You\'ve completed all rituals. Amazing work!'
                           : 'Complete ${totalCount - completedCount} more ${totalCount - completedCount == 1 ? 'ritual' : 'rituals'} to earn your gem.',
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.mulish(
                         fontSize: 12,
                         color: WommiColors.inkDim,
                         height: 1.5,
@@ -425,7 +425,7 @@ class _ChallengesScreenState extends ConsumerState<ChallengesScreen> {
                             ? 'Come back tomorrow for new rituals'
                             : 'Nice work catching up on this day',
                         textAlign: TextAlign.center,
-                        style: GoogleFonts.inter(
+                        style: GoogleFonts.mulish(
                           fontSize: 14,
                           color: WommiColors.inkDim,
                           height: 1.5,
@@ -529,7 +529,7 @@ class ChallengeCard extends StatelessWidget {
                 const SizedBox(height: 3),
                 Text(
                   challenge.description,
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.mulish(
                     fontSize: 12,
                     color: WommiColors.inkDim,
                     height: 1.5,

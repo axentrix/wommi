@@ -53,7 +53,7 @@ class WelcomeDialog extends StatelessWidget {
               Text(
                 'Do 3 small rituals daily, collect charms, and guide Wommi in your inner world.',
                 textAlign: TextAlign.center,
-                style: GoogleFonts.inter(
+                style: GoogleFonts.mulish(
                   fontSize: 14,
                   color: WommiColors.inkDim,
                   height: 1.55,

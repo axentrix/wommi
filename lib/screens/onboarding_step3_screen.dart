@@ -78,8 +78,7 @@ class OnboardingStep3Screen extends ConsumerWidget {
                     // Eyebrow
                     Text(
                       'STEP 3 OF 3',
-                      style: TextStyle(
-                        fontFamily: 'Space Mono',
+                      style: GoogleFonts.mulish(
                         fontSize: 10.5,
                         letterSpacing: 1.89,
                         color: WommiColors.rose,
@@ -100,8 +99,7 @@ class OnboardingStep3Screen extends ConsumerWidget {
                     const SizedBox(height: 10),
                     Text(
                       'Select all that apply. This helps us personalize your journey.',
-                      style: TextStyle(
-                        fontFamily: 'Inter',
+                      style: GoogleFonts.mulish(
                         fontSize: 13.5,
                         height: 1.55,
                         color: WommiColors.inkDim,

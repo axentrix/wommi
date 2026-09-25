@@ -6,6 +6,7 @@ import '../providers/repository_provider.dart';
 import '../providers/user_state_provider.dart';
 import '../services/device_storage.dart';
 import '../theme.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 /// Parses the stored genderIdentity column back into its enum - null (no
 /// match, or a pre-migration row that never had one) is treated as "not
@@ -221,8 +222,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                 const SizedBox(height: 24),
                 Text(
                   'Wommi',
-                  style: TextStyle(
-                    fontFamily: 'Unbounded',
+                  style: GoogleFonts.unbounded(
                     fontWeight: FontWeight.w800,
                     fontSize: 42,
                     color: WommiColors.ink,
@@ -232,8 +232,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                 const SizedBox(height: 8),
                 Text(
                   'Your fertility companion',
-                  style: TextStyle(
-                    fontFamily: 'Space Mono',
+                  style: GoogleFonts.mulish(
                     fontSize: 11,
                     letterSpacing: 2,
                     color: WommiColors.inkDim,

@@ -135,7 +135,7 @@ class _GameWinDialogState extends State<GameWinDialog>
                 children: [
                   Text(
                     widget.gameName.toUpperCase(),
-                    style: GoogleFonts.spaceMono(
+                    style: GoogleFonts.mulish(
                       fontSize: 10.5,
                       letterSpacing: 2.1,
                       color: WommiColors.rose,
@@ -227,7 +227,7 @@ class _GameWinDialogState extends State<GameWinDialog>
                   Text(
                     'One more charm for your collection.',
                     textAlign: TextAlign.center,
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.mulish(
                       fontSize: 13.5,
                       color: Colors.white.withValues(alpha: 0.68),
                       height: 1.6,
@@ -329,7 +329,7 @@ class _GameWinDialogState extends State<GameWinDialog>
       children: [
         Text(
           label,
-          style: GoogleFonts.spaceMono(
+          style: GoogleFonts.mulish(
             fontSize: 11,
             color: Colors.white.withValues(alpha: 0.55),
           ),

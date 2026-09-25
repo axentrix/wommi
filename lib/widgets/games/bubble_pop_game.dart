@@ -86,7 +86,7 @@ class _BubblePopGameState extends State<BubblePopGame> {
                     _won
                         ? 'Charm collected!'
                         : 'Pop them all (${_popped.length}/${_bubbles.length})',
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.mulish(
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
                       color: Colors.white.withOpacity(0.85),

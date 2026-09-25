@@ -120,7 +120,7 @@ class _PinataGameState extends State<PinataGame>
               _broken
                   ? (_won ? 'Charm collected!' : 'Empty - better luck tomorrow')
                   : 'Tap the piñata ($_hits/$_hitsToBreak)',
-              style: GoogleFonts.inter(
+              style: GoogleFonts.mulish(
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
                 color: WommiColors.inkDim,

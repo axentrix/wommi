@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../theme.dart';
+import '../models/challenge.dart';
 import '../models/charm_rarity.dart';
 import '../models/onboarding_state.dart';
 import '../models/user_state.dart';
 import '../providers/user_state_provider.dart';
 import '../providers/repository_provider.dart';
+import '../widgets/app_header_bar.dart';
 import '../widgets/bottom_navigation_bar.dart';
 import '../widgets/journey_map_widget.dart';
 import '../widgets/gem_balance_popup.dart';
@@ -25,6 +27,11 @@ class HomeScreen extends ConsumerStatefulWidget {
 class _HomeScreenState extends ConsumerState<HomeScreen>
     with WidgetsBindingObserver {
   int _currentIndex = 0;
+
+  // The home header's "Next ritual" card (see _buildMissionCard) - null
+  // while loading, and also once every ritual for today is done, in which
+  // case the card just doesn't show.
+  String? _nextRitualTitle;
 
   @override
   void initState() {
@@ -55,7 +62,32 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       }
 
       _checkOvulationStatus(userState);
+      _loadNextRitual(userState);
     });
+  }
+
+  /// Today's first not-yet-completed ritual, shown on the mission card -
+  /// re-run whenever the Map tab is reopened (see WommiBottomNavigationBar's
+  /// onTap below), since completing a ritual happens on a different tab and
+  /// wouldn't otherwise be noticed here.
+  Future<void> _loadNextRitual(UserState userState) async {
+    final day = userState.currentDay;
+    final repository = ref.read(repositoryProvider);
+    final completedIds = await repository.getCompletedRitualIdsForDay(day);
+    if (!mounted) return;
+
+    final templates = ChallengeTemplates.getChallengesForDay(
+      day,
+      userState.tracksMenstrualCycle,
+    );
+    String? nextTitle;
+    for (var i = 0; i < templates.length; i++) {
+      if (!completedIds.contains('day_${day}_challenge_$i')) {
+        nextTitle = templates[i]['title'];
+        break;
+      }
+    }
+    setState(() => _nextRitualTitle = nextTitle);
   }
 
   /// Once-per-launch ovulation check-in. A man or "other" journey doesn't
@@ -149,12 +181,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       );
     }
 
-    final header = _buildHeader(
-      userState.currentDay,
-      userState.gemBalance,
-      userState.streakDays,
-      userState.tracksMenstrualCycle,
-    );
+    final header = _buildHeader(userState);
 
     return Scaffold(
       // Only matters where something doesn't fully cover it - on Home the
@@ -164,14 +191,22 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       backgroundColor: _currentIndex == 0 ? WommiColors.riveBg : WommiColors.bg,
       body: SafeArea(
         child: _currentIndex == 0
-            // On Home the header floats over the map instead of sitting in
-            // its own space above it - it has no background color of its
-            // own, so the map's artwork shows through behind it instead of
-            // a flat color seam where the two used to meet.
+            // On Home the header (and the mission card) float over the map
+            // instead of sitting in their own space above/below it - the
+            // header has no background color of its own, so the map's
+            // artwork shows through behind it instead of a flat color seam
+            // where the two used to meet.
             ? Stack(
                 children: [
                   Positioned.fill(child: _buildContent()),
                   Positioned(top: 0, left: 0, right: 0, child: header),
+                  if (_nextRitualTitle != null)
+                    Positioned(
+                      left: 16,
+                      right: 16,
+                      bottom: 16,
+                      child: _buildMissionCard(_nextRitualTitle!),
+                    ),
                 ],
               )
             : Column(
@@ -187,82 +222,101 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
           setState(() {
             _currentIndex = index;
           });
+          // Refresh the mission card in case a ritual was just completed on
+          // another tab - this State persists across tab switches, so
+          // nothing else would notice that on its own.
+          if (index == 0) {
+            _loadNextRitual(ref.read(userStateProvider));
+          }
         },
       ),
     );
   }
 
-  Widget _buildHeader(
-    int currentDay,
-    int gemBalance,
-    int streakDays,
-    bool tracksMenstrualCycle,
-  ) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 16),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          // Current day
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                tracksMenstrualCycle ? 'CYCLE' : 'JOURNEY',
-                style: GoogleFonts.spaceMono(
-                  fontSize: 9.5,
-                  letterSpacing: 1.33,
-                  color: WommiColors.inkDim,
-                  fontWeight: FontWeight.w400,
-                ),
-              ),
-              const SizedBox(height: 3),
-              Text(
-                'Day $currentDay',
-                style: GoogleFonts.unbounded(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700,
-                  color: WommiColors.ink,
-                ),
-              ),
-            ],
-          ),
-          // Gem balance - tap to see the necklace mini dashboard
-          Builder(
-            builder: (badgeContext) => GestureDetector(
-              onTap: () =>
-                  _showGemPopup(badgeContext, gemBalance, streakDays),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                decoration: BoxDecoration(
-                  color: WommiColors.goldSoft,
-                  border: Border.all(
-                    color: WommiColors.gold,
-                    width: 1.5,
+  Widget _buildHeader(UserState userState) {
+    return AppHeaderBar(
+      userState: userState,
+      subtitle: _phaseSubtitle(userState),
+      onGemsTap: (badgeContext) => _showGemPopup(
+        badgeContext,
+        userState.gemBalance,
+        userState.streakDays,
+      ),
+    );
+  }
+
+  /// A short, punchy phase description for the header subtitle - separate
+  /// from CycleDayInfoDialog's more clinical phase names, same underlying
+  /// day/ovulation logic though.
+  String _phaseSubtitle(UserState userState) {
+    if (!userState.tracksMenstrualCycle) {
+      return 'Keep up the great work';
+    }
+    final day = userState.currentDay;
+    final ovulationDay = userState.effectiveOvulationDay;
+    if (ovulationDay == null) {
+      return day <= 5 ? 'Resting and releasing' : 'Ovulation on its way';
+    }
+    if (day < ovulationDay) return 'Ovulation on its way';
+    if (day == ovulationDay) return 'Ovulation day!';
+    final daysSinceOvulation = day - ovulationDay;
+    if (daysSinceOvulation <= 6) return 'Early luteal phase';
+    if (daysSinceOvulation <= 13) return 'Two week wait';
+    return 'New cycle coming soon';
+  }
+
+  /// The "Next ritual" card floating above the bottom nav on the Map tab -
+  /// hidden entirely once today's rituals are all done (see
+  /// _loadNextRitual). Tapping it jumps to the Daily Rituals tab.
+  Widget _buildMissionCard(String ritualTitle) {
+    return GestureDetector(
+      onTap: () => setState(() => _currentIndex = 1),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: WommiColors.ink.withValues(alpha: 0.06),
+              blurRadius: 8,
+              offset: const Offset(0, 6),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Next ritual',
+                    style: GoogleFonts.mulish(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      color: WommiColors.missionLabelPink,
+                    ),
                   ),
-                  borderRadius: BorderRadius.circular(100),
-                ),
-                child: Row(
-                  children: [
-                    Text(
-                      '💎',
-                      style: TextStyle(fontSize: 16),
+                  const SizedBox(height: 6),
+                  Text(
+                    ritualTitle,
+                    style: GoogleFonts.unbounded(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w800,
+                      color: WommiColors.missionTitleDark,
                     ),
-                    const SizedBox(width: 6),
-                    Text(
-                      '$gemBalance',
-                      style: GoogleFonts.unbounded(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w700,
-                        color: WommiColors.ink,
-                      ),
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
-          ),
-        ],
+            Image.asset(
+              'assets/images/home/chevron_right.png',
+              width: 16,
+              height: 16,
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -328,17 +382,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   }
 
   Widget _buildJourneyMap() {
+    // Flat, matching the Figma homepage's solid background - the previous
+    // radial lilac highlight looked out of place once this became a dark
+    // purple instead of a light cyan.
     return Container(
-      decoration: BoxDecoration(
-        gradient: RadialGradient(
-          center: const Alignment(0, -0.5),
-          radius: 1.2,
-          colors: [
-            WommiColors.lilac.withOpacity(0.3),
-            WommiColors.riveBg,
-          ],
-        ),
-      ),
+      color: WommiColors.riveBg,
       child: const JourneyMapWidget(),
     );
   }
@@ -364,7 +412,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
           const SizedBox(height: 8),
           Text(
             'Coming soon',
-            style: GoogleFonts.spaceMono(
+            style: GoogleFonts.mulish(
               fontSize: 11,
               color: WommiColors.inkDim,
             ),

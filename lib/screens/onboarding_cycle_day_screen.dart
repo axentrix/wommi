@@ -80,8 +80,7 @@ class OnboardingCycleDayScreen extends ConsumerWidget {
                     // Eyebrow
                     Text(
                       'STEP 1 OF 3',
-                      style: TextStyle(
-                        fontFamily: 'Space Mono',
+                      style: GoogleFonts.mulish(
                         fontSize: 10.5,
                         letterSpacing: 1.89,
                         color: WommiColors.rose,
@@ -103,8 +102,7 @@ class OnboardingCycleDayScreen extends ConsumerWidget {
                     // Subtitle
                     Text(
                       'We\'ll use this to place Wommi on the path and time your rituals to your body.',
-                      style: TextStyle(
-                        fontFamily: 'Inter',
+                      style: GoogleFonts.mulish(
                         fontSize: 13.5,
                         height: 1.55,
                         color: WommiColors.inkDim,
@@ -134,8 +132,7 @@ class OnboardingCycleDayScreen extends ConsumerWidget {
                             const SizedBox(height: 8),
                             Text(
                               'DAY OF CYCLE',
-                              style: TextStyle(
-                                fontFamily: 'Space Mono',
+                              style: GoogleFonts.mulish(
                                 fontSize: 11,
                                 letterSpacing: 1.1,
                                 color: WommiColors.inkDim,
@@ -235,8 +232,7 @@ class _DisclosureChip extends StatelessWidget {
         ),
         child: Text(
           label,
-          style: TextStyle(
-            fontFamily: 'Inter',
+          style: GoogleFonts.mulish(
             fontSize: 12,
             fontWeight: FontWeight.w600,
             color: isSelected ? WommiColors.cyanDark : WommiColors.inkDim,

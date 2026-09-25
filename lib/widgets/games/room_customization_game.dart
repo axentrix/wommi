@@ -70,7 +70,7 @@ class _RoomCustomizationGameState extends State<RoomCustomizationGame> {
               const SizedBox(height: 26),
               Text(
                 'WALLPAPER',
-                style: GoogleFonts.spaceMono(
+                style: GoogleFonts.mulish(
                   fontSize: 10.5,
                   letterSpacing: 1.4,
                   color: WommiColors.inkDim,
@@ -104,7 +104,7 @@ class _RoomCustomizationGameState extends State<RoomCustomizationGame> {
               const SizedBox(height: 22),
               Text(
                 'FURNITURE',
-                style: GoogleFonts.spaceMono(
+                style: GoogleFonts.mulish(
                   fontSize: 10.5,
                   letterSpacing: 1.4,
                   color: WommiColors.inkDim,

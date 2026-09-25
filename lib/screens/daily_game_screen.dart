@@ -211,7 +211,7 @@ class _DailyGameScreenState extends ConsumerState<DailyGameScreen> {
                     ? 'You already collected this day\'s charm from it.'
                     : 'No luck this time - each day only gets one go.',
                 textAlign: TextAlign.center,
-                style: GoogleFonts.inter(
+                style: GoogleFonts.mulish(
                   fontSize: 13,
                   color: WommiColors.inkDim,
                   height: 1.5,
