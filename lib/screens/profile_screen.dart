@@ -7,6 +7,7 @@ import '../providers/onboarding_provider.dart';
 import '../providers/repository_provider.dart';
 import '../widgets/edit_cycle_day_dialog.dart';
 import '../widgets/edit_conception_method_dialog.dart';
+import '../widgets/ovulation_day_picker_dialog.dart';
 import '../services/device_storage.dart';
 import '../services/local_backup_storage.dart';
 import '../utils/journey_completion_flows.dart';
@@ -269,13 +270,7 @@ class ProfileScreen extends ConsumerWidget {
                     Switch(
                       value: userState.ovulationDay != null,
                       activeColor: WommiColors.gold,
-                      onChanged: (value) {
-                        final newDay = value ? userState.currentDay : null;
-                        ref
-                            .read(userStateProvider.notifier)
-                            .markOvulationDay(newDay);
-                        ref.read(repositoryProvider).setOvulationDay(newDay);
-                      },
+                      onChanged: (_) => showOvulationDayPicker(context),
                     ),
                   ],
                 ),

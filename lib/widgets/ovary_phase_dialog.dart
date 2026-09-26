@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../theme.dart';
 import '../providers/user_state_provider.dart';
-import '../providers/repository_provider.dart';
+import 'ovulation_day_picker_dialog.dart';
 
 /// The "enlarged highlight" shown when tapping the combined ovary node on
 /// the journey map: since ovulation timing varies and this phase's real
@@ -143,15 +143,10 @@ class OvaryPhaseDialog extends ConsumerWidget {
                       Switch(
                         value: ovulationMarkedToday,
                         activeThumbColor: WommiColors.gold,
-                        onChanged: (value) {
-                          final newDay = value ? currentDay : null;
-                          ref
-                              .read(userStateProvider.notifier)
-                              .markOvulationDay(newDay);
-                          ref
-                              .read(repositoryProvider)
-                              .setOvulationDay(newDay);
-                        },
+                        onChanged: (_) => showOvulationDayPicker(
+                          context,
+                          asBottomSheet: asBottomSheet,
+                        ),
                       ),
                     ],
                   ),

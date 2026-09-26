@@ -262,14 +262,14 @@ const List<double> _grayscaleMatrix = [
   0, 0, 0, 1, 0,
 ];
 
-/// The charm itself - a rounded circle, styled by rarity the same way a
-/// bead on the profile/achievements necklace is (see NecklaceCircle's
-/// _CharmBead): gold ring + glow for legendary, lilac-cyan ring + glow for
-/// rare, plain white/bordered ring for normal - framing the real charm
-/// artwork (see CharmImageCatalog), filled to the circle. A not-yet-
-/// collected slot shows that same artwork grayed out and dimmed instead of
-/// hidden outright, since its real rarity isn't revealed until it's earned
-/// - falling back to a plain "?" only if no artwork was available at all.
+/// The charm itself - a transparent rounded box, styled by rarity: a gold
+/// border + glow for legendary, a lilac-cyan border + glow for rare, a
+/// plain bordered box for normal - framing the real charm artwork (see
+/// CharmImageCatalog) rather than sitting on a filled/gradient background.
+/// A not-yet-collected slot shows that same artwork grayed out and dimmed
+/// instead of hidden outright, since its real rarity isn't revealed until
+/// it's earned - falling back to a plain "?" only if no artwork was
+/// available at all.
 class _CharmCircle extends StatelessWidget {
   final CharmRarity? rarity;
   final String? imagePath;
@@ -284,6 +284,7 @@ class _CharmCircle extends StatelessWidget {
   });
 
   static const double _size = _AlbumCell._circleSize;
+  static const BorderRadius _radius = BorderRadius.all(Radius.circular(16));
 
   Widget _art(BuildContext context, {required bool grayscale}) {
     final path = imagePath;
@@ -299,12 +300,13 @@ class _CharmCircle extends StatelessWidget {
       height: _size,
       fit: BoxFit.cover,
       // The source art (especially the reward charms) is far higher
-      // resolution than a 64-logical-pixel circle needs - decoding at
+      // resolution than a 64-logical-pixel box needs - decoding at
       // roughly display size instead of full size keeps memory sane.
       cacheWidth: (_size * devicePixelRatio).round(),
       cacheHeight: (_size * devicePixelRatio).round(),
     );
-    return ClipOval(
+    return ClipRRect(
+      borderRadius: _radius,
       child: grayscale
           ? Opacity(
               opacity: 0.55,
@@ -324,8 +326,8 @@ class _CharmCircle extends StatelessWidget {
         width: _size,
         height: _size,
         decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color: WommiColors.bgSoft,
+          borderRadius: _radius,
+          color: Colors.transparent,
           border: Border.all(color: WommiColors.line, width: 1.5),
         ),
         child: _art(context, grayscale: true),
@@ -338,16 +340,12 @@ class _CharmCircle extends StatelessWidget {
           width: _size,
           height: _size,
           decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            gradient: const LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [WommiColors.gold, Color(0xFFFFF0C4)],
-            ),
-            border: Border.all(color: Colors.white, width: 2.5),
+            borderRadius: _radius,
+            color: Colors.transparent,
+            border: Border.all(color: WommiColors.gold, width: 2.5),
             boxShadow: [
               BoxShadow(
-                color: WommiColors.gold.withOpacity(0.5),
+                color: WommiColors.gold.withValues(alpha: 0.5),
                 blurRadius: 16,
                 spreadRadius: 1,
               ),
@@ -360,16 +358,12 @@ class _CharmCircle extends StatelessWidget {
           width: _size,
           height: _size,
           decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            gradient: const LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [WommiColors.lilac, WommiColors.cyan],
-            ),
-            border: Border.all(color: Colors.white, width: 2.5),
+            borderRadius: _radius,
+            color: Colors.transparent,
+            border: Border.all(color: WommiColors.cyan, width: 2.5),
             boxShadow: [
               BoxShadow(
-                color: WommiColors.cyan.withOpacity(0.35),
+                color: WommiColors.cyan.withValues(alpha: 0.35),
                 blurRadius: 12,
                 spreadRadius: 0.5,
               ),
@@ -382,8 +376,8 @@ class _CharmCircle extends StatelessWidget {
           width: _size,
           height: _size,
           decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: Colors.white,
+            borderRadius: _radius,
+            color: Colors.transparent,
             border: Border.all(color: WommiColors.line, width: 1.5),
           ),
           child: _art(context, grayscale: false),

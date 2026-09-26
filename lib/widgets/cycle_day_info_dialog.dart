@@ -5,8 +5,8 @@ import '../theme.dart';
 import '../models/onboarding_state.dart';
 import '../models/user_state.dart';
 import '../providers/user_state_provider.dart';
-import '../providers/repository_provider.dart';
 import '../utils/journey_completion_flows.dart';
+import 'ovulation_day_picker_dialog.dart';
 
 /// Shown when tapping a day on the journey map: a summary of what's
 /// typically happening in the cycle on that day, and - for a day that
@@ -173,13 +173,10 @@ class CycleDayInfoDialog extends ConsumerWidget {
                     Switch(
                       value: ovulationMarkedHere,
                       activeThumbColor: WommiColors.gold,
-                      onChanged: (value) {
-                        final newDay = value ? day : null;
-                        ref
-                            .read(userStateProvider.notifier)
-                            .markOvulationDay(newDay);
-                        ref.read(repositoryProvider).setOvulationDay(newDay);
-                      },
+                      onChanged: (_) => showOvulationDayPicker(
+                        context,
+                        asBottomSheet: asBottomSheet,
+                      ),
                     ),
                   ],
                 ),

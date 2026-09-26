@@ -7,6 +7,7 @@ import '../models/charm_rarity.dart';
 import '../providers/challenges_provider.dart';
 import '../providers/user_state_provider.dart';
 import '../providers/repository_provider.dart';
+import '../providers/gem_icon_key_provider.dart';
 import '../widgets/win_state_dialog.dart';
 import '../widgets/challenge_completion_dialog.dart';
 import '../widgets/play_daily_game_prompt_dialog.dart';
@@ -107,8 +108,16 @@ class _ChallengesScreenState extends ConsumerState<ChallengesScreen> {
     return true;
   }
 
-  void _showWinDialog() {
+  void _showWinDialog() async {
     final userState = ref.read(userStateProvider);
+    // The charm just awarded in _awardCharmIfNeeded() is already saved, so
+    // this naturally includes it as the last (highest-day) entry - exactly
+    // the one WinStateDialog's bangle should highlight as new.
+    final charms = await ref.read(repositoryProvider).getAllCharms();
+    if (!mounted) return;
+    final ritualCharms = charms.where((c) => c.charmName == 'daily_charm').toList()
+      ..sort((a, b) => a.cycleDay.compareTo(b.cycleDay));
+
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -118,6 +127,8 @@ class _ChallengesScreenState extends ConsumerState<ChallengesScreen> {
         streakDays: userState.streakDays,
         tracksMenstrualCycle: userState.tracksMenstrualCycle,
         rarity: _lastAwardedRarity,
+        recentCharms: ritualCharms,
+        gemIconKey: ref.read(gemIconKeyProvider),
         onContinue: () {
           Navigator.of(context).pop();
           _maybePromptDailyGame();

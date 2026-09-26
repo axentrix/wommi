@@ -60,32 +60,37 @@ class _AchievementsScreenState extends ConsumerState<AchievementsScreen> {
     });
   }
 
-  /// The current journey's charms, in the order they were earned - the
-  /// necklace wheel's fixed bottom-center-then-alternate layout (see
-  /// NecklaceWheel) is driven by this order, not by day number or rarity.
-  List<NecklaceWheelCharm> _necklaceCharms() {
-    final rows = [...?_currentCharmRows]
-      ..sort((a, b) => a.earnedAt.compareTo(b.earnedAt));
+  /// One necklace slot per day of the current journey's full ritual-charm
+  /// catalog (see CharmCatalog), in the order this journey actually reaches
+  /// them - starting at [startingCycleDay] (the day the journey itself
+  /// began, not necessarily day 1 - see UserState.startingCycleDay) and
+  /// wrapping around the catalog from there. This is a fixed layout so a
+  /// slot's position never shifts as more charms are earned, it just swaps
+  /// from a placeholder to the real charm (see NecklaceWheel/
+  /// NecklaceWheelCharm) - and since charms are always earned one day at a
+  /// time in that same order, slot 0 (the wheel's center, see NecklaceWheel)
+  /// always ends up being this journey's first-ever earned charm.
+  List<NecklaceWheelCharm> _necklaceCharms(int startingCycleDay) {
+    final byDay = <int, CharmsEarnedData>{
+      for (final c in [...?_currentCharmRows])
+        if (c.charmName == 'daily_charm') c.cycleDay: c,
+    };
+    final total = CharmCatalog.ritualCharmCount;
 
-    return rows.map((c) {
-      switch (c.charmName) {
-        case 'daily_charm':
-          return NecklaceWheelCharm(
-            imagePath: CharmImageCatalog.journeyCharmImage(
-              CharmRarity.fromName(c.rarity),
-              c.cycleDay,
-            ),
-            fallbackEmoji: '🌸',
-          );
-        case 'game_charm':
-          return NecklaceWheelCharm(
-            imagePath: CharmImageCatalog.rewardCharmImage(c.cycleDay),
-            fallbackEmoji: '🎮',
-          );
-        default:
-          return const NecklaceWheelCharm(fallbackEmoji: '👑');
+    return List.generate(total, (i) {
+      final day = (startingCycleDay - 1 + i) % total + 1;
+      final row = byDay[day];
+      if (row == null) {
+        return const NecklaceWheelCharm(earned: false, fallbackEmoji: '🌸');
       }
-    }).toList();
+      return NecklaceWheelCharm(
+        imagePath: CharmImageCatalog.journeyCharmImage(
+          CharmRarity.fromName(row.rarity),
+          day,
+        ),
+        fallbackEmoji: '🌸',
+      );
+    });
   }
 
   @override
@@ -99,7 +104,9 @@ class _AchievementsScreenState extends ConsumerState<AchievementsScreen> {
       child: Column(
         children: [
           if (hasCurrentJourney)
-            NecklaceWheel(charms: _necklaceCharms()),
+            NecklaceWheel(
+              charms: _necklaceCharms(userState.startingCycleDay ?? 1),
+            ),
           Expanded(
             child: Container(
               width: double.infinity,

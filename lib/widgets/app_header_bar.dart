@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../theme.dart';
 import '../models/user_state.dart';
+import '../providers/gem_icon_key_provider.dart';
 
 /// The mascot badge + "Day X" + gems/streak stats row shared by the Home
 /// and Achievements screens (see the Figma homepage/achievements designs) -
 /// [subtitle] is optional since only Home's header shows a cycle-phase line
 /// under "Day X"; Achievements omits it.
-class AppHeaderBar extends StatelessWidget {
+class AppHeaderBar extends ConsumerWidget {
   final UserState userState;
   final String? subtitle;
   final void Function(BuildContext badgeContext) onGemsTap;
@@ -20,7 +22,7 @@ class AppHeaderBar extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 24, 16, 0),
       child: Row(
@@ -68,6 +70,10 @@ class AppHeaderBar extends StatelessWidget {
                 builder: (badgeContext) => GestureDetector(
                   onTap: () => onGemsTap(badgeContext),
                   child: StatColumn(
+                    // Lets a reward popup elsewhere (see WinStateDialog) find
+                    // exactly where this icon lands on screen, to animate an
+                    // earned gem flying here.
+                    key: ref.watch(gemIconKeyProvider),
                     image: 'assets/images/home/gem_icon.png',
                     imageSize: 26,
                     value: userState.gemBalance,

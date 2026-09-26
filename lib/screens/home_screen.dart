@@ -182,13 +182,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     }
 
     final header = _buildHeader(userState);
+    // Home's map and Achievements' necklace/journey cards both sit on the
+    // deep purple background (see the Figma redesigns for each); Daily
+    // Rituals and Settings keep the original white background. The header
+    // has no background color of its own (see below), so whichever of
+    // these actually shows through behind it needs to match, or its white
+    // text/icons either clash with a white backdrop or show a seam.
+    final isPurpleTab = _currentIndex == 0 || _currentIndex == 2;
 
     return Scaffold(
-      // Only matters where something doesn't fully cover it - on Home the
-      // map (see below) fills the whole SafeArea itself, on every other tab
-      // this is what actually shows through the header's own transparent
-      // background.
-      backgroundColor: _currentIndex == 0 ? WommiColors.riveBg : WommiColors.bg,
+      backgroundColor: isPurpleTab ? WommiColors.riveBg : WommiColors.bg,
       body: SafeArea(
         child: _currentIndex == 0
             // On Home the header (and the mission card) float over the map

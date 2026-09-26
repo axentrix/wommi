@@ -3,7 +3,10 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../theme.dart';
+import '../data/database.dart';
 import '../models/charm_rarity.dart';
+import '../models/charm_image_catalog.dart';
+import 'flying_gem_overlay.dart';
 
 class WinStateDialog extends StatefulWidget {
   final int currentDay;
@@ -11,6 +14,16 @@ class WinStateDialog extends StatefulWidget {
   final int streakDays;
   final bool tracksMenstrualCycle;
   final CharmRarity rarity;
+  // This journey's ritual charms earned so far, current one included -
+  // ascending by day. Used to fill the bangle below with the real recent
+  // charms instead of a generic pattern; the last entry is the one this
+  // popup is celebrating.
+  final List<CharmsEarnedData> recentCharms;
+  // Where AppHeaderBar's gem count icon currently sits (see
+  // gemIconKeyProvider) - lets Continue animate the earned gem flying there.
+  // Null (or not yet laid out, e.g. a hidden route underneath) just skips
+  // that animation rather than failing.
+  final GlobalKey? gemIconKey;
   final VoidCallback onContinue;
 
   const WinStateDialog({
@@ -20,6 +33,8 @@ class WinStateDialog extends StatefulWidget {
     required this.streakDays,
     required this.tracksMenstrualCycle,
     this.rarity = CharmRarity.normal,
+    this.recentCharms = const [],
+    this.gemIconKey,
     required this.onContinue,
   });
 
@@ -30,6 +45,7 @@ class WinStateDialog extends StatefulWidget {
 class _WinStateDialogState extends State<WinStateDialog>
     with SingleTickerProviderStateMixin {
   late final AnimationController _raysController;
+  final _orbKey = GlobalKey();
 
   @override
   void initState() {
@@ -44,6 +60,43 @@ class _WinStateDialogState extends State<WinStateDialog>
   void dispose() {
     _raysController.dispose();
     super.dispose();
+  }
+
+  String? get _earnedImagePath =>
+      CharmImageCatalog.journeyCharmImage(widget.rarity, widget.currentDay);
+
+  /// Flies a copy of the earned charm from the orb to the header's gem icon
+  /// before handing off to [WinStateDialog.onContinue] - purely a visual
+  /// overlay effect (see showFlyingGem), so it never blocks or delays
+  /// Continue's own behavior (closing the dialog, prompting the daily game,
+  /// etc.), it just layers on top of it.
+  void _handleContinue() {
+    final targetKey = widget.gemIconKey;
+    final orbBox = _orbKey.currentContext?.findRenderObject() as RenderBox?;
+    final targetBox = targetKey?.currentContext?.findRenderObject() as RenderBox?;
+    if (orbBox != null &&
+        orbBox.attached &&
+        targetBox != null &&
+        targetBox.attached) {
+      final rootOverlayBox =
+          Overlay.of(context, rootOverlay: true).context.findRenderObject()
+              as RenderBox;
+      final start = orbBox.localToGlobal(
+        orbBox.size.center(Offset.zero),
+        ancestor: rootOverlayBox,
+      );
+      final end = targetBox.localToGlobal(
+        targetBox.size.center(Offset.zero),
+        ancestor: rootOverlayBox,
+      );
+      showFlyingGem(
+        context: context,
+        startGlobal: start,
+        endGlobal: end,
+        gem: _FlyingGemArt(imagePath: _earnedImagePath, glowColor: _glowColor),
+      );
+    }
+    widget.onContinue();
   }
 
   List<Color> get _orbColors {
@@ -169,6 +222,7 @@ class _WinStateDialogState extends State<WinStateDialog>
                             return Transform.scale(
                               scale: value,
                               child: Container(
+                                key: _orbKey,
                                 width: 118,
                                 height: 118,
                                 decoration: BoxDecoration(
@@ -191,10 +245,19 @@ class _WinStateDialogState extends State<WinStateDialog>
                                   ),
                                 ),
                                 child: Center(
-                                  child: Text(
-                                    '💎',
-                                    style: TextStyle(fontSize: 40),
-                                  ),
+                                  child: _earnedImagePath != null
+                                      ? ClipOval(
+                                          child: Image.asset(
+                                            _earnedImagePath!,
+                                            width: 96,
+                                            height: 96,
+                                            fit: BoxFit.cover,
+                                          ),
+                                        )
+                                      : const Text(
+                                          '💎',
+                                          style: TextStyle(fontSize: 40),
+                                        ),
                                 ),
                               ),
                             );
@@ -255,7 +318,7 @@ class _WinStateDialogState extends State<WinStateDialog>
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
-                      onPressed: widget.onContinue,
+                      onPressed: _handleContinue,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: WommiColors.cyan,
                         foregroundColor: Colors.white,
@@ -284,8 +347,18 @@ class _WinStateDialogState extends State<WinStateDialog>
     );
   }
 
+  /// The bangle shows this journey's up to 6 most recently earned ritual
+  /// charms (see widget.recentCharms, already ascending by day), right-
+  /// aligned so the newest - the one this popup is celebrating - always
+  /// lands in the rightmost slot; any remaining slots on the left stay
+  /// empty rather than padded with charms that don't exist yet.
   Widget _buildBangle() {
-    final filledGems = widget.gemBalance > 6 ? 6 : widget.gemBalance;
+    final recent = widget.recentCharms;
+    final shown = recent.length > 6
+        ? recent.sublist(recent.length - 6)
+        : recent;
+    final emptySlots = 6 - shown.length;
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
       decoration: BoxDecoration(
@@ -305,79 +378,26 @@ class _WinStateDialogState extends State<WinStateDialog>
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
-        children: List.generate(6, (index) {
-          final isFilled = index < filledGems;
-          final isNew = index == filledGems - 1;
-          return Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 5),
-            // Only the just-earned slot reflects this charm's actual
-            // rarity - earlier slots in the bangle don't have their own
-            // rarity history threaded through here, so they stay gold.
-            child: _buildGemSlot(isFilled, isNew, isNew ? widget.rarity : CharmRarity.legendary),
-          );
-        }),
-      ),
-    );
-  }
-
-  Widget _buildGemSlot(bool isFilled, bool isNew, CharmRarity slotRarity) {
-    final gradientColors = switch (slotRarity) {
-      CharmRarity.legendary => [WommiColors.goldSoft, WommiColors.gold],
-      CharmRarity.rare => [WommiColors.lilac, WommiColors.cyan],
-      CharmRarity.normal => [Colors.white, WommiColors.line],
-    };
-    final borderColor = switch (slotRarity) {
-      CharmRarity.legendary => WommiColors.gold,
-      CharmRarity.rare => WommiColors.cyan,
-      CharmRarity.normal => WommiColors.inkDim,
-    };
-    return TweenAnimationBuilder<double>(
-      tween: Tween(begin: isNew ? 0.0 : 1.0, end: 1.0),
-      duration: Duration(milliseconds: isNew ? 600 : 0),
-      curve: Curves.elasticOut,
-      builder: (context, value, child) {
-        return Transform.scale(
-          scale: value,
-          child: Container(
-            width: 30,
-            height: 30,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              gradient: isFilled
-                  ? LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: gradientColors,
-                    )
-                  : null,
-              color: isFilled ? null : WommiColors.bgSoft,
-              border: Border.all(
-                color: isFilled ? borderColor : Color(0xFFD8D2E8),
-                width: 1.5,
-                style: isFilled ? BorderStyle.solid : BorderStyle.solid,
-              ),
-              boxShadow: isNew
-                  ? [
-                      BoxShadow(
-                        color: WommiColors.cyan.withValues(alpha: 0.5),
-                        blurRadius: 14,
-                        spreadRadius: 2.5,
-                      ),
-                    ]
-                  : null,
+        children: [
+          for (var i = 0; i < emptySlots; i++)
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 5),
+              child: _EmptyGemSlot(),
             ),
-            child: Center(
-              child: Text(
-                isFilled ? '💎' : '·',
-                style: TextStyle(
-                  fontSize: isFilled ? 14 : 16,
-                  color: isFilled ? Colors.white : WommiColors.inkDim,
+          for (var i = 0; i < shown.length; i++)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 5),
+              child: _GemSlot(
+                imagePath: CharmImageCatalog.journeyCharmImage(
+                  CharmRarity.fromName(shown[i].rarity),
+                  shown[i].cycleDay,
                 ),
+                rarity: CharmRarity.fromName(shown[i].rarity),
+                isNew: i == shown.length - 1,
               ),
             ),
-          ),
-        );
-      },
+        ],
+      ),
     );
   }
 
@@ -400,6 +420,116 @@ class _WinStateDialogState extends State<WinStateDialog>
           ),
         ),
       ],
+    );
+  }
+}
+
+/// One earned charm in the bangle - the real artwork (see
+/// CharmImageCatalog), framed by a border/glow that matches its actual
+/// rarity, same palette as the rest of the app's charm displays (see
+/// CharmAlbumGrid's _CharmCircle). The just-earned one ([isNew]) pops in
+/// with a little bounce and an extra glow, same as before this showed a
+/// generic gem, so the "new addition" cue survives the switch to real art.
+class _GemSlot extends StatelessWidget {
+  final String? imagePath;
+  final CharmRarity rarity;
+  final bool isNew;
+
+  const _GemSlot({
+    required this.imagePath,
+    required this.rarity,
+    required this.isNew,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final borderColor = switch (rarity) {
+      CharmRarity.legendary => WommiColors.gold,
+      CharmRarity.rare => WommiColors.cyan,
+      CharmRarity.normal => WommiColors.inkDim,
+    };
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: isNew ? 0.0 : 1.0, end: 1.0),
+      duration: Duration(milliseconds: isNew ? 600 : 0),
+      curve: Curves.elasticOut,
+      builder: (context, value, child) {
+        return Transform.scale(
+          scale: value,
+          child: Container(
+            width: 30,
+            height: 30,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: Colors.white,
+              border: Border.all(color: borderColor, width: 1.5),
+              boxShadow: isNew
+                  ? [
+                      BoxShadow(
+                        color: WommiColors.cyan.withValues(alpha: 0.5),
+                        blurRadius: 14,
+                        spreadRadius: 2.5,
+                      ),
+                    ]
+                  : null,
+            ),
+            child: ClipOval(
+              child: imagePath != null
+                  ? Image.asset(imagePath!, fit: BoxFit.cover)
+                  : const Center(child: Text('💎', style: TextStyle(fontSize: 14))),
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+/// A not-yet-earned slot in the bangle - see _GemSlot.
+class _EmptyGemSlot extends StatelessWidget {
+  const _EmptyGemSlot();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 30,
+      height: 30,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: WommiColors.bgSoft,
+        border: Border.all(color: const Color(0xFFD8D2E8), width: 1.5),
+      ),
+      child: Center(
+        child: Text('·', style: TextStyle(fontSize: 16, color: WommiColors.inkDim)),
+      ),
+    );
+  }
+}
+
+/// The small art shown flying from the win-dialog orb to the header's gem
+/// icon (see showFlyingGem) - same real charm image + rarity glow as the
+/// orb itself, just without the orb's own sunburst/pop-in animation, which
+/// wouldn't read at this size or during a fast flight.
+class _FlyingGemArt extends StatelessWidget {
+  final String? imagePath;
+  final Color glowColor;
+
+  const _FlyingGemArt({required this.imagePath, required this.glowColor});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        border: Border.all(color: Colors.white, width: 2),
+        boxShadow: [
+          BoxShadow(color: glowColor.withValues(alpha: 0.6), blurRadius: 12),
+        ],
+      ),
+      child: ClipOval(
+        child: imagePath != null
+            ? Image.asset(imagePath!, fit: BoxFit.cover)
+            : const Center(child: Text('💎', style: TextStyle(fontSize: 14))),
+      ),
     );
   }
 }
